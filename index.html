@@ -515,7 +515,8 @@ async function callAI(prompt,blobs,signal,cfg){
   if(!res.ok){
     const t=await res.text().catch(()=>'');
     const code=res.status===401||res.status===403?'auth':res.status===429?'rate_limited':res.status===404?'bad_model':res.status>=500?'upstream_error':(/model/i.test(t)?'bad_model':'bad_request');
-    throw{code,message:t.slice(0,400)};
+    let msg=t;try{const j=JSON.parse(t);msg=(j.error&&(j.error.message||j.error.status))||t}catch(_){}
+    throw{code,status:res.status,message:String(msg).slice(0,300)};
   }
   const j=await res.json();
   let text='';
@@ -1165,7 +1166,7 @@ $('#sTest').onclick=async()=>{
   out.textContent='⏳ 測試中…';
   try{const t=await callAI('Reply with only this JSON: {"ok":true}',[],undefined,{provider:p,key,model});const j=parseJSONText(t);
     out.innerHTML=j&&j.ok?'<span style="color:var(--grn)">✅ 連線成功，可以使用</span>':'<span style="color:var(--org)">⚠️ 有連上，但回覆格式怪怪的</span>'}
-  catch(e){out.innerHTML=`<span style="color:var(--red)">❌ ${esc(scanErrMsg(e&&e.code))}</span>`}
+  catch(e){out.innerHTML=`<span style="color:var(--red)">❌ ${esc(scanErrMsg(e&&e.code))}</span>`+(e&&e.status?`<br><span style="color:var(--sub);font-size:12.5px">錯誤代碼 ${e.status}：${esc(e.message||'')}</span>`:'')}
 };
 
 /* ---------- backup reminder + online state ---------- */
