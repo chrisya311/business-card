@@ -309,9 +309,17 @@ label.f.warn>span::after{content:" ⚠️ 請確認";font-weight:400;color:#8a6d
       <div class="sec" style="margin-top:18px">💾 資料與備份</div>
       <div style="font-size:14px;line-height:1.8;margin-top:10px">資料全部存在這台裝置。<br>上次完整備份：<b id="sLastBackup">從未備份</b><br><span id="sStorage" style="color:var(--sub);font-size:13px"></span></div>
       <div class="note">📱 換手機、刪掉 App 或清除 Safari 資料，名片都會一起不見。請每個月用「📤 匯出 → 完整備份」存一份到「檔案」或 iCloud。</div>
-      <div style="text-align:center;color:#9aa3b2;font-size:12px;margin-top:14px">版本 <span id="sVer"></span></div>
+      <div style="text-align:center;margin-top:14px"><button type="button" class="btn sm" id="sLog">📋 版本 <span id="sVer"></span>・更新紀錄</button></div>
     </div>
     <div class="mfoot"><button class="btn" data-close>取消</button><button class="btn pri" id="sSave">💾 儲存設定</button></div>
+  </div>
+</div>
+
+<!-- changelog modal -->
+<div class="modal" id="mLog">
+  <div class="mbox" style="max-width:560px">
+    <div class="mhead"><h2>📋 更新紀錄</h2><button class="btn sm" data-close>✕</button></div>
+    <div class="mbody" id="logBody"></div>
   </div>
 </div>
 
@@ -481,7 +489,15 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t){$('#syncBadge').textContent=t}
 
-const APP_VERSION='2026.11.04-4';
+const APP_VERSION='2026.11.04-5';
+const CHANGELOG=[
+  {v:'2026.11.04-5',items:['新增「更新紀錄」：在設定最下面點版本號就能查看','更新到新版本後，會自動告訴你這次改了什麼']},
+  {v:'2026.11.04-4',items:['批次辨識碰到 AI「每分鐘次數上限」時，會自動等 30 秒再繼續，不用重按','當天免費額度用完時，會提醒你額度重置的時間']},
+  {v:'2026.11.04-3',items:['設定最下面顯示版本號','有新版本時會自動更新，並跳出「已更新到新版本」']},
+  {v:'2026.11.04-2',items:['預設改用輕量模型（Gemini 3.5 Flash-Lite、Claude Haiku），比較快也比較省','在名片頁面往右滑就能回到清單','AI 暫時出錯時會自動再試一次','測試連線失敗時，會顯示錯誤代碼和原因']},
+  {v:'2026.11.04-1',items:['第一版：拍照辨識名片、批次拖拉辨識、拜訪紀錄、跟進提醒','多個地址、統一編號、匯出 Excel／Outlook、完整備份與匯入','可以離線使用，資料存在自己的裝置','支援 Claude、ChatGPT、Gemini，使用自己的 API 金鑰']}
+];
+function changelogHTML(list){return list.map(c=>`<div style="margin-bottom:14px"><div style="font-weight:700;color:var(--pri)">版本 ${c.v}${c.v===APP_VERSION?' <span class="badge" style="background:var(--grn-soft);color:var(--grn)">目前版本</span>':''}</div><ul style="margin:6px 0 0;padding-left:20px;line-height:1.7">${c.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
 /* ---------- AI settings ---------- */
 const PROVIDERS={
   claude:{name:'Claude',models:['claude-haiku-5-5','claude-sonnet-5-5','claude-opus-5-5'],keyUrl:'https://console.anthropic.com/settings/keys',keyHint:'sk-ant-'},
@@ -1189,6 +1205,7 @@ async function openSettings(){
   openModal('#mSettings');
 }
 $('#bSettings').onclick=openSettings;
+$('#sLog').onclick=()=>{$('#logBody').innerHTML=changelogHTML(CHANGELOG);openModal('#mLog')};
 $('#sProv').addEventListener('change',e=>{paintProv();fillProvider(e.target.value)});
 $('#sShow').onclick=()=>{const k=$('#sKey');k.type=k.type==='password'?'text':'password'};
 $('#sSave').onclick=()=>{const p=($('#sProv input:checked')||{}).value||'claude';AI.set(p,$('#sKey').value.trim(),$('#sModel').value.trim());closeModal($('#mSettings'));toast('✅ 設定已儲存');};
@@ -1221,6 +1238,9 @@ refresh();
   try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(_){}
   try{contacts=(await LDB.all()).map(normalize)}catch(_){contacts=[]}
   refresh();checkBackup();
+  try{const seen=localStorage.getItem('mpgj.seenVersion');localStorage.setItem('mpgj.seenVersion',APP_VERSION);
+    if(seen&&seen!==APP_VERSION){const news=CHANGELOG.slice(0,Math.max(1,CHANGELOG.findIndex(c=>c.v===seen)));
+      setTimeout(()=>infoBox(`🎉 已更新到版本 ${APP_VERSION}\n\n`+news.map(c=>c.items.map(i=>'• '+i).join('\n')).join('\n'),{ok:'知道了'}),500)}}catch(_){}
   if(!AI.get().key&&!contacts.length)setTimeout(()=>infoBox('👋 歡迎使用名片管家！\n\n要自動辨識名片，請先到右上角「⚙️ 設定」選一家 AI，貼上你自己的 API 金鑰。\n\n沒有金鑰也可以用：拍照後按「自己填」手動輸入。',{ok:'知道了'}),400);
   if('serviceWorker' in navigator&&location.protocol!=='file:'){
     const hadCtl=!!navigator.serviceWorker.controller;let reloaded=false;
