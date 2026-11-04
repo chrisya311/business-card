@@ -481,7 +481,7 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t){$('#syncBadge').textContent=t}
 
-const APP_VERSION='2026.11.04-3';
+const APP_VERSION='2026.11.04-4';
 /* ---------- AI settings ---------- */
 const PROVIDERS={
   claude:{name:'Claude',models:['claude-haiku-5-5','claude-sonnet-5-5','claude-opus-5-5'],keyUrl:'https://console.anthropic.com/settings/keys',keyHint:'sk-ant-'},
@@ -851,7 +851,8 @@ function renderBatch(){
 }
 function updateBatchBar(){
   const n=B.rows.length,done=B.rows.filter(r=>r.state==='ok'||r.state==='err').length,ok=B.rows.filter(r=>r.state==='ok').length,sel=B.rows.filter(r=>r.on&&r.state==='ok').length;
-  $('#bProgTx').textContent=n?(B.running?`辨識中… ${done} / ${n}`:`辨識完成 ${ok} 張${n-ok?`，${B.rows.filter(r=>r.state==='err').length} 張失敗`:''}`):'把名片照片拖進來，或按右邊的按鈕選照片';
+  const waitS=B.pauseUntil?Math.ceil((B.pauseUntil-Date.now())/1000):0;
+  $('#bProgTx').textContent=n?(B.running&&waitS>0?`⏳ AI 每分鐘的次數到上限了，${waitS} 秒後自動繼續…（${done} / ${n}）`:B.running?`辨識中… ${done} / ${n}`:`辨識完成 ${ok} 張${n-ok?`，${B.rows.filter(r=>r.state==='err').length} 張失敗`:''}`):'把名片照片拖進來，或按右邊的按鈕選照片';
   $('#bProgBar').style.width=n?(done/n*100)+'%':'0';
   $('#bStop').hidden=!B.running;
   $('#bSel').textContent=n?`已勾選 ${sel} 張`:'';
@@ -863,6 +864,7 @@ async function runBatch(){
   const worker=async()=>{
     while(true){
       if(B.ctl.signal.aborted)return;
+      while(B.pauseUntil&&Date.now()<B.pauseUntil){if(B.ctl.signal.aborted)return;updateBatchBar();await new Promise(r=>setTimeout(r,1000))}
       const r=B.rows.find(x=>x.state==='wait');if(!r)return;
       r.state='run';renderBatch();
       try{
@@ -871,6 +873,10 @@ async function runBatch(){
       }catch(e){
         const code=e&&e.code;
         if(code==='cancelled'){r.state='wait';return}
+        const daily=/day|daily|每日|per.?day/i.test(String(e&&e.message||''));
+        if(code==='rate_limited'&&!daily&&(r.tries||0)<4){r.tries=(r.tries||0)+1;r.state='wait';B.pauseUntil=Math.max(B.pauseUntil||0,Date.now()+30000);renderBatch();continue}
+        if(code==='rate_limited'&&daily){r.state='err';r.err='今天的免費額度用完了';r.on=false;B.ctl.abort();B.rows.filter(x=>x.state==='wait').forEach(x=>{x.state='err';x.err='未辨識'});
+          infoBox('今天的 AI 免費額度用完了。\n\n已辨識好的可以先儲存，其他的等額度重置後按「重試」。\n（Gemini 的每日額度在台灣時間下午 3～4 點重置）');renderBatch();continue}
         r.state='err';r.err=code==='rate_limited'?'額度或頻率限制':code==='offline'||code==='network'?'沒有網路':code==='auth'?'金鑰錯誤':'辨識失敗';r.on=false;
         if(['no_key','auth','offline','network','bad_model','rate_limited'].includes(code)){
           B.ctl.abort();B.rows.filter(x=>x.state==='wait').forEach(x=>{x.state='err';x.err='未辨識'});
@@ -881,7 +887,7 @@ async function runBatch(){
     }
   };
   await Promise.all([worker(),worker()]); // two at a time
-  B.running=false;B.ctl=null;renderBatch();
+  B.running=false;B.ctl=null;B.pauseUntil=0;renderBatch();
 }
 async function saveBatch(){
   const list=B.rows.filter(r=>r.on&&r.state==='ok');if(!list.length)return;
