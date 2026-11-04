@@ -300,7 +300,7 @@ label.f.warn>span::after{content:" ⚠️ 請確認";font-weight:400;color:#8a6d
         <div style="display:flex;gap:6px"><input type="password" id="sKey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="貼上你的 API 金鑰"><button type="button" class="btn sm" id="sShow">👁️</button></div>
       </label>
       <div style="font-size:13px;margin-top:6px" id="sKeyLink"></div>
-      <label class="f" style="margin-top:12px"><span>模型名稱（通常不用改）</span><input type="text" id="sModel" list="dlModels" autocapitalize="off" spellcheck="false"></label>
+      <label class="f" style="margin-top:12px"><span>模型名稱（預設是輕量模型，通常不用改）</span><input type="text" id="sModel" list="dlModels" autocapitalize="off" spellcheck="false"></label>
       <datalist id="dlModels"></datalist>
       <div style="display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap">
         <button class="btn" id="sTest">🔌 測試連線</button><span id="sTestRes" style="font-size:13.5px"></span>
@@ -309,6 +309,7 @@ label.f.warn>span::after{content:" ⚠️ 請確認";font-weight:400;color:#8a6d
       <div class="sec" style="margin-top:18px">💾 資料與備份</div>
       <div style="font-size:14px;line-height:1.8;margin-top:10px">資料全部存在這台裝置。<br>上次完整備份：<b id="sLastBackup">從未備份</b><br><span id="sStorage" style="color:var(--sub);font-size:13px"></span></div>
       <div class="note">📱 換手機、刪掉 App 或清除 Safari 資料，名片都會一起不見。請每個月用「📤 匯出 → 完整備份」存一份到「檔案」或 iCloud。</div>
+      <div style="text-align:center;color:#9aa3b2;font-size:12px;margin-top:14px">版本 <span id="sVer"></span></div>
     </div>
     <div class="mfoot"><button class="btn" data-close>取消</button><button class="btn pri" id="sSave">💾 儲存設定</button></div>
   </div>
@@ -480,11 +481,12 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t){$('#syncBadge').textContent=t}
 
+const APP_VERSION='2026.11.04-3';
 /* ---------- AI settings ---------- */
 const PROVIDERS={
-  claude:{name:'Claude',models:['claude-sonnet-5-5','claude-haiku-5-5','claude-opus-5-5'],keyUrl:'https://console.anthropic.com/settings/keys',keyHint:'sk-ant-'},
+  claude:{name:'Claude',models:['claude-haiku-5-5','claude-sonnet-5-5','claude-opus-5-5'],keyUrl:'https://console.anthropic.com/settings/keys',keyHint:'sk-ant-'},
   openai:{name:'ChatGPT',models:['gpt-5.4-mini','gpt-5.4','gpt-5.4-nano'],keyUrl:'https://platform.openai.com/api-keys',keyHint:'sk-'},
-  gemini:{name:'Gemini',models:['gemini-3.8-flash','gemini-3.6-flash','gemini-3.5-flash-lite'],keyUrl:'https://aistudio.google.com/apikey',keyHint:'AIza'}
+  gemini:{name:'Gemini',models:['gemini-3.5-flash-lite','gemini-3.6-flash','gemini-3.8-flash'],keyUrl:'https://aistudio.google.com/apikey',keyHint:'AIza'}
 };
 const AI={
   get(){let v={};try{v=JSON.parse(localStorage.getItem('mpgj.ai')||'{}')}catch(_){}
@@ -495,6 +497,10 @@ const AI={
 };
 function blobToB64(b){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const u=String(r.result);res({mime:b.type||'image/jpeg',data:u.slice(u.indexOf(',')+1)})};r.onerror=()=>rej(r.error);r.readAsDataURL(b)})}
 async function callAI(prompt,blobs,signal,cfg){
+  try{return await callAIOnce(prompt,blobs,signal,cfg)}
+  catch(e){if(e&&(e.code==='upstream_error')&&!(signal&&signal.aborted)){await new Promise(r=>setTimeout(r,1500));return await callAIOnce(prompt,blobs,signal,cfg)}throw e}
+}
+async function callAIOnce(prompt,blobs,signal,cfg){
   const s=cfg||AI.get();
   if(!s.key)throw{code:'no_key'};
   if(!navigator.onLine)throw{code:'offline'};
@@ -515,7 +521,8 @@ async function callAI(prompt,blobs,signal,cfg){
   if(!res.ok){
     const t=await res.text().catch(()=>'');
     const code=res.status===401||res.status===403?'auth':res.status===429?'rate_limited':res.status===404?'bad_model':res.status>=500?'upstream_error':(/model/i.test(t)?'bad_model':'bad_request');
-    throw{code,message:t.slice(0,400)};
+    let msg=t;try{const j=JSON.parse(t);msg=(j.error&&(j.error.message||j.error.status))||t}catch(_){}
+    throw{code,status:res.status,message:String(msg).slice(0,300)};
   }
   const j=await res.json();
   let text='';
@@ -689,7 +696,26 @@ function renderDetail(){
   const tok=++detailToken;
   $$('#dPhotos img').forEach(async img=>{const src=await Store.getPhoto(c.id,img.dataset.side);if(tok===detailToken&&src)img.src=src});
 }
-function select(id){S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;if(window.innerWidth<=820)window.scrollTo(0,0)}
+const isNarrow=()=>window.innerWidth<=820;
+function select(id){const was=S.sel;S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;
+  if(isNarrow()){window.scrollTo(0,0);if(!was||!(history.state&&history.state.detail))history.pushState({detail:id},'')}}
+function closeDetail(){S.sel=null;document.body.classList.remove('detail');renderList()}
+function goBack(){if(history.state&&history.state.detail)history.back();else closeDetail()}
+addEventListener('popstate',()=>{if(S.sel&&!$$('.modal.on').length)closeDetail();else if($$('.modal.on').length&&S.sel)history.pushState({detail:S.sel},'')});
+/* swipe right to go back (phone) */
+(()=>{let x0=0,y0=0,dx=0,active=false,locked=null;const main=()=>$('#main');
+  document.addEventListener('touchstart',e=>{if(!isNarrow()||!document.body.classList.contains('detail')||$$('.modal.on').length||e.touches.length!==1)return;
+    const t=e.touches[0];if(e.target.closest('input,textarea,select'))return;x0=t.clientX;y0=t.clientY;dx=0;active=true;locked=null},{passive:true});
+  document.addEventListener('touchmove',e=>{if(!active)return;const t=e.touches[0];const mx=t.clientX-x0,my=t.clientY-y0;
+    if(locked===null&&(Math.abs(mx)>10||Math.abs(my)>10))locked=Math.abs(mx)>Math.abs(my)*1.3&&mx>0?'h':'v';
+    if(locked!=='h')return;dx=Math.max(0,mx);const m=main();m.style.transition='none';m.style.transform=`translateX(${dx}px)`;m.style.opacity=String(1-Math.min(dx/window.innerWidth,1)*0.4)},{passive:true});
+  const end=()=>{if(!active)return;active=false;const m=main();if(locked!=='h'){return}
+    m.style.transition='transform .2s ease,opacity .2s ease';
+    if(dx>Math.min(110,window.innerWidth*0.28)){m.style.transform=`translateX(${window.innerWidth}px)`;m.style.opacity='0.4';
+      setTimeout(()=>{m.style.transition='none';m.style.transform='';m.style.opacity='';goBack()},180)}
+    else{m.style.transform='';m.style.opacity=''}};
+  document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
+})();
 function refresh(){renderList();renderDetail()}
 
 /* ---------- images ---------- */
@@ -1074,10 +1100,10 @@ document.addEventListener('click',async e=>{
   const clr=t.closest('[data-clear]');if(clr){const slot=clr.closest('.pslot');const target=slot.closest('#scanSlots')?'scan':'edit';slotState[target][slot.dataset.side]='';paintSlots(target);return}
 
   const c=contacts.find(x=>x.id===S.sel);
-  if(t.closest('#dBack')){S.sel=null;document.body.classList.remove('detail');renderList();return}
+  if(t.closest('#dBack')){goBack();return}
   if(!c)return;
   if(t.closest('#dEdit')){openEdit(c);return}
-  if(t.closest('#dDel')){if(await confirmBox(`確定要刪除「${c.name}」？\n（包含照片和所有拜訪紀錄，無法復原）`,{ok:'刪除',danger:true})){try{await Store.del(c);contacts=contacts.filter(x=>x.id!==c.id);S.sel=null;refresh();toast('已刪除')}catch(_){toast('❌ 刪除失敗')}}return}
+  if(t.closest('#dDel')){if(await confirmBox(`確定要刪除「${c.name}」？\n（包含照片和所有拜訪紀錄，無法復原）`,{ok:'刪除',danger:true})){try{await Store.del(c);contacts=contacts.filter(x=>x.id!==c.id);S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('❌ 刪除失敗')}}return}
   if(t.closest('#dAsk')){
     const lv=lastVisit(c);
     const txt=`幫我做拜訪前準備，請上網查這家公司，整理成一頁重點（公司做什麼產品、規模、主要客戶產業、可能用到哪些刀具或加工、最近新聞，以及我拜訪時可以聊的切入點）：\n\n公司：${c.company||'（未填）'}\n地址：${c.address||'（未填）'}\n網站：${c.website||'（未填）'}\n對象：${c.name}${c.title?'（'+c.title+'）':''}\n已知加工類型：${c.processes.join('、')||'不清楚'}\n目前使用的刀具品牌：${c.brands||'不清楚'}\n備註：${c.notes||'無'}${lv?`\n上次聯絡（${fmtD(lv.date)}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`:''}`;
@@ -1153,6 +1179,7 @@ async function openSettings(){
   const cur=AI.get();$$('#sProv input').forEach(i=>i.checked=i.value===cur.provider);paintProv();fillProvider(cur.provider);
   const lb=await Meta.get('lastBackup');$('#sLastBackup').textContent=lb?fmtD(lb.slice(0,10))+`（${daysBetween(lb.slice(0,10),today())} 天前）`:'從未備份';
   try{const e=await navigator.storage.estimate();$('#sStorage').textContent=`目前使用 ${(e.usage/1048576).toFixed(1)} MB`}catch(_){$('#sStorage').textContent=''}
+  $('#sVer').textContent=APP_VERSION;
   openModal('#mSettings');
 }
 $('#bSettings').onclick=openSettings;
@@ -1165,7 +1192,7 @@ $('#sTest').onclick=async()=>{
   out.textContent='⏳ 測試中…';
   try{const t=await callAI('Reply with only this JSON: {"ok":true}',[],undefined,{provider:p,key,model});const j=parseJSONText(t);
     out.innerHTML=j&&j.ok?'<span style="color:var(--grn)">✅ 連線成功，可以使用</span>':'<span style="color:var(--org)">⚠️ 有連上，但回覆格式怪怪的</span>'}
-  catch(e){out.innerHTML=`<span style="color:var(--red)">❌ ${esc(scanErrMsg(e&&e.code))}</span>`}
+  catch(e){out.innerHTML=`<span style="color:var(--red)">❌ ${esc(scanErrMsg(e&&e.code))}</span>`+(e&&e.status?`<br><span style="color:var(--sub);font-size:12.5px">錯誤代碼 ${e.status}：${esc(e.message||'')}</span>`:'')}
 };
 
 /* ---------- backup reminder + online state ---------- */
@@ -1189,7 +1216,11 @@ refresh();
   try{contacts=(await LDB.all()).map(normalize)}catch(_){contacts=[]}
   refresh();checkBackup();
   if(!AI.get().key&&!contacts.length)setTimeout(()=>infoBox('👋 歡迎使用名片管家！\n\n要自動辨識名片，請先到右上角「⚙️ 設定」選一家 AI，貼上你自己的 API 金鑰。\n\n沒有金鑰也可以用：拍照後按「自己填」手動輸入。',{ok:'知道了'}),400);
-  if('serviceWorker' in navigator&&location.protocol!=='file:'){try{await navigator.serviceWorker.register('sw.js')}catch(_){}}
+  if('serviceWorker' in navigator&&location.protocol!=='file:'){
+    const hadCtl=!!navigator.serviceWorker.controller;let reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadCtl&&!reloaded){reloaded=true;toast('🔄 已更新到新版本');setTimeout(()=>location.reload(),600)}});
+    try{const reg=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});reg.update().catch(()=>{})}catch(_){}
+  }
 })();
 })();
 </script>
