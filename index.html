@@ -673,8 +673,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-5';
+const APP_VERSION='2026.11.07-6';
 const CHANGELOG=[
+  {v:'2026.11.07-6',items:['手機主畫面的 App 圖示換成森霧風格（要把舊圖示刪掉、重新加入主畫面才會換）']},
   {v:'2026.11.07-5',items:['右滑回上一頁改成跟 iPhone 一樣的效果：詳細頁跟著手指移動，名片清單從左邊滑出來；快速一撥也能返回']},
   {v:'2026.11.07-4',items:['手機上方區域變精簡（大約只佔畫面三分之一），名片清單看得更多','地區、加工、排序收進搜尋框旁邊的篩選按鈕，有用篩選時按鈕上會有小綠點','不再跳出提醒備份的訊息']},
   {v:'2026.11.07-3',items:['修正手機上名片很多、公司名稱很長時，畫面變太寬、右邊被切掉的問題']},
