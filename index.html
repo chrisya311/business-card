@@ -342,6 +342,10 @@ label.f.warn>span::after{content:"　請確認";font-weight:500;color:var(--org)
 }
 :root,:root[data-theme=dark]{--aurbg:radial-gradient(420px 420px at 40px 0,rgba(78,156,122,.34),transparent 70%),radial-gradient(400px 400px at calc(100% + 40px) 40%,rgba(47,140,147,.32),transparent 70%),radial-gradient(380px 380px at 25% calc(100% + 40px),rgba(185,138,69,.3),transparent 70%),#0D1210}
 :root[data-theme=light]{--aurbg:radial-gradient(420px 420px at 40px 0,rgba(158,210,182,.55),transparent 70%),radial-gradient(400px 400px at calc(100% + 40px) 40%,rgba(140,207,211,.55),transparent 70%),radial-gradient(380px 380px at 25% calc(100% + 40px),rgba(235,203,147,.5),transparent 70%),#EDF1EC}
+/* long dialogs scroll inside, button always visible */
+.dlg .box{max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));display:flex;flex-direction:column}
+.dlg .msg{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.dlg textarea,.dlg .bts{flex:none}
 </style>
 </head>
 <body>
@@ -663,7 +667,8 @@ function dialog(msg,{ok='確定',cancel='取消',danger=false,text=null}={}){
     const d=$('#dlg');$('#dlgMsg').textContent=noEmoji(msg);
     const ta=$('#dlgText');ta.hidden=text==null;if(text!=null){ta.value=text;setTimeout(()=>{ta.focus();ta.select()},50)}
     const y=$('#dlgYes'),n=$('#dlgNo');y.textContent=ok;y.classList.toggle('danger',danger);n.hidden=cancel==null;if(cancel)n.textContent=cancel;
-    const done=v=>{d.classList.remove('on');y.onclick=n.onclick=null;res(v)};
+    const done=v=>{d.classList.remove('on');y.onclick=n.onclick=d.onclick=null;res(v)};
+    if(cancel==null)d.onclick=e=>{if(e.target===d)done(true)};
     y.onclick=()=>done(true);n.onclick=()=>done(false);d.classList.add('on');
   });
 }
@@ -673,8 +678,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-6';
+const APP_VERSION='2026.11.07-7';
 const CHANGELOG=[
+  {v:'2026.11.07-7',items:['「已更新」通知太長時可以上下滑動，「知道了」按鈕一定看得到；點旁邊空白處也能關閉','更新通知只顯示最近的內容，完整紀錄在「設定 → 更新紀錄」']},
   {v:'2026.11.07-6',items:['手機主畫面的 App 圖示換成森霧風格（要把舊圖示刪掉、重新加入主畫面才會換）']},
   {v:'2026.11.07-5',items:['右滑回上一頁改成跟 iPhone 一樣的效果：詳細頁跟著手指移動，名片清單從左邊滑出來；快速一撥也能返回']},
   {v:'2026.11.07-4',items:['手機上方區域變精簡（大約只佔畫面三分之一），名片清單看得更多','地區、加工、排序收進搜尋框旁邊的篩選按鈕，有用篩選時按鈕上會有小綠點','不再跳出提醒備份的訊息']},
@@ -1665,7 +1671,7 @@ refresh();
   paintSync();
   try{const seen=localStorage.getItem('mpgj.seenVersion');localStorage.setItem('mpgj.seenVersion',APP_VERSION);
     if(seen&&seen!==APP_VERSION){const news=CHANGELOG.slice(0,Math.max(1,CHANGELOG.findIndex(c=>c.v===seen)));
-      setTimeout(()=>infoBox(`已更新到版本 ${APP_VERSION}\n\n`+news.map(c=>c.items.map(i=>'• '+i).join('\n')).join('\n'),{ok:'知道了'}),500)}}catch(_){}
+      setTimeout(()=>infoBox(`已更新到版本 ${APP_VERSION}\n\n`+news.slice(0,2).map(c=>c.items.map(i=>'• '+i).join('\n')).join('\n')+(news.length>2?'\n\n更早的更新可以在「設定 → 更新紀錄」查看。':''),{ok:'知道了'}),500)}}catch(_){}
   let welcomed=false;try{welcomed=!!localStorage.getItem('mpgj.welcomed');localStorage.setItem('mpgj.welcomed','1')}catch(_){}
   if(!welcomed&&!AI.get().key&&!contacts.length&&!/access_token|error=/.test(location.hash))setTimeout(()=>infoBox('歡迎使用名片管家！\n\n要自動辨識名片，請先到右上角「設定」選一家 AI，貼上你自己的 API 金鑰。\n\n沒有金鑰也可以用：拍照後按「自己填」手動輸入。',{ok:'知道了'}),400);
   if('serviceWorker' in navigator&&location.protocol!=='file:'){
