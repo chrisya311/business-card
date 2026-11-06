@@ -501,8 +501,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t){$('#syncBadge').textContent=t}
 
-const APP_VERSION='2026.11.06-3';
+const APP_VERSION='2026.11.06-4';
 const CHANGELOG=[
+  {v:'2026.11.06-4',items:['名片詳細頁新增「🔗 分享」：產生一個唯讀網址，用 LINE 傳給同事，對方不用安裝 App 也能看到名片資料、備註和拜訪紀錄（不含照片）','分享連結 1 天後自動失效，對方打開只會看到「連結已過期」']},
   {v:'2026.11.06-3',items:['開啟 Google 雲端同步：到「⚙️ 設定」最下面按「🔗 用 Google 帳號開啟同步」，手機和電腦的資料就會自動同步','每個人的資料存在自己的 Google 雲端硬碟，不會跟別人混在一起']},
   {v:'2026.11.06-2',items:['拜訪／聯絡紀錄可以加照片（例如試刀後的工件），一筆紀錄可以放好幾張','已經存好的紀錄也能按「📷 加照片」補上，點照片可以放大','照片會跟著完整備份和雲端同步一起保存']},
   {v:'2026.11.06-1',items:['新增「手機和電腦同步」：用 Google 帳號連結後，名片、照片、拜訪紀錄會存到你自己的 Google 雲端硬碟，在每台裝置自動同步','兩台裝置都修改過同一張名片時，以最後修改的為準；拜訪紀錄會合併，不會互相蓋掉','上方的狀態標籤會顯示上次同步時間，點一下就能立即同步']},
@@ -677,6 +678,33 @@ function renderList(){
 /* ---------- render detail ---------- */
 function telLink(p){const n=(p||'').split(/[#＃x轉]/)[0].replace(/[^\d+]/g,'');return n?`<a href="tel:${n}">${esc(p)}</a>`:esc(p)}
 let detailToken=0;
+/* ---------- 唯讀分享：名片內容壓縮後放在網址 # 後面（# 後面的內容不會傳到任何伺服器），1 天後失效 ---------- */
+const SHARE_HOURS=24;
+async function packShare(obj){
+  const json=new TextEncoder().encode(JSON.stringify(obj));let bytes,tag='z';
+  if(typeof CompressionStream==='function'){bytes=new Uint8Array(await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer())}
+  else{bytes=json;tag='j'}
+  let bin='';for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));
+  return tag+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function shareData(c){
+  const o={n:c.name,ne:c.nameEn,co:c.company,ti:c.title,de:c.dept,mo:c.mobile,ph:c.phone,fx:c.fax,em:c.email,ad:c.address,
+    as:(c.addresses||[]).filter(a=>a.address).map(a=>[a.label||'',a.address]),ws:c.website,tx:c.taxId,rg:c.region,pr:c.processes,br:c.brands,mt:c.metAt,no:c.notes,
+    v:[...(c.visits||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(v=>[v.date||'',v.type||'',v.content||'',v.next||'']),
+    x:Math.floor(Date.now()/1000)+SHARE_HOURS*3600};
+  for(const k in o){const v=o[k];if(v===''||v==null||(Array.isArray(v)&&!v.length))delete o[k]}
+  return o;
+}
+async function shareCard(c){
+  let url;try{url=new URL('view.html',location.href).href+'#'+await packShare(shareData(c))}catch(e){toast('❌ 產生分享連結失敗');return}
+  const title=`${c.name}${c.company?'｜'+c.company:''} 的名片`;const text=`${title}（連結 1 天內有效）`;
+  if(navigator.share){
+    try{await navigator.share({title,text,url});return}
+    catch(e){if(e&&e.name==='AbortError')return}
+  }
+  try{await navigator.clipboard.writeText(text+'\n'+url);toast('📋 已複製分享連結，貼到 LINE 就可以（1 天內有效）',3500)}
+  catch(_){await infoBox('請長按下面的文字全選後複製，再貼到 LINE（1 天內有效）：',{text:text+'\n'+url,ok:'關閉'})}
+}
 function renderDetail(){
   const c=contacts.find(x=>x.id===S.sel);
   if(!c){$('#main').innerHTML=`<div class="empty"><div class="big">👈</div>從左邊選一張名片<br><span style="font-size:13px">或按右上角「📸 拍名片」</span></div>`;document.body.classList.remove('detail');return}
@@ -711,6 +739,7 @@ function renderDetail(){
     </div>
     <div class="actions">
       <button class="btn pri" id="dEdit">✏️ 編輯</button>
+      <button class="btn" id="dShare">🔗 分享</button>
       <a class="btn" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(c.company||c.name)}">🔍 Google 查公司</a>
       <button class="btn" id="dAsk">🤖 複製「拜訪前查詢」</button>
       <button class="btn danger" id="dDel">🗑️ 刪除</button>
@@ -1171,6 +1200,7 @@ document.addEventListener('click',async e=>{
   if(!c)return;
   if(t.closest('#dEdit')){openEdit(c);return}
   if(t.closest('#dDel')){if(await confirmBox(`確定要刪除「${c.name}」？\n（包含照片和所有拜訪紀錄，無法復原）`,{ok:'刪除',danger:true})){try{await Store.del(c);contacts=contacts.filter(x=>x.id!==c.id);S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('❌ 刪除失敗')}}return}
+  if(t.closest('#dShare')){shareCard(c);return}
   if(t.closest('#dAsk')){
     const lv=lastVisit(c);
     const txt=`幫我做拜訪前準備，請上網查這家公司，整理成一頁重點（公司做什麼產品、規模、主要客戶產業、可能用到哪些刀具或加工、最近新聞，以及我拜訪時可以聊的切入點）：\n\n公司：${c.company||'（未填）'}\n地址：${c.address||'（未填）'}\n網站：${c.website||'（未填）'}\n對象：${c.name}${c.title?'（'+c.title+'）':''}\n已知加工類型：${c.processes.join('、')||'不清楚'}\n目前使用的刀具品牌：${c.brands||'不清楚'}\n備註：${c.notes||'無'}${lv?`\n上次聯絡（${fmtD(lv.date)}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`:''}`;

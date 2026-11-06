@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1d2330">
+<title>名片管家・唯讀分享</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--ink:#1d2330;--sub:#5d6677;--line:#e2e5ea;--pri:#1f5fbf;--pri-soft:#e8f0fc;--red:#c62828;--red-soft:#fdecea;--org:#b85c00;--org-soft:#fff3e0;--grn:#2e7d32;--grn-soft:#e8f5e9;--r:10px;--sh:0 1px 3px rgba(0,0,0,.08)}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;background:var(--bg);color:var(--ink);font-size:15px;-webkit-text-size-adjust:100%}
+a{color:var(--pri)}
+header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top))}
+header h1{font-size:17px;margin:0;flex:1}
+header .ro{font-size:11.5px;background:rgba(255,255,255,.14);border-radius:999px;padding:3px 9px}
+main{padding:12px;max-width:900px;margin:0 auto;padding-bottom:max(18px,env(safe-area-inset-bottom))}
+.badge{display:inline-block;font-size:11.5px;padding:2px 7px;border-radius:999px;background:#eef0f4;color:var(--sub);white-space:nowrap}
+.badge.cat-客戶{background:var(--grn-soft);color:var(--grn)}.badge.cat-潛在客戶{background:var(--pri-soft);color:var(--pri)}
+.badge.cat-經銷商,.badge.cat-供應商{background:#f3e8fd;color:#6a1b9a}
+.badge.st-已成交{background:var(--grn-soft);color:var(--grn)}.badge.st-報價中{background:var(--org-soft);color:var(--org)}
+.dcard{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:18px;margin-bottom:14px}
+.dhead h2{margin:0 0 4px;font-size:22px}.dhead .en{color:var(--sub);font-size:14px;margin-left:6px;font-weight:400}
+.dhead .co{font-size:15px;color:var(--sub)}
+.follow{padding:12px 14px;border-radius:8px;background:var(--bg);margin-top:14px}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;font-size:14px;display:inline-flex;align-items:center;gap:5px;text-decoration:none;color:var(--ink);cursor:pointer;font-family:inherit}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.sm{padding:5px 9px;font-size:13px}
+h3{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.grid{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;font-size:14.5px}
+.grid .k{color:var(--sub)}.grid .v{word-break:break-word;white-space:pre-wrap}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{border-left:3px solid var(--pri-soft);padding:2px 0 14px 14px;position:relative}
+.tl li::before{content:"";position:absolute;left:-7.5px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--pri)}
+.tl .d{font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:center}
+.tl .ct{white-space:pre-wrap;margin-top:3px}.tl .nx{font-size:13.5px;color:var(--org);margin-top:3px}
+.foot{font-size:12px;color:#9aa3b2;text-align:center;margin-top:6px}
+.err{text-align:center;color:var(--sub);margin-top:20vh;line-height:1.9}
+@media (max-width:820px){.grid{grid-template-columns:86px 1fr}}
+</style>
+</head>
+<body>
+<header><h1>📇 名片管家</h1><span class="ro">👁️ 唯讀</span></header>
+<main id="m"><div class="err">讀取中…</div></main>
+<script>
+// 名片內容在網址 # 後面（# 後面的內容不會傳到伺服器），這個頁面只負責解開並顯示
+const $m=document.getElementById('m');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtD=s=>s?String(s).replace(/-/g,'/'):'';
+const tel=p=>{const n=(p||'').split(/[#＃x轉]/)[0].replace(/[^\d+]/g,'');return n?'<a href="tel:'+n+'">'+esc(p)+'</a>':esc(p)};
+const map=a=>' <a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(a)+'">🗺️ 地圖</a>';
+const web=w=>/^https?:|^www\./i.test(w)?'<a target="_blank" rel="noopener" href="'+esc(/^www\./i.test(w)?'https://'+w:w)+'">'+esc(w)+'</a>':esc(w);
+const msg=(big,t)=>{$m.innerHTML='<div class="err"><div style="font-size:46px">'+big+'</div>'+t+'</div>'};
+async function unpack(s){
+  const tag=s[0];let b=s.slice(1).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
+  const bytes=Uint8Array.from(atob(b),ch=>ch.charCodeAt(0));
+  if(tag==='j')return JSON.parse(new TextDecoder().decode(bytes));
+  if(tag!=='z')throw new Error('bad');
+  if(typeof DecompressionStream!=='function')throw new Error('old');
+  return JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text());
+}
+(async()=>{
+  const h=location.hash.slice(1);
+  if(!h){msg('😕','這個分享連結不完整<br>請再跟分享的人要一次');return}
+  let c;
+  try{c=await unpack(decodeURIComponent(h))}
+  catch(e){msg('😕',e.message==='old'?'這支手機的瀏覽器版本太舊，打不開這個連結<br>請更新系統後再試':'這個分享連結不完整<br>請再跟分享的人要一次');return}
+  if(!c.x||Date.now()/1000>c.x){msg('⏰','連結已過期');return}
+  document.title=(c.n||'名片')+(c.co?'｜'+c.co:'');
+  const rows=[['📱 手機',c.mo&&tel(c.mo)],['☎️ 公司電話',c.ph&&tel(c.ph)],['📠 傳真',c.fx&&esc(c.fx)],
+    ['✉️ Email',c.em&&'<a href="mailto:'+esc(c.em)+'">'+esc(c.em)+'</a>'],['📍 地址',c.ad&&esc(c.ad)+map(c.ad)],
+    ...(c.as||[]).map(a=>['🏭 '+esc(a[0]||'其他地址'),esc(a[1])+map(a[1])]),
+    ['🌐 網站/LINE',c.ws&&web(c.ws)],['🧾 統一編號',c.tx&&esc(c.tx)],['🏢 部門',c.de&&esc(c.de)],['📍 地區',c.rg&&esc(c.rg)],
+    ['⚙️ 加工類型',(c.pr||[]).length&&c.pr.map(p=>'<span class="badge">'+esc(p)+'</span>').join(' ')],
+    ['🔧 刀具品牌',c.br&&esc(c.br)],['🤝 認識情境',c.mt&&esc(c.mt)],['📝 備註',c.no&&esc(c.no)]].filter(r=>r[1]);
+  const vs=c.v||[];
+  $m.innerHTML=
+  '<div class="dcard"><div class="dhead"><h2>'+esc(c.n)+(c.ne?'<span class="en">'+esc(c.ne)+'</span>':'')+'</h2>'+
+  '<div class="co">'+esc(c.co||'')+(c.ti?' · '+esc(c.ti):'')+'</div></div>'+
+  '<div class="actions"><a class="btn" target="_blank" rel="noopener" href="https://www.google.com/search?q='+encodeURIComponent(c.co||c.n||'')+'">🔍 Google 查公司</a></div></div>'+
+  (rows.length?'<div class="dcard"><h3>📋 詳細資料</h3><div class="grid">'+rows.map(r=>'<div class="k">'+r[0]+'</div><div class="v">'+r[1]+'</div>').join('')+'</div></div>':'')+
+  '<div class="dcard"><h3>🗓️ 拜訪／聯絡紀錄 <span class="badge">'+vs.length+' 筆</span></h3>'+
+  (vs.length?'<ul class="tl">'+vs.map(v=>'<li><div class="d"><b>'+fmtD(v[0])+'</b>'+(v[1]?'<span class="badge">'+esc(v[1])+'</span>':'')+'</div>'+(v[2]?'<div class="ct">'+esc(v[2])+'</div>':'')+(v[3]?'<div class="nx">➡️ '+esc(v[3])+'</div>':'')+'</li>').join('')+'</ul>':'<div style="color:var(--sub);font-size:14px">沒有紀錄</div>')+
+  '</div><div class="foot">📇 名片管家・唯讀分享</div>';
+})();
+addEventListener('hashchange',()=>location.reload());
+</script>
+</body>
+</html>

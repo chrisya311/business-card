@@ -1,6 +1,6 @@
 // 名片管家 service worker：讓 App 沒有網路也能打開
-const VERSION = 'mpgj-2026.11.06-3';   // 每次更新 App 都要改這個版本號
-const SHELL = ['./', './index.html', './help.html', './manifest.webmanifest', './xlsx.full.min.js',
+const VERSION = 'mpgj-2026.11.06-4';   // 每次更新 App 都要改這個版本號
+const SHELL = ['./', './index.html', './view.html', './help.html', './manifest.webmanifest', './xlsx.full.min.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -23,10 +23,11 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
   // 先用手機裡存好的版本（打開最快），同時在背景向伺服器確認有沒有新版本
   e.respondWith(caches.open(VERSION).then(async cache => {
-    const key = req.mode === 'navigate' ? './index.html' : req;
-    const cached = await cache.match(key, { ignoreSearch: true });
+    // 每個頁面（主畫面、說明、唯讀分享頁）各自存各自的；找不到時才退回 App 主畫面
+    const cached = (await cache.match(req, { ignoreSearch: true })) ||
+      (req.mode === 'navigate' ? await cache.match('./index.html') : undefined);
     const fresh = fetch(url.pathname + url.search, { cache: 'no-cache' }).then(res => {
-      if (res && res.ok) cache.put(key, res.clone());
+      if (res && res.ok && !res.redirected) cache.put(req, res.clone());
       return res;
     }).catch(() => cached);
     return cached || fresh;
