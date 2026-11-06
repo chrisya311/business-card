@@ -5,42 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>名片管家 使用說明</title>
 <link rel="icon" type="image/png" href="icon-192.png">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('mpgj.theme')==='light'?'light':'dark'}catch(_){document.documentElement.dataset.theme='dark'}</script>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;background:#f4f5f7;color:#1d2330;margin:0;line-height:1.7;font-size:16px}
-main{max-width:760px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom))}
-h1{font-size:24px;margin:8px 0 4px}
-.sub{color:#5d6677;margin:0 0 20px}
-section{background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+:root,:root[data-theme=dark]{color-scheme:dark;--bg:#0D1210;--ink:#EEF3EF;--sub:#A9B8AF;--pri:#8FD3B0;--glass:rgba(255,255,255,.06);--bd:rgba(255,255,255,.14);--hi:rgba(255,255,255,.2);--tip:rgba(242,196,109,.15);--line:rgba(255,255,255,.12);--th:rgba(255,255,255,.05);--b1:#4E9C7A;--b2:#2F8C93;--bo:.4}
+:root[data-theme=light]{color-scheme:light;--bg:#EDF1EC;--ink:#15201A;--sub:#55655C;--pri:#2C7656;--glass:rgba(255,255,255,.6);--bd:rgba(255,255,255,.9);--hi:rgba(255,255,255,.95);--tip:rgba(196,140,30,.15);--line:rgba(21,32,26,.12);--th:rgba(21,32,26,.04);--b1:#9ED2B6;--b2:#8CCFD3;--bo:.6}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);margin:0;line-height:1.7;font-size:16px}
+body::before,body::after{content:"";position:fixed;border-radius:50%;filter:blur(70px);opacity:var(--bo);pointer-events:none;z-index:0}
+body::before{width:340px;height:340px;left:-110px;top:-90px;background:var(--b1)}
+body::after{width:320px;height:320px;right:-120px;top:40%;background:var(--b2)}
+main{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:20px 20px calc(40px + env(safe-area-inset-bottom))}
+h1{font-size:30px;margin:8px 0 4px}
+.sub{color:var(--sub);margin:0 0 20px}
+section{background:var(--glass);border:1px solid var(--bd);box-shadow:inset 0 1px 0 var(--hi);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-radius:28px 14px 28px 14px;padding:18px 20px;margin-bottom:16px}
 h2{font-size:18px;margin:0 0 10px}
 ol,ul{padding-left:22px;margin:6px 0}
 li{margin:4px 0}
 table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0}
-th,td{border:1px solid #e2e5ea;padding:8px;text-align:left;vertical-align:top}
-th{background:#f6f7f9}
-.tip{background:#fff6cc;border-radius:8px;padding:10px 12px;font-size:14.5px;margin-top:10px}
-a{color:#1f5fbf}
+th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+th{background:var(--th)}
+.tip{background:var(--tip);border-radius:14px;padding:10px 14px;font-size:14.5px;margin-top:10px}
+a{color:var(--pri)}
 .back{display:inline-block;margin-bottom:8px}
 </style>
 </head>
 <body>
 <main>
 <a class="back" href="./">← 回到名片管家</a>
-<h1>📇 名片管家 使用說明</h1>
+<h1>名片管家 使用說明</h1>
 <p class="sub">拍照辨識名片、記錄拜訪、提醒跟進。資料只存在你自己的手機或電腦。</p>
 
 <section>
-<h2>📲 1. 安裝到 iPhone 主畫面</h2>
+<h2>1. 安裝到 iPhone 主畫面</h2>
 <ol>
 <li>用 <b>Safari</b> 打開名片管家的網址（不要用 LINE 或 Chrome 裡的瀏覽器）。</li>
 <li>點下方中間的 <b>分享</b> 按鈕（方框加向上箭頭）。</li>
 <li>往下滑，點 <b>「加入主畫面」</b>，再點右上角「加入」。</li>
 <li>之後都從主畫面的 <b>名片管家</b> 圖示打開。打開過一次之後，沒有網路也能用。</li>
 </ol>
-<div class="tip">💡 每次都從主畫面圖示打開，資料才會一直在同一個地方。用 Safari 分頁直接開網址的話，看到的是另一份資料。</div>
+<div class="tip">每次都從主畫面圖示打開，資料才會一直在同一個地方。用 Safari 分頁直接開網址的話，看到的是另一份資料。</div>
 </section>
 
 <section>
-<h2>🔑 2. 設定 AI（自動辨識名片用）</h2>
+<h2>2. 設定 AI（自動辨識名片用）</h2>
 <p>名片管家用你自己的 AI 帳號來讀名片。選一家申請 API 金鑰就好：</p>
 <table>
 <tr><th>AI</th><th>申請金鑰的網址</th><th>說明</th></tr>
@@ -50,58 +56,58 @@ a{color:#1f5fbf}
 </table>
 <ol>
 <li>到上面的網站註冊，建立一組 <b>API 金鑰</b>（一長串英數字），然後複製起來。</li>
-<li>打開名片管家 → 右上角 <b>⚙️ 設定</b> → 選 AI → 貼上金鑰。</li>
-<li>按 <b>🔌 測試連線</b>，看到「✅ 連線成功」後按 <b>儲存設定</b>。</li>
+<li>打開名片管家 → 右上角 <b>設定</b> → 選 AI → 貼上金鑰。</li>
+<li>按 <b>測試連線</b>，看到「連線成功」後按 <b>儲存設定</b>。</li>
 </ol>
-<div class="tip">🔒 金鑰只存在你的裝置上，不會傳給任何人。不要把金鑰傳給別人，別人拿到就能用你的額度。</div>
+<div class="tip">金鑰只存在你的裝置上，不會傳給任何人。不要把金鑰傳給別人，別人拿到就能用你的額度。</div>
 </section>
 
 <section>
-<h2>📸 3. 開始使用</h2>
+<h2>3. 開始使用</h2>
 <table>
 <tr><th>功能</th><th>怎麼用</th></tr>
-<tr><td>拍一張名片</td><td>按 <b>📸 拍名片</b> → 拍正面（背面可不拍）→ <b>🤖 自動辨識</b> → 看一下對不對 → 儲存</td></tr>
-<tr><td>一次很多張</td><td>按 <b>📚 批次</b> 選好幾張照片。用電腦的話，也可以直接把照片拖進視窗</td></tr>
+<tr><td>拍一張名片</td><td>按 <b>拍名片</b> → 拍正面（背面可不拍）→ <b>自動辨識</b> → 看一下對不對 → 儲存</td></tr>
+<tr><td>一次很多張</td><td>按 <b>批次</b> 選好幾張照片。用電腦的話，也可以直接把照片拖進視窗</td></tr>
 <tr><td>記錄拜訪</td><td>點開一位聯絡人 → <b>＋ 新增紀錄</b>，可以順便設定下次跟進日期</td></tr>
 <tr><td>跟進提醒</td><td>最上面會顯示「已逾期」和「7 天內跟進」的人數，點一下就只看那些人</td></tr>
-<tr><td>匯出</td><td><b>📤 匯出</b> → Excel、Outlook 聯絡人，或完整備份</td></tr>
+<tr><td>匯出</td><td><b>匯出</b> → Excel、Outlook 聯絡人，或完整備份</td></tr>
 </table>
-<div class="tip">📶 沒有網路時，查名片、寫拜訪紀錄都可以照常用。只有「自動辨識」需要網路。</div>
+<div class="tip">沒有網路時，查名片、寫拜訪紀錄都可以照常用。只有「自動辨識」需要網路。</div>
 </section>
 
 <section>
-<h2>☁️ 手機和電腦同步</h2>
+<h2>手機和電腦同步</h2>
 <ol>
 <li>在手機和電腦都安裝名片管家（電腦用 Chrome 或 Edge 打開網址，按網址列右邊的「安裝」圖示）。</li>
-<li>在每台裝置打開 <b>⚙️ 設定</b> → <b>「用 Google 帳號開啟同步」</b>，每台都要登入<b>同一個 Google 帳號</b>。</li>
+<li>在每台裝置打開 <b>設定</b> → <b>「用 Google 帳號開啟同步」</b>，每台都要登入<b>同一個 Google 帳號</b>。</li>
 <li>如果出現「Google 尚未驗證這個應用程式」，按「繼續」就好。</li>
 <li>之後打開 App、修改名片時都會自動同步。上方標籤會顯示上次同步的時間，點一下可以立即同步。</li>
 </ol>
-<div class="tip">🔒 資料存在你自己 Google 雲端硬碟裡一個 App 專用的隱藏資料夾，只有你看得到。Google 大約每小時會要求重新確認一次，標籤顯示「☁️ 點我同步」時點一下就好。</div>
+<div class="tip">資料存在你自己 Google 雲端硬碟裡一個 App 專用的隱藏資料夾，只有你看得到。Google 大約每小時會要求重新確認一次，標籤顯示「點我同步」時點一下就好。</div>
 </section>
 
 <section>
-<h2>🔗 把名片分享給同事</h2>
+<h2>把名片分享給同事</h2>
 <ol>
-<li>打開一張名片，按「✏️ 編輯」旁邊的 <b>「🔗 分享」</b>。</li>
+<li>打開一張名片，按「編輯」旁邊的 <b>「分享」</b>。</li>
 <li>手機會跳出分享選單，選 <b>LINE</b> 傳給同事；電腦會自動複製連結，貼到 LINE 就可以。</li>
 <li>同事不用安裝 App，點開就能看到名片資料、備註和拜訪紀錄（只能看、不能改，不含照片）。</li>
 </ol>
-<div class="tip">⏰ 連結從按下分享的那一刻起 <b>1 天後失效</b>，之後打開只會顯示「連結已過期」。內容是分享當下的資料，之後有新的拜訪紀錄要再分享一次。<br>🔒 拿到連結的人都看得到，請只傳給需要的同事。</div>
+<div class="tip">連結從按下分享的那一刻起 <b>1 天後失效</b>，之後打開只會顯示「連結已過期」。內容是分享當下的資料，之後有新的拜訪紀錄要再分享一次。<br>拿到連結的人都看得到，請只傳給需要的同事。</div>
 </section>
 
 <section>
-<h2>💾 4. 備份（很重要）</h2>
+<h2>4. 備份（很重要）</h2>
 <ul>
 <li>資料<b>只存在這台裝置</b>。換手機、刪掉 App、清除 Safari 資料，名片都會不見。</li>
-<li>每個月做一次：<b>📤 匯出 → 完整備份</b> → 選「儲存到檔案」，存到 iCloud 雲碟。</li>
-<li>換手機或要在電腦上用：在新裝置打開名片管家 → <b>📥 匯入</b> → 選那個備份檔。</li>
+<li>每個月做一次：<b>匯出 → 完整備份</b> → 選「儲存到檔案」，存到 iCloud 雲碟。</li>
+<li>換手機或要在電腦上用：在新裝置打開名片管家 → <b>匯入</b> → 選那個備份檔。</li>
 <li>超過 30 天沒備份的話，App 會提醒你。</li>
 </ul>
 </section>
 
 <section>
-<h2>❓ 常見問題</h2>
+<h2>常見問題</h2>
 <ul>
 <li><b>辨識失敗、顯示「金鑰錯誤」</b>：到設定重新貼一次金鑰，再按「測試連線」。</li>
 <li><b>顯示「額度用完」</b>：到 AI 公司的網站確認帳戶還有餘額。</li>
