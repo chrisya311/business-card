@@ -355,17 +355,29 @@ textarea.grow{min-height:150px;resize:none;line-height:1.6;overflow:hidden}
 .cut label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--ink);font-weight:600}
 .cut small{font-size:11px;color:var(--sub);font-weight:400}
 .cut input,.cut select{min-height:42px;padding:8px 10px}
-#tResult label{min-width:64px;justify-content:center}
+.runs{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.run{border:1px solid var(--line);border-radius:18px;padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px;background:var(--field)}
+.run.best{border-color:var(--pri);box-shadow:0 0 0 1px var(--pri) inset}
+.rhead{display:flex;align-items:center;gap:8px;font-size:14px}.rhead .sp{flex:1}
+.rbtn{width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:var(--sub);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.rbtn.on{color:var(--org)}.rbtn:active{background:var(--chip)}
+.run .cut{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rres label{min-width:64px;justify-content:center}
+.addrun{width:100%;margin-top:10px;height:44px}
+.tsum .tb{color:var(--ink)}
 .vt[data-vedit]{cursor:pointer;border-radius:12px}
 .vt .ty .sp{flex:1}
 .vt .x+.x{margin-left:0}
 .tsum{margin-top:6px;padding:8px 12px;border-radius:12px;background:var(--chip);font-size:13px;color:var(--sub);line-height:1.6}
 .tsum div:first-child{color:var(--ink);font-weight:600}
-@media (max-width:820px){#mVisit .fgrid{grid-template-columns:1fr 1fr}#mVisit .fgrid .f.full,#mVisit .fgrid>.full{grid-column:1/-1}#mVisit #vTrial .fgrid>label.f,#mVisit label.f:has(#vNext),#mVisit label.f:has(#vFollow){grid-column:1/-1}.cut{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){#mVisit .fgrid{grid-template-columns:1fr 1fr}#mVisit .fgrid .f.full,#mVisit .fgrid>.full{grid-column:1/-1}#mVisit #vTrial .fgrid>label.f,#mVisit label.f:has(#vNext),#mVisit label.f:has(#vFollow){grid-column:1/-1}.cut{grid-template-columns:repeat(2,minmax(0,1fr))}.run .cut{grid-template-columns:repeat(3,minmax(0,1fr))}}
 /* iOS date fields: never wider than their box */
 input[type=date]{min-width:0;max-width:100%;display:block;-webkit-appearance:none;appearance:none}
 input[type=date]::-webkit-date-and-time-value{text-align:left}
 @media (max-width:820px){.modal{backdrop-filter:none;-webkit-backdrop-filter:none}}
+@media (max-width:820px){.mbox,.mhead,.mfoot{background:var(--sheet-solid)}}
+:root,:root[data-theme=dark]{--sheet-solid:#161D1A}
+:root[data-theme=light]{--sheet-solid:#F3F6F2}
 </style>
 </head>
 <body>
@@ -566,20 +578,12 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
           <div class="fgrid">
             <label class="f"><span>工件材質</span><input type="text" id="tMat" list="dlMat" placeholder="例：S45C"></label>
             <label class="f"><span>加工方式</span><select id="tProc"></select></label>
-            <label class="f"><span>試用刀具</span><input type="text" id="tTool" placeholder="例：AH8015 TNMG160408"></label>
             <label class="f"><span>對照刀具（原本用的）</span><input type="text" id="tRef" placeholder="例：S 牌 GC4325"></label>
-            <div class="f full"><span class="fl">切削條件</span>
-              <div class="cut">
-                <label>Vc<small>m/min</small><input type="text" inputmode="decimal" id="tVc"></label>
-                <label>f<small>mm/rev・mm/t</small><input type="text" inputmode="decimal" id="tF"></label>
-                <label>ap<small>mm</small><input type="text" inputmode="decimal" id="tAp"></label>
-                <label>冷卻<small>&nbsp;</small><select id="tCool"></select></label>
-              </div></div>
-            <label class="f"><span>壽命（試用刀具）</span><input type="text" id="tLife" placeholder="例：120 件、45 分鐘"></label>
-            <label class="f"><span>壽命（對照刀具）</span><input type="text" id="tRefLife" placeholder="例：90 件"></label>
-            <div class="f full"><span class="fl">結果</span><div class="checks" id="tResult"></div></div>
-            <label class="f full"><span>表面、切屑、聲音等觀察</span><input type="text" id="tSurf" placeholder="例：切屑斷得好，表面粗糙度改善"></label>
+            <label class="f"><span>對照刀具壽命</span><input type="text" id="tRefLife" placeholder="例：90 件"></label>
           </div>
+          <div class="runs" id="tRuns"></div>
+          <button type="button" class="btn addrun" id="tAddRun"><i data-ic="plus"></i>新增一組條件</button>
+          <label class="f" style="margin-top:14px"><span>表面、切屑、聲音等觀察</span><input type="text" id="tSurf" placeholder="例：切屑斷得好，表面粗糙度改善"></label>
         </div>
         <label class="f full"><span id="vContentLbl">內容</span><textarea id="vContent" class="grow"></textarea></label>
         <label class="f"><span>下一步</span><input type="text" id="vNext" placeholder="例：寄報價、安排第二次試刀"></label>
@@ -651,12 +655,22 @@ const VTYPES=['拜訪','試刀','電話','Email','LINE','展覽','視訊會議',
 const MATERIALS=['S45C','S50C','SCM440','SCM415','SUJ2','SUS304','SUS316','SUS420','FC250','FC300','FCD450','FCD600','SKD11','SKD61','NAK80','AL6061','A7075','黃銅','銅','鈦合金 Ti-6Al-4V','Inconel 718'];
 const COOLANTS=['水溶性','油性','乾切','MQL','高壓冷卻'];
 const RESULTS=['成功','持平','失敗','待確認'];
-const TRIAL_KEYS=['mat','proc','tool','ref','vc','f','ap','cool','life','refLife','result','surf'];
-function cleanTrial(t){if(!t||typeof t!=='object')return null;const o={};let any=false;for(const k of TRIAL_KEYS){o[k]=String(t[k]??'').trim();if(o[k])any=true}return any?o:null}
+const TRIAL_SHARED=['mat','proc','ref','refLife','surf'];
+const RUN_KEYS=['tool','vc','f','ap','n','fm','cool','life','result','note'];
+/* 試刀：共用資料＋好幾組條件（runs）；舊格式（只有一組）自動轉成第 1 組 */
+function cleanTrial(t){if(!t||typeof t!=='object')return null;const o={};let any=false;
+  for(const k of TRIAL_SHARED){o[k]=String(t[k]??'').trim();if(o[k])any=true}
+  let runs=Array.isArray(t.runs)?t.runs:(['tool','vc','f','ap','cool','life','result'].some(k=>t[k])?[t]:[]);
+  o.runs=runs.map(r=>{const x={};let has=false;for(const k of RUN_KEYS){x[k]=String((r&&r[k])??'').trim();if(x[k])has=true}x.best=!!(r&&r.best);return has?x:null}).filter(Boolean);
+  if(o.runs.length)any=true;if(o.runs.filter(r=>r.best).length>1){let seen=false;o.runs.forEach(r=>{if(r.best){if(seen)r.best=false;seen=true}})}
+  return any?o:null}
+function trialResult(t){if(!t||!t.runs||!t.runs.length)return '';const b=t.runs.find(r=>r.best&&r.result);if(b)return b.result;if(t.runs.length===1)return t.runs[0].result||'';
+  const rs=t.runs.map(r=>r.result).filter(Boolean);return rs.includes('成功')?'成功':rs[0]||''}
+function runLine(r,i,many){const cond=[r.vc&&'Vc '+r.vc,r.f&&'f '+r.f,r.ap&&'ap '+r.ap,r.n&&'S '+r.n,r.fm&&'F '+r.fm,r.cool].filter(Boolean).join('　');
+  return (r.best?'★ ':'')+(many?`第 ${i+1} 組　`:'')+[r.tool,cond,r.life&&'壽命 '+r.life,r.result,r.note].filter(Boolean).join(' · ')}
 function trialLines(t){if(!t)return [];const L=[];
-  const a=[t.mat,t.proc,t.tool].filter(Boolean).join(' · ')+(t.ref?`（對照 ${t.ref}）`:'');if(a)L.push(a);
-  const b=[t.vc&&'Vc '+t.vc,t.f&&'f '+t.f,t.ap&&'ap '+t.ap,t.cool].filter(Boolean).join('　');if(b)L.push(b);
-  const c=(t.life||t.refLife)?`壽命 ${t.life||'—'}${t.refLife?` ／ 對照 ${t.refLife}`:''}`:'';if(c)L.push(c);
+  const a=[t.mat,t.proc].filter(Boolean).join(' · ')+(t.ref?`（對照 ${t.ref}${t.refLife?`，壽命 ${t.refLife}`:''}）`:(t.refLife?`（對照壽命 ${t.refLife}）`:''));if(a)L.push(a);
+  (t.runs||[]).forEach((r,i)=>L.push(runLine(r,i,t.runs.length>1)));
   if(t.surf)L.push(t.surf);return L}
 const resultCls=r=>({成功:'cat-客戶',持平:'wk',失敗:'od'})[r]||'';
 const COMPOUND=['張簡','范姜','張廖','歐陽','司馬','諸葛','上官','東方','皇甫','慕容','令狐','周黃','江謝','陳黃','簡李','司徒','夏侯','尉遲','公孫'];
@@ -749,8 +763,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-10';
+const APP_VERSION='2026.11.07-11';
 const CHANGELOG=[
+  {v:'2026.11.07-11',items:['試刀可以記好幾組條件：按「新增一組條件」會帶入上一組的設定，只要改不同的地方','每組都有刀具、Vc、f、ap、S 轉速、F 進給、冷卻、壽命、結果、備註；按星號標出建議條件','Excel 匯出時每一組條件各佔一列，方便篩選比較；舊的試刀紀錄會自動變成第 1 組']},
   {v:'2026.11.07-10',items:['修正：打開別人分享的名片時，有時會看到舊版頁面，試刀內容沒有顯示']},
   {v:'2026.11.07-9',items:['拍名片、編輯、拜訪紀錄等全螢幕頁面，右滑返回也改成跟 iPhone 一樣的效果；從螢幕最左邊滑也能正常關閉']},
   {v:'2026.11.07-8',items:['新增／修改拜訪紀錄改成獨立的全螢幕頁面，內容框會跟著字數變大，適合寫長的試刀過程','點一下舊紀錄（或鉛筆圖示）就能修改','新增「試刀」類型，有材質、加工方式、刀具、切削條件、壽命、結果等欄位，Excel 也會一起匯出','寫到一半關掉會自動保留草稿，上方的「清除草稿」可以一次清掉']},
@@ -950,7 +965,7 @@ async function packShare(obj){
 function shareData(c){
   const o={n:c.name,ne:c.nameEn,co:c.company,ti:c.title,de:c.dept,mo:c.mobile,ph:c.phone,fx:c.fax,em:c.email,ad:c.address,
     as:(c.addresses||[]).filter(a=>a.address).map(a=>[a.label||'',a.address]),ws:c.website,tx:c.taxId,rg:c.region,pr:c.processes,br:c.brands,mt:c.metAt,no:c.notes,
-    v:[...(c.visits||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(v=>{const r=[v.date||'',v.type||'',v.content||'',v.next||''];const tl=trialLines(v.trial);if(v.trial&&v.trial.result)tl.unshift('結果：'+v.trial.result);if(tl.length)r.push(tl.join('\n'));return r}),
+    v:[...(c.visits||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(v=>{const r=[v.date||'',v.type||'',v.content||'',v.next||''];const tl=trialLines(v.trial);if(tl.length)r.push(tl.join('\n'));return r}),
     x:Math.floor(Date.now()/1000)+SHARE_HOURS*3600};
   for(const k in o){const v=o[k];if(v===''||v==null||(Array.isArray(v)&&!v.length))delete o[k]}
   return o;
@@ -1011,8 +1026,8 @@ function renderDetail(){
   <div class="gh"><span>拜訪／聯絡紀錄・${c.visits.length} 筆</span><span class="sp"></span><button class="btn sm pri" id="vNew">${ic('plus')}新增紀錄</button></div>
   <div class="dgrp glass vwrap">
     ${visits.length?`<div class="tl">${visits.map(v=>`<div class="v"><div class="vd">${vDate(v.date)}</div><div class="vt" data-vedit="${v.id}">
-      <div class="ty"><span class="badge">${esc(v.type)}</span>${v.trial&&v.trial.result?`<span class="badge ${resultCls(v.trial.result)}">${esc(v.trial.result)}</span>`:''}<span class="sp"></span><button class="x" data-vedit-btn="${v.id}" title="修改這筆" aria-label="修改這筆紀錄">${ic('edit')}</button><button class="x" data-vdel="${v.id}" title="刪除這筆" aria-label="刪除這筆紀錄">${ic('trash')}</button></div>
-      ${v.trial?`<div class="tsum">${trialLines(v.trial).map(l=>`<div>${esc(l)}</div>`).join('')}</div>`:''}
+      <div class="ty"><span class="badge">${esc(v.type)}</span>${trialResult(v.trial)?`<span class="badge ${resultCls(trialResult(v.trial))}">${esc(trialResult(v.trial))}</span>`:''}<span class="sp"></span><button class="x" data-vedit-btn="${v.id}" title="修改這筆" aria-label="修改這筆紀錄">${ic('edit')}</button><button class="x" data-vdel="${v.id}" title="刪除這筆" aria-label="刪除這筆紀錄">${ic('trash')}</button></div>
+      ${v.trial?`<div class="tsum">${trialLines(v.trial).map(l=>`<div class="${l.startsWith('★')?'tb':''}">${esc(l)}</div>`).join('')}</div>`:''}
       ${v.content?`<div class="ct">${esc(v.content)}</div>`:''}${v.next?`<div class="nx">→ ${esc(v.next)}</div>`:''}
       <div class="vph">${(v.photos||[]).map(ph=>`<div class="th"><img data-vp="${ph.id}" data-zoom alt="拜訪照片"><button data-vpdel="${ph.id}" data-v="${v.id}" title="刪除這張照片" aria-label="刪除這張照片">${ic('x')}</button></div>`).join('')}<button class="add" data-vpadd="${v.id}" title="加照片">${ic('cam')}加照片</button></div></div></div>`).join('')}</div>`
     :`<div style="color:var(--sub);font-size:14px">還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。</div>`}
@@ -1291,12 +1306,32 @@ function growTA(){const t=$('#vContent');t.style.height='auto';t.style.height=Ma
 function paintTrial(){const tr=$('#vType').value==='試刀';$('#vTrial').hidden=!tr;
   $('#vContentLbl').textContent=tr?'試刀過程與心得':'內容';
   $('#vContent').placeholder=tr?'過程、遇到的問題、客戶反應、後續規劃…':'聊了什麼？（客戶需求、加工問題、競爭品牌、報價…）'}
-function readVisitForm(){const t={};for(const k of TRIAL_KEYS)t[k]=k==='result'?(($('#tResult input:checked')||{}).value||''):($('#t'+k[0].toUpperCase()+k.slice(1))||{}).value||'';
+function runCard(r,i,many){r=r||{};const v=k=>esc(r[k]||'');
+  return `<div class="run${r.best?' best':''}" data-ri="${i}">
+    <div class="rhead"><b>${many?`第 ${i+1} 組`:'試刀條件'}</b>${r.best?'<span class="badge cat-客戶">建議條件</span>':''}<span class="sp"></span>
+      <button type="button" class="rbtn${r.best?' on':''}" data-rbest aria-label="標成建議條件" aria-pressed="${!!r.best}" title="標成建議條件"><svg class="i" aria-hidden="true" viewBox="0 0 24 24" fill="${r.best?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></svg></button>
+      ${many?`<button type="button" class="rbtn" data-rdel aria-label="刪除這一組" title="刪除這一組">${ic('trash')}</button>`:''}</div>
+    <label class="f"><span>試用刀具</span><input type="text" data-k="tool" value="${v('tool')}" placeholder="例：AH8015 TNMG160408"></label>
+    <div class="cut">
+      <label>Vc<small>m/min</small><input type="text" inputmode="decimal" data-k="vc" value="${v('vc')}"></label>
+      <label>f<small>mm/rev・mm/t</small><input type="text" inputmode="decimal" data-k="f" value="${v('f')}"></label>
+      <label>ap<small>mm</small><input type="text" inputmode="decimal" data-k="ap" value="${v('ap')}"></label>
+      <label>S 轉速<small>min⁻¹</small><input type="text" inputmode="decimal" data-k="n" value="${v('n')}"></label>
+      <label>F 進給<small>mm/min</small><input type="text" inputmode="decimal" data-k="fm" value="${v('fm')}"></label>
+      <label>冷卻<small>&nbsp;</small><select data-k="cool"><option value=""></option>${COOLANTS.map(c=>`<option ${r.cool===c?'selected':''}>${c}</option>`).join('')}</select></label>
+    </div>
+    <label class="f"><span>壽命</span><input type="text" data-k="life" value="${v('life')}" placeholder="例：120 件、45 分鐘、崩刃"></label>
+    <div class="f"><span class="fl">結果</span><div class="checks rres">${RESULTS.map(x=>`<label class="${r.result===x?'on':''}" data-res="${x}">${x}</label>`).join('')}</div></div>
+    <label class="f"><span>這組的備註</span><input type="text" data-k="note" value="${v('note')}" placeholder="例：第 2 件開始有振刀"></label>
+  </div>`}
+function readRuns(){return $$('#tRuns .run').map(el=>{const r={};el.querySelectorAll('[data-k]').forEach(i=>r[i.dataset.k]=i.value);
+  r.result=((el.querySelector('.rres label.on')||{}).dataset||{}).res||'';r.best=el.classList.contains('best');return r})}
+function renderRuns(runs){runs=runs&&runs.length?runs:[{}];$('#tRuns').innerHTML=runs.map((r,i)=>runCard(r,i,runs.length>1)).join('')}
+function readVisitForm(){const t={mat:$('#tMat').value,proc:$('#tProc').value,ref:$('#tRef').value,refLife:$('#tRefLife').value,surf:$('#tSurf').value,runs:readRuns()};
   return{date:$('#vDate').value,type:$('#vType').value,content:$('#vContent').value,next:$('#vNext').value,follow:$('#vFollow').value,trial:t}}
 function fillVisitForm(d){$('#vDate').value=d.date||today();$('#vType').value=VTYPES.includes(d.type)?d.type:'拜訪';$('#vContent').value=d.content||'';$('#vNext').value=d.next||'';$('#vFollow').value=d.follow||'';
-  const t=d.trial||{};for(const k of TRIAL_KEYS){if(k==='result')continue;const el=$('#t'+k[0].toUpperCase()+k.slice(1));if(el)el.value=t[k]||''}
-  $$('#tResult input').forEach(i=>{i.checked=i.value===(t.result||'')});paintResult();paintTrial();setTimeout(growTA,0)}
-function paintResult(){$$('#tResult label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked))}
+  const t=cleanTrial(d.trial)||{};for(const k of TRIAL_SHARED){const el=$('#t'+k[0].toUpperCase()+k.slice(1));if(el)el.value=t[k]||''}
+  renderRuns(t.runs);paintTrial();setTimeout(growTA,0)}
 function visitBase(c,vid){const v=vid&&c.visits.find(x=>x.id===vid);
   return v?{date:v.date,type:v.type,content:v.content,next:v.next,follow:'',trial:v.trial||{}}:{date:today(),type:'拜訪',content:'',next:'',follow:c.nextFollow&&c.nextFollow>today()?c.nextFollow:'',trial:{}}}
 function showDraftBar(at){const b=$('#vDraft');const has=!!at;b.hidden=!has;if(has)$('#vDraftTx').textContent=(VS.vid?'有還沒儲存的修改':'已自動保存草稿')+'・'+fmtTime(at)}
@@ -1327,11 +1362,15 @@ async function saveVisit(){const c=contacts.find(x=>x.id===VS.cid);if(!c)return;
   catch(_){toast('儲存失敗，請檢查網路')}finally{btn.disabled=false}}
 $('#vType').innerHTML=VTYPES.map(t=>`<option>${t}</option>`).join('');
 $('#tProc').innerHTML='<option value="">（選擇）</option>'+PROCS.map(p=>`<option>${p}</option>`).join('');
-$('#tCool').innerHTML='<option value=""></option>'+COOLANTS.map(p=>`<option>${p}</option>`).join('');
-$('#tResult').innerHTML=RESULTS.map(r=>`<label><input type="radio" name="tres" value="${r}">${r}</label>`).join('');
 $('#dlMat').innerHTML=MATERIALS.map(m=>`<option value="${m}">`).join('');
-$('#tResult').addEventListener('click',e=>{const l=e.target.closest('label');if(!l)return;e.preventDefault();const i=l.querySelector('input');i.checked=!i.checked;paintResult();saveDraft()});
+$('#tRuns').addEventListener('click',e=>{const run=e.target.closest('.run');if(!run)return;
+  const rl=e.target.closest('.rres label');if(rl){const on=!rl.classList.contains('on');run.querySelectorAll('.rres label').forEach(l=>l.classList.remove('on'));if(on)rl.classList.add('on');saveDraft();return}
+  if(e.target.closest('[data-rbest]')){const runs=readRuns();const i=+run.dataset.ri;const was=runs[i].best;runs.forEach(r=>r.best=false);runs[i].best=!was;renderRuns(runs);saveDraft();return}
+  if(e.target.closest('[data-rdel]')){const runs=readRuns();const i=+run.dataset.ri;runs.splice(i,1);renderRuns(runs);saveDraft();return}});
+$('#tAddRun').onclick=()=>{const runs=readRuns();const last=runs[runs.length-1]||{};runs.push({tool:last.tool,vc:last.vc,f:last.f,ap:last.ap,n:last.n,fm:last.fm,cool:last.cool});renderRuns(runs);saveDraft();
+  const cards=$$('#tRuns .run');const nc=cards[cards.length-1];if(nc){nc.scrollIntoView({behavior:'smooth',block:'center'});const i=nc.querySelector('[data-k=vc]');if(i)setTimeout(()=>i.focus({preventScroll:true}),350)}};
 $('#vType').addEventListener('change',()=>{paintTrial();saveDraft()});
+$('#mVisit').addEventListener('change',e=>{if(e.target.matches('select'))saveDraft()});
 $('#mVisit').addEventListener('input',e=>{if(e.target.id==='vContent')growTA();saveDraft()});
 $('#vSave').onclick=saveVisit;
 $('#vDraftClr').onclick=async()=>{if(!await confirmBox('清除這份草稿？\n（還沒儲存的內容和照片都會清掉）',{ok:'清除',danger:true}))return;
@@ -1441,12 +1480,13 @@ function exportXLSX(list){
   const ws=XLSX.utils.aoa_to_sheet([XCOLS,...rows],{cellDates:true,dateNF:'yyyy/mm/dd'});
   ws['!cols']=[10,14,22,11,12,10,15,20,14,26,32,40,9,20,10,9,16,18,20,12,36,12,40,8,12,14].map(w=>({wch:w}));
   ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:XCOLS.length-1}})};
-  const vr=[['日期','姓名','公司','方式','內容','下一步','工件材質','加工方式','試用刀具','對照刀具','Vc','f','ap','冷卻','壽命','對照壽命','試刀結果','觀察','照片數','聯絡人ID']];
-  list.forEach(c=>c.visits.forEach(v=>{const t=v.trial||{};vr.push([toDate(v.date),c.name,c.company,v.type,v.content,v.next,t.mat||'',t.proc||'',t.tool||'',t.ref||'',t.vc||'',t.f||'',t.ap||'',t.cool||'',t.life||'',t.refLife||'',t.result||'',t.surf||'',(v.photos||[]).length||'',c.id])}));
+  const vr=[['日期','姓名','公司','方式','內容','下一步','工件材質','加工方式','組別','建議條件','試用刀具','對照刀具','Vc','f','ap','S 轉速','F 進給','冷卻','壽命','對照壽命','結果','組備註','觀察','照片數','聯絡人ID']];
+  list.forEach(c=>c.visits.forEach(v=>{const t=v.trial;const runs=t&&t.runs&&t.runs.length?t.runs:[null];
+    runs.forEach((r,i)=>{r=r||{};vr.push([toDate(v.date),c.name,c.company,v.type,i?'':v.content,i?'':v.next,t?t.mat:'',t?t.proc:'',t&&runs.length>1?i+1:'',r.best?'★':'',r.tool||'',t?t.ref:'',r.vc||'',r.f||'',r.ap||'',r.n||'',r.fm||'',r.cool||'',r.life||'',t?t.refLife:'',r.result||'',r.note||'',i?'':(t?t.surf:''),i?'':((v.photos||[]).length||''),c.id])})}));
   vr.splice(1,vr.length-1,...vr.slice(1).sort((a,b)=>(b[0]||0)-(a[0]||0)));
   const ws2=XLSX.utils.aoa_to_sheet(vr,{cellDates:true,dateNF:'yyyy/mm/dd'});
-  ws2['!cols']=[12,10,22,9,50,24,12,10,20,18,7,7,7,8,12,12,9,24,8,14].map(w=>({wch:w}));
-  ws2['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:vr.length-1,c:18}})};
+  ws2['!cols']=[12,10,22,9,50,24,12,10,6,8,20,18,7,7,7,8,9,8,12,12,8,20,24,8,14].map(w=>({wch:w}));
+  ws2['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:vr.length-1,c:23}})};
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'客戶名片');XLSX.utils.book_append_sheet(wb,ws2,'拜訪紀錄');
   const buf=XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true});
   return saveFile(`客戶名片_${stamp()}.xlsx`,new Blob([buf]));
