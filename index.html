@@ -179,7 +179,8 @@ label.f.warn>span::after{content:" ⚠️ 請確認";font-weight:400;color:#8a6d
 
 @media (max-width:820px){
   header h1{font-size:16px}
-  header h1 .sync{display:none}
+  header h1 .ttl{display:none}
+  header h1 .sync{font-size:10.5px;padding:2px 7px}
   header .hbtn{padding:8px 10px;font-size:13px}
   header .hbtn .tx{display:none}
   header .hbtn.pri .tx{display:inline}
@@ -199,6 +200,12 @@ label.f.warn>span::after{content:" ⚠️ 請確認";font-weight:400;color:#8a6d
   .pslot{width:calc(50% - 6px)}
 }
 
+/* visit photos */
+.vph{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.vph .th{position:relative;width:76px;height:76px;border-radius:6px;overflow:hidden;background:#eceef2;border:1px solid var(--line)}
+.vph .th img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block}
+.vph .th button{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:12px;line-height:22px;padding:0}
+.vph .add{width:76px;height:76px;border:2px dashed var(--line);border-radius:6px;background:#fafbfc;color:var(--sub);font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 /* extra addresses */
 .addrs{display:flex;flex-direction:column;gap:8px}
 .addr-row{display:grid;grid-template-columns:130px 1fr auto;gap:8px;align-items:center}
@@ -229,7 +236,7 @@ label.f.warn>span::after{content:" ⚠️ 請確認";font-weight:400;color:#8a6d
 <body>
 
 <header>
-  <h1>📇 名片管家 <span class="sync" id="syncBadge">💾 本機</span></h1>
+  <h1>📇<span class="ttl"> 名片管家</span> <span class="sync" id="syncBadge" role="button" style="cursor:pointer">💾 本機</span></h1>
   <button class="hbtn" id="bSettings" title="設定"><span>⚙️</span><span class="tx"> 設定</span></button>
   <button class="hbtn" id="bImport" title="匯入"><span>📥</span><span class="tx"> 匯入</span></button>
   <button class="hbtn" id="bExport" title="匯出"><span>📤</span><span class="tx"> 匯出 Excel</span></button>
@@ -306,6 +313,11 @@ label.f.warn>span::after{content:" ⚠️ 請確認";font-weight:400;color:#8a6d
         <button class="btn" id="sTest">🔌 測試連線</button><span id="sTestRes" style="font-size:13.5px"></span>
       </div>
       <div class="note">🔒 金鑰只存在<b>這台裝置</b>上。辨識名片時，照片會直接傳給你選的 AI 公司，不會經過其他地方。<br>💰 辨識費用由 AI 公司依用量向你收取，一張名片通常只要很少的費用。</div>
+      <div id="syncSec">
+      <div class="sec" style="margin-top:18px">☁️ 手機和電腦同步（Google 雲端硬碟）</div>
+      <div id="syncBox" style="font-size:14px;line-height:1.8;margin-top:10px"></div>
+      <div class="note">🔒 資料會存在<b>你自己的 Google 雲端硬碟</b>裡一個 App 專用的隱藏資料夾。這個 App 只能存取那個資料夾，看不到你雲端硬碟裡的其他檔案；其他人（包括 App 的作者）也看不到你的資料。<br>📱💻 在每台裝置都用<b>同一個 Google 帳號</b>連結，資料就會自動同步。</div>
+      </div>
       <div class="sec" style="margin-top:18px">💾 資料與備份</div>
       <div style="font-size:14px;line-height:1.8;margin-top:10px">資料全部存在這台裝置。<br>上次完整備份：<b id="sLastBackup">從未備份</b><br><span id="sStorage" style="color:var(--sub);font-size:13px"></span></div>
       <div class="note">📱 換手機、刪掉 App 或清除 Safari 資料，名片都會一起不見。請每個月用「📤 匯出 → 完整備份」存一份到「檔案」或 iCloud。</div>
@@ -489,8 +501,10 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t){$('#syncBadge').textContent=t}
 
-const APP_VERSION='2026.11.04-5';
+const APP_VERSION='2026.11.06-2';
 const CHANGELOG=[
+  {v:'2026.11.06-2',items:['拜訪／聯絡紀錄可以加照片（例如試刀後的工件），一筆紀錄可以放好幾張','已經存好的紀錄也能按「📷 加照片」補上，點照片可以放大','照片會跟著完整備份和雲端同步一起保存']},
+  {v:'2026.11.06-1',items:['新增「手機和電腦同步」：用 Google 帳號連結後，名片、照片、拜訪紀錄會存到你自己的 Google 雲端硬碟，在每台裝置自動同步','兩台裝置都修改過同一張名片時，以最後修改的為準；拜訪紀錄會合併，不會互相蓋掉','上方的狀態標籤會顯示上次同步時間，點一下就能立即同步']},
   {v:'2026.11.04-5',items:['新增「更新紀錄」：在設定最下面點版本號就能查看','更新到新版本後，會自動告訴你這次改了什麼']},
   {v:'2026.11.04-4',items:['批次辨識碰到 AI「每分鐘次數上限」時，會自動等 30 秒再繼續，不用重按','當天免費額度用完時，會提醒你額度重置的時間']},
   {v:'2026.11.04-3',items:['設定最下面顯示版本號','有新版本時會自動更新，並跳出「已更新到新版本」']},
@@ -571,30 +585,39 @@ const LDB={db:null,
 };
 const Store={
   async put(c){await LDB.put('contacts',JSON.parse(JSON.stringify(c)))},
-  async del(c){await LDB.del('contacts',c.id);for(const s of ['front','back']){await LDB.del('photos',c.id+':'+s).catch(()=>{});photoCache.delete(c.id+':'+s)}},
+  async del(c){const t=(await Meta.get('deleted'))||{};t[c.id]=new Date().toISOString();await Meta.set('deleted',t);Sync.dirty();await LDB.del('contacts',c.id);for(const v of c.visits||[])for(const ph of v.photos||[])await VP.del(ph.id);for(const s of ['front','back']){await LDB.del('photos',c.id+':'+s).catch(()=>{});photoCache.delete(c.id+':'+s)}},
   async putPhoto(id,side,data){const k=id+':'+side;if(data)await LDB.put('photos',data,k);else await LDB.del('photos',k);photoCache.set(k,data||'')},
   async getPhoto(id,side){const k=id+':'+side;if(photoCache.has(k))return photoCache.get(k);try{const v=(await LDB.get('photos',k))||'';photoCache.set(k,v);return v}catch(_){return ''}}
 };
+const VP={key:id=>'vp:'+id,
+  async put(id,d){await LDB.put('photos',d,this.key(id));photoCache.set(this.key(id),d)},
+  async get(id){const k=this.key(id);if(photoCache.has(k))return photoCache.get(k);try{const v=(await LDB.get('photos',k))||'';photoCache.set(k,v);return v}catch(_){return ''}},
+  async del(id){await LDB.del('photos',this.key(id)).catch(()=>{});photoCache.delete(this.key(id))}};
 const Meta={get:k=>LDB.get('meta',k).catch(()=>null),set:(k,v)=>LDB.put('meta',v,k).catch(()=>{})};
+function hashStr(str){let h=0x811c9dc5;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,0x01000193)}return(h>>>0).toString(16).padStart(8,'0')+'-'+str.length.toString(36)}
+async function setPhoto(c,side,data){await Store.putPhoto(c.id,side,data||'');c['has'+(side==='front'?'Front':'Back')]=!!data;c.photoHash={...(c.photoHash||{}),[side]:data?hashStr(data):''}}
 
 function parseAddrText(t){return String(t||'').split(/\n|；/).map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^([^：:]{1,12})[：:]\s*(.+)$/);return m?{label:m[1].trim(),address:m[2].trim()}:{label:'',address:l}})}
 const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join('\n');
 const mapLink=a=>`<a class="btn sm" style="margin-left:4px" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">🗺️ 地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    category:'',status:'',addresses:[],processes:[],brands:'',metAt:'',notes:'',nextFollow:'',thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
   if(typeof o.addresses==='string')o.addresses=parseAddrText(o.addresses);
   o.addresses=(Array.isArray(o.addresses)?o.addresses:[]).map(a=>({label:String(a&&a.label||'').trim(),address:String(a&&a.address||'').trim()})).filter(a=>a.address);
-  o.visits=(Array.isArray(o.visits)?o.visits:[]).map(v=>({id:v.id||uid(),date:v.date||'',type:v.type||'拜訪',content:v.content||'',next:v.next||''}));
+  if(!o.photoHash||typeof o.photoHash!=='object')o.photoHash={};
+  if(!Array.isArray(o.deletedVisits))o.deletedVisits=[];
+  o.visits=(Array.isArray(o.visits)?o.visits:[]).map(v=>({id:v.id||uid(),date:v.date||'',type:v.type||'拜訪',content:v.content||'',next:v.next||'',photos:(Array.isArray(v.photos)?v.photos:[]).filter(x=>x&&x.id).map(x=>x.d?{id:x.id,h:x.h||'',d:x.d}:{id:x.id,h:x.h||''})}));
+  if(!Array.isArray(o.deletedPhotos))o.deletedPhotos=[];
   if(!o.created)o.created=new Date().toISOString();
   if(!o.updated)o.updated=o.created;
   if(!o.region)o.region=findRegion(o.address)||'';
   return o;
 }
-async function save(c){c.updated=new Date().toISOString();await Store.put(c);const i=contacts.findIndex(x=>x.id===c.id);if(i>=0)contacts[i]=c;else contacts.push(c)}
+async function save(c){c.updated=new Date().toISOString();await Store.put(c);const i=contacts.findIndex(x=>x.id===c.id);if(i>=0)contacts[i]=c;else contacts.push(c);Sync.dirty()}
 
 /* ---------- follow-up ---------- */
 function followState(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c.nextFollow);return d<0?'od':d<=7?'wk':'ok'}
@@ -700,17 +723,21 @@ function renderDetail(){
       <select id="vType">${VTYPES.map(t=>`<option>${t}</option>`).join('')}</select>
       <input type="text" id="vNext" placeholder="下一步（例：寄型錄、報價）">
       <textarea id="vContent" placeholder="聊了什麼？（客戶需求、加工問題、競爭品牌、報價…）"></textarea>
+      <div style="grid-column:1/-1"><div class="vph" id="vPend"></div></div>
       <div class="row2"><label style="font-size:13px;color:var(--sub)">下次跟進日期 <input type="date" id="vFollow" style="width:auto;margin-left:4px" value="${c.nextFollow&&c.nextFollow>today()?c.nextFollow:''}"></label>
         <span style="flex:1"></span><button class="btn sm" id="vCancel">取消</button><button class="btn sm pri" id="vSave">💾 儲存紀錄</button></div>
     </div>
     ${visits.length?`<ul class="tl">${visits.map(v=>`<li><div class="d"><b>${fmtD(v.date)}</b><span class="badge">${esc(v.type)}</span><button class="x" data-vdel="${v.id}" title="刪除這筆">✕</button></div>
-      ${v.content?`<div class="ct">${esc(v.content)}</div>`:''}${v.next?`<div class="nx">➡️ ${esc(v.next)}</div>`:''}</li>`).join('')}</ul>`
+      ${v.content?`<div class="ct">${esc(v.content)}</div>`:''}${v.next?`<div class="nx">➡️ ${esc(v.next)}</div>`:''}
+      <div class="vph">${(v.photos||[]).map(ph=>`<div class="th"><img data-vp="${ph.id}" data-zoom alt="拜訪照片"><button data-vpdel="${ph.id}" data-v="${v.id}" title="刪除這張照片">✕</button></div>`).join('')}<button class="add" data-vpadd="${v.id}" title="加照片"><span style="font-size:20px">📷</span>加照片</button></div></li>`).join('')}</ul>`
     :`<div style="color:var(--sub);font-size:14px">還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。</div>`}
   </div>
   <div style="font-size:12px;color:#9aa3b2;max-width:900px">建立 ${fmtD((c.created||'').slice(0,10))}　·　最後更新 ${fmtD((c.updated||'').slice(0,10))}</div>`;
   document.body.classList.add('detail');
   const tok=++detailToken;
   $$('#dPhotos img').forEach(async img=>{const src=await Store.getPhoto(c.id,img.dataset.side);if(tok===detailToken&&src)img.src=src});
+  $$('img[data-vp]').forEach(async img=>{const src=await VP.get(img.dataset.vp);if(tok===detailToken){if(src)img.src=src;else img.alt='同步中…'}});
+  paintPend();
 }
 const isNarrow=()=>window.innerWidth<=820;
 function select(id){const was=S.sel;S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;
@@ -915,7 +942,7 @@ async function saveBatch(){
       const c=normalize({...r.pre,category:cat,metAt:met});
       if(!c.name){r.state='err';r.err='沒有姓名';r.on=false;fail++;continue}
       c.taxId=(c.taxId||'').replace(/\D/g,'');
-      await Store.putPhoto(c.id,'front',r.photo);c.hasFront=true;c.thumb=await makeThumb(r.photo);
+      await setPhoto(c,'front',r.photo);c.thumb=await makeThumb(r.photo);
       await save(c);r.state='saved';r.on=false;
     }catch(e){r.state='err';r.err=e&&e.code==='quota_exceeded'?'雲端空間已滿':'儲存失敗';r.on=false;fail++}
   }
@@ -932,6 +959,21 @@ function addAddrRow(a={label:'',address:''},focus){
   d.innerHTML=`<input type="text" data-al placeholder="名稱，例：二廠" list="dlAddrLabel" value="${esc(a.label)}"><input type="text" data-aa placeholder="地址" value="${esc(a.address)}"><button type="button" class="btn sm danger" data-adel title="刪除這個地址">✕</button>`;
   $('#eAddrs').appendChild(d);if(focus)d.querySelector('[data-al]').focus();
 }
+
+/* ---------- visit photos ---------- */
+let vPend=[];let vPhotoTarget=null; // null = new visit form, else visit id
+function paintPend(){const el=$('#vPend');if(!el)return;
+  el.innerHTML=vPend.map((d,i)=>`<div class="th"><img src="${d}" data-zoom alt=""><button data-pdel="${i}" title="移除">✕</button></div>`).join('')+`<button class="add" data-padd><span style="font-size:20px">📷</span>加照片</button>`}
+const vpInput=document.createElement('input');vpInput.type='file';vpInput.accept='image/*';vpInput.multiple=true;vpInput.hidden=true;document.body.appendChild(vpInput);
+vpInput.onchange=async()=>{const files=[...vpInput.files];if(!files.length)return;const out=[];
+  for(const f of files){try{out.push(await fileToPhoto(f))}catch(e){toast(e.message)}}
+  if(vPhotoTarget===null){vPend=vPend.concat(out);paintPend();return}
+  const c=contacts.find(x=>x.id===S.sel);if(!c)return;const v=c.visits.find(x=>x.id===vPhotoTarget);if(!v)return;
+  const add=[];for(const d of out){const id=uid();await VP.put(id,d);add.push({id,h:hashStr(d)})}
+  const nc={...c,visits:c.visits.map(x=>x.id===v.id?{...x,photos:[...(x.photos||[]),...add]}:x)};
+  try{await save(nc);renderDetail();toast(`✅ 已加入 ${add.length} 張照片`)}catch(_){toast('❌ 儲存失敗')}};
+function pickVisitPhotos(target){vPhotoTarget=target;vpInput.value='';vpInput.click()}
+async function storePend(){const arr=[];for(const d of vPend){const id=uid();await VP.put(id,d);arr.push({id,h:hashStr(d)})}vPend=[];return arr}
 
 /* ---------- edit modal ---------- */
 let editing=null,editPhotosOrig={front:'',back:''};
@@ -979,7 +1021,7 @@ async function saveEdit(){
   try{
     for(const s of ['front','back']){
       const v=slotState.edit[s]||'';
-      if(v!==editPhotosOrig[s])await Store.putPhoto(editing.id,s,v);
+      if(v!==editPhotosOrig[s])await setPhoto(editing,s,v);
       editing['has'+(s==='front'?'Front':'Back')]=!!v;
     }
     if(slotState.edit.front!==editPhotosOrig.front||!editing.thumb!==!slotState.edit.front)editing.thumb=await makeThumb(slotState.edit.front);
@@ -1025,8 +1067,8 @@ function exportXLSX(list){
   const ws=XLSX.utils.aoa_to_sheet([XCOLS,...rows],{cellDates:true,dateNF:'yyyy/mm/dd'});
   ws['!cols']=[10,14,22,11,12,10,15,20,14,26,32,40,9,20,10,9,16,18,20,12,36,12,40,8,12,14].map(w=>({wch:w}));
   ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:XCOLS.length-1}})};
-  const vr=[['日期','姓名','公司','方式','內容','下一步','聯絡人ID']];
-  list.forEach(c=>c.visits.forEach(v=>vr.push([toDate(v.date),c.name,c.company,v.type,v.content,v.next,c.id])));
+  const vr=[['日期','姓名','公司','方式','內容','下一步','照片數','聯絡人ID']];
+  list.forEach(c=>c.visits.forEach(v=>vr.push([toDate(v.date),c.name,c.company,v.type,v.content,v.next,(v.photos||[]).length||'',c.id])));
   vr.splice(1,vr.length-1,...vr.slice(1).sort((a,b)=>(b[0]||0)-(a[0]||0)));
   const ws2=XLSX.utils.aoa_to_sheet(vr,{cellDates:true,dateNF:'yyyy/mm/dd'});
   ws2['!cols']=[12,10,22,9,50,24,14].map(w=>({wch:w}));
@@ -1047,7 +1089,8 @@ async function exportJSON(list){
   const out=[];let i=0;
   for(const c of list){toast(`準備備份檔… ${++i}/${list.length}`,60000);const photos={};
     for(const s of ['front','back'])if(c['has'+(s==='front'?'Front':'Back')]){const d=await Store.getPhoto(c.id,s);if(d)photos[s]=d}
-    out.push({...c,photos})}
+    const visits=[];for(const v of c.visits){const ps=[];for(const ph of v.photos||[]){const d=await VP.get(ph.id);ps.push(d?{...ph,d}:ph)}visits.push({...v,photos:ps})}
+    out.push({...c,visits,photos})}
   toast('備份檔準備好了',1500);
   const ok=await saveFile(`名片管家備份_含照片_${stamp()}.json`,JSON.stringify({app:'名片管家',version:2,exported:new Date().toISOString(),contacts:out}));
   if(ok&&list===contacts){await Meta.set('lastBackup',new Date().toISOString());checkBackup()}
@@ -1075,14 +1118,15 @@ async function mergeIn(list,progress){
     progress&&progress(++i,list.length);
     const ph=raw.photos&&typeof raw.photos==='object'?raw.photos:{};
     const inc=normalize(raw);const ex=findMatch(inc);
+    for(const v of inc.visits)for(const ph of v.photos||[]){if(ph.d){try{await VP.put(ph.id,ph.d);ph.h=ph.h||hashStr(ph.d)}catch(_){}delete ph.d}}
     let m;
     if(!ex){m=inc;add++}else{m={...ex,visits:[...ex.visits]};
       for(const k of [...FIELDS,'category','status'])if(inc[k])m[k]=inc[k];
       if(inc.processes.length)m.processes=inc.processes;
       if(inc.addresses.length){const have=new Set(m.addresses.map(a=>a.address));m.addresses=[...m.addresses,...inc.addresses.filter(a=>!have.has(a.address))]}
-      const seen=new Set(m.visits.map(v=>v.date+'|'+v.content));inc.visits.forEach(v=>{if(!seen.has(v.date+'|'+v.content))m.visits.push(v)});upd++}
+      const seen=new Set(m.visits.map(v=>v.date+'|'+v.content));inc.visits.forEach(v=>{const same=m.visits.find(x=>x.id===v.id);if(same){const have=new Set((same.photos||[]).map(p=>p.id));same.photos=[...(same.photos||[]),...(v.photos||[]).filter(p=>!have.has(p.id))]}else if(!seen.has(v.date+'|'+v.content))m.visits.push(v)});upd++}
     for(const s of ['front','back']){const key='has'+(s==='front'?'Front':'Back');
-      if(ph[s]&&!(ex&&ex[key])){try{const d=await fileToPhoto(dataUrlToBlob(ph[s]));await Store.putPhoto(m.id,s,d);m[key]=true;if(s==='front')m.thumb=await makeThumb(d)}catch(_){}}}
+      if(ph[s]&&!(ex&&ex[key])){try{const d=await fileToPhoto(dataUrlToBlob(ph[s]));await setPhoto(m,s,d);if(s==='front')m.thumb=await makeThumb(d)}catch(_){}}}
     if(!ex){if(!ph.front)m.hasFront=false;if(!ph.back)m.hasBack=false}
     await save(m);
   }
@@ -1134,14 +1178,21 @@ document.addEventListener('click',async e=>{
   if(t.closest('#fDone')){c.nextFollow='';await save(c).catch(()=>toast('❌ 儲存失敗'));refresh();toast('✅ 已清除跟進日期，記得記一筆紀錄');const f=$('#vForm');f.style.display='grid';$('#vContent').focus();return}
   const sn=t.closest('[data-snooze]');if(sn){const base=c.nextFollow&&c.nextFollow>today()?c.nextFollow:today();c.nextFollow=addDays(base,+sn.dataset.snooze);await save(c).catch(()=>toast('❌ 儲存失敗'));refresh();toast('⏰ 跟進日期改為 '+fmtD(c.nextFollow));return}
   if(t.closest('#vToggle')){const f=$('#vForm');f.style.display=f.style.display==='none'?'grid':'none';if(f.style.display==='grid')$('#vContent').focus();return}
-  if(t.closest('#vCancel')){$('#vForm').style.display='none';return}
+  if(t.closest('#vCancel')){$('#vForm').style.display='none';vPend=[];paintPend();return}
+  if(t.closest('[data-padd]')){pickVisitPhotos(null);return}
+  const pd=t.closest('[data-pdel]');if(pd){vPend.splice(+pd.dataset.pdel,1);paintPend();return}
+  const va=t.closest('[data-vpadd]');if(va){pickVisitPhotos(va.dataset.vpadd);return}
+  const vpd=t.closest('[data-vpdel]');if(vpd){if(await confirmBox('刪除這張照片？',{ok:'刪除',danger:true})){const pid=vpd.dataset.vpdel;
+    const nc={...c,visits:c.visits.map(x=>x.id===vpd.dataset.v?{...x,photos:(x.photos||[]).filter(p=>p.id!==pid)}:x),deletedPhotos:[...(c.deletedPhotos||[]),pid]};
+    await VP.del(pid);await save(nc).catch(()=>toast('❌ 刪除失敗'));renderDetail()}return}
   if(t.closest('#vSave')){
     const v={id:uid(),date:$('#vDate').value||today(),type:$('#vType').value,content:$('#vContent').value.trim(),next:$('#vNext').value.trim()};
-    if(!v.content&&!v.next){toast('請填寫聊了什麼或下一步');return}
+    if(!v.content&&!v.next&&!vPend.length){toast('請填寫聊了什麼、下一步，或加一張照片');return}
+    v.photos=await storePend();
     const nc={...c,visits:[...c.visits,v]};const nf=$('#vFollow').value;if(nf)nc.nextFollow=nf;
     try{await save(nc);$('#vForm').style.display='none';refresh();toast('✅ 已新增紀錄')}catch(_){toast('❌ 儲存失敗，請檢查網路')}
     return}
-  const vd=t.closest('[data-vdel]');if(vd){if(await confirmBox('刪除這筆紀錄？',{ok:'刪除',danger:true})){const nc={...c,visits:c.visits.filter(v=>v.id!==vd.dataset.vdel)};await save(nc).catch(()=>toast('❌ 刪除失敗'));refresh()}return}
+  const vd=t.closest('[data-vdel]');if(vd){if(await confirmBox('刪除這筆紀錄？',{ok:'刪除',danger:true})){const gone=c.visits.find(v=>v.id===vd.dataset.vdel);for(const ph of (gone&&gone.photos)||[])await VP.del(ph.id);const nc={...c,visits:c.visits.filter(v=>v.id!==vd.dataset.vdel),deletedVisits:[...(c.deletedVisits||[]),vd.dataset.vdel]};await save(nc).catch(()=>toast('❌ 刪除失敗'));refresh()}return}
 });
 document.addEventListener('click',async e=>{
   const x=e.target.closest('[data-x]');if(x){const list=scopeList();if(!list.length){toast('沒有可匯出的名片');return}
@@ -1181,7 +1232,7 @@ $('#scanManual').onclick=()=>{const ph={...slotState.scan};closeModal($('#mScan'
 $('#eSave').onclick=saveEdit;
 $('#eAddAddr').onclick=()=>addAddrRow(undefined,true);
 $('#eAddrs').addEventListener('click',e=>{const b=e.target.closest('[data-adel]');if(b)b.closest('.addr-row').remove()});
-$('#wipe').onclick=async()=>{if(await confirmBox(`確定清空全部 ${contacts.length} 張名片？\n建議先匯出 Excel 留一份。此動作無法復原。`,{ok:'清空',danger:true})&&await confirmBox('真的確定？',{ok:'確定清空',danger:true})){
+$('#wipe').onclick=async()=>{if(await confirmBox(`確定清空全部 ${contacts.length} 張名片？\n建議先匯出 Excel 留一份。此動作無法復原。${Sync.linked()?'\n\n⚠️ 已開啟同步：其他裝置上的名片也會一起被刪除。':''}`,{ok:'清空',danger:true})&&await confirmBox('真的確定？',{ok:'確定清空',danger:true})){
   closeModal($('#mImport'));for(const c of [...contacts]){await Store.del(c).catch(()=>{})}contacts=[];S.sel=null;refresh();toast('已清空')}};
 $('#photoInput').onchange=async e=>{const f=e.target.files[0];if(!f||!pickCtx)return;
   try{const d=await fileToPhoto(f);slotState[pickCtx.target][pickCtx.side]=d;paintSlots(pickCtx.target);if(pickCtx.target==='scan')$('#scanStatus').hidden=true}catch(err){toast(err.message)}};
@@ -1192,6 +1243,132 @@ $('#fProc').onchange=e=>{S.proc=e.target.value;renderList()};
 $('#fSort').onchange=e=>{S.sort=e.target.value;renderList()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#dlg').classList.contains('on'))return;if($('#zoom').classList.contains('on'))$('#zoom').classList.remove('on');else{const m=$$('.modal.on').pop();if(m)closeModal(m)}}});
 
+/* ---------- Google Drive sync ---------- */
+const GOOGLE_CLIENT_ID='';   // 在 Google Cloud 建立的 OAuth 用戶端 ID
+const Sync={
+  scope:'https://www.googleapis.com/auth/drive.appdata',
+  dataName:'mpgj-data.json',
+  busy:false,timer:null,pending:false,
+  enabled(){return !!GOOGLE_CLIENT_ID},
+  st(){try{return JSON.parse(localStorage.getItem('mpgj.sync')||'{}')}catch(_){return{}}},
+  save(v){try{localStorage.setItem('mpgj.sync',JSON.stringify({...this.st(),...v}))}catch(_){}},
+  linked(){return this.enabled()&&!!this.st().linked},
+  tokenOk(){const t=this.st();return !!(t.token&&t.exp&&Date.now()<t.exp-60000)},
+  redirectUri(){return location.origin+location.pathname.replace(/index\.html$/,'')},
+  login(forceConsent){
+    if(!this.enabled())return;
+    const state=uid();try{sessionStorage.setItem('mpgj.oauth',state);localStorage.setItem('mpgj.oauth',state)}catch(_){}
+    const q=new URLSearchParams({client_id:GOOGLE_CLIENT_ID,redirect_uri:this.redirectUri(),response_type:'token',scope:this.scope,include_granted_scopes:'true',state});
+    const st=this.st();if(forceConsent||!st.linked)q.set('prompt','consent select_account');else if(st.email)q.set('login_hint',st.email);
+    location.href='https://accounts.google.com/o/oauth2/v2/auth?'+q.toString();
+  },
+  takeRedirect(){
+    if(!location.hash||!/access_token=|error=/.test(location.hash))return null;
+    const h=new URLSearchParams(location.hash.slice(1));history.replaceState(history.state,'',location.pathname+location.search);
+    let saved='';try{saved=localStorage.getItem('mpgj.oauth')||sessionStorage.getItem('mpgj.oauth')||'';localStorage.removeItem('mpgj.oauth')}catch(_){}
+    if(h.get('error'))return{error:h.get('error')};
+    if(!h.get('access_token')||(saved&&h.get('state')!==saved))return{error:'state'};
+    this.save({token:h.get('access_token'),exp:Date.now()+(+h.get('expires_in')||3600)*1000,linked:true});
+    return{ok:true};
+  },
+  unlink(){const t=this.st().token;try{localStorage.removeItem('mpgj.sync')}catch(_){}
+    if(t)fetch('https://oauth2.googleapis.com/revoke?token='+encodeURIComponent(t),{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'}}).catch(()=>{});paintSync()},
+  async api(path,opt={},raw){
+    const r=await fetch(path.startsWith('http')?path:'https://www.googleapis.com/drive/v3/'+path,{...opt,headers:{...(opt.headers||{}),authorization:'Bearer '+this.st().token}});
+    if(r.status===401){this.save({token:'',exp:0});throw{code:'auth'}}
+    if(!r.ok)throw{code:'http',status:r.status,message:(await r.text().catch(()=>'')).slice(0,200)};
+    return raw?r:(r.status===204?null:r.json());
+  },
+  async list(){let files=[],tok='';do{const j=await this.api(`files?spaces=appDataFolder&pageSize=1000&fields=nextPageToken,files(id,name)${tok?'&pageToken='+tok:''}`);files=files.concat(j.files||[]);tok=j.nextPageToken||''}while(tok);return files},
+  async upload(name,blob,id){
+    if(id)return this.api(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`,{method:'PATCH',headers:{'content-type':blob.type||'application/octet-stream'},body:blob});
+    const fd=new FormData();fd.append('metadata',new Blob([JSON.stringify({name,parents:['appDataFolder']})],{type:'application/json'}));fd.append('file',blob);
+    return this.api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',{method:'POST',body:fd});
+  },
+  dirty(){if(!this.linked())return;clearTimeout(this.timer);this.timer=setTimeout(()=>this.run(),4000)},
+  async run(manual){
+    if(!this.linked())return;
+    if(this.busy){this.pending=true;return}
+    if(!navigator.onLine){paintSync();return}
+    if(!this.tokenOk()){paintSync();if(manual)this.login();return}
+    this.busy=true;paintSync('☁️ 同步中…');
+    try{await this.syncOnce();this.save({last:new Date().toISOString(),err:''});}
+    catch(e){this.save({err:e&&e.code==='auth'?'auth':'fail'});if(manual&&e&&e.code!=='auth')toast('❌ 同步失敗，請稍後再試',3500)}
+    finally{this.busy=false;paintSync();if(this.pending){this.pending=false;this.dirty()}}
+  },
+  async syncOnce(){
+    const files=await this.list();const byName=new Map(files.map(f=>[f.name,f]));
+    // 1. remote data
+    let remote={contacts:[],deleted:{}};const df=byName.get(this.dataName);
+    if(df){const r=await this.api(`files/${df.id}?alt=media`,{},true);try{remote=await r.json()}catch(_){}}
+    const rDel=remote.deleted||{};const lDel=(await Meta.get('deleted'))||{};
+    const del={...rDel};for(const k in lDel)if(!del[k]||lDel[k]>del[k])del[k]=lDel[k];
+    // 2. make sure local photo hashes exist (older records)
+    for(const c of contacts){for(const sd of ['front','back']){const has=c['has'+(sd==='front'?'Front':'Back')];if(has&&!c.photoHash[sd]){const d=await Store.getPhoto(c.id,sd);if(d){c.photoHash={...c.photoHash,[sd]:hashStr(d)};await Store.put(c)}}}}
+    // 3. merge
+    const L=new Map(contacts.map(c=>[c.id,c])),R=new Map((remote.contacts||[]).map(c=>[c.id,normalize(c)]));
+    const ids=new Set([...L.keys(),...R.keys()]);const merged=[];
+    for(const id of ids){
+      const a=L.get(id),b=R.get(id);
+      let w=!a?b:!b?a:((a.updated||'')>=(b.updated||'')?a:b);
+      if(a&&b){const dv=[...new Set([...(a.deletedVisits||[]),...(b.deletedVisits||[])])];const dp=[...new Set([...(a.deletedPhotos||[]),...(b.deletedPhotos||[])])];const vm=new Map();
+        [...b.visits,...a.visits].forEach(v=>{if(dv.includes(v.id))return;const prev=vm.get(v.id);const ph=new Map();[...((prev&&prev.photos)||[]),...(v.photos||[])].forEach(p=>{if(!dp.includes(p.id))ph.set(p.id,p)});vm.set(v.id,{...v,photos:[...ph.values()]})});
+        w={...w,deletedVisits:dv,deletedPhotos:dp,visits:[...vm.values()]}}
+      if(del[id]&&del[id]>=(w.updated||''))continue;
+      if(del[id])delete del[id];
+      merged.push(w);
+    }
+    // 4. write local changes
+    const mIds=new Set(merged.map(c=>c.id));
+    for(const c of contacts)if(!mIds.has(c.id)){await LDB.del('contacts',c.id);for(const sd of ['front','back']){await LDB.del('photos',c.id+':'+sd).catch(()=>{});photoCache.delete(c.id+':'+sd)}}
+    for(const c of merged){const a=L.get(c.id);if(!a||JSON.stringify(a)!==JSON.stringify(c))await Store.put(c)}
+    // 5. photos
+    const want=new Set();
+    for(const c of merged)for(const sd of ['front','back']){const h=c.photoHash&&c.photoHash[sd];if(!h||!c['has'+(sd==='front'?'Front':'Back')])continue;
+      const name=`p-${c.id}-${sd}-${h}.jpg`;want.add(name);
+      const local=await Store.getPhoto(c.id,sd);const lh=local?hashStr(local):'';
+      if(lh===h&&!byName.has(name)){await this.upload(name,dataUrlToBlob(local));}
+      else if(lh!==h&&byName.has(name)){const r=await this.api(`files/${byName.get(name).id}?alt=media`,{},true);const d=await blobToDataURL(new Blob([await r.blob()],{type:'image/jpeg'}));await Store.putPhoto(c.id,sd,d);
+        if(sd==='front'){c.thumb=await makeThumb(d);await Store.put(c)}}
+    }
+    for(const c of merged)for(const v of c.visits||[])for(const ph of v.photos||[]){if(!ph.h)continue;const name=`v-${ph.id}-${ph.h}.jpg`;want.add(name);
+      const local=await VP.get(ph.id);
+      if(local&&!byName.has(name))await this.upload(name,dataUrlToBlob(local));
+      else if(!local&&byName.has(name)){const r=await this.api(`files/${byName.get(name).id}?alt=media`,{},true);await VP.put(ph.id,await blobToDataURL(new Blob([await r.blob()],{type:'image/jpeg'})))}}
+    // local cleanup of visit photos that were deleted elsewhere
+    for(const c of contacts)for(const v of c.visits||[])for(const ph of v.photos||[])if(!want.has(`v-${ph.id}-${ph.h}.jpg`)&&!merged.some(m=>m.visits.some(x=>(x.photos||[]).some(p=>p.id===ph.id))))await VP.del(ph.id);
+    // 6. upload data + clean old photos
+    const payload={app:'名片管家',version:3,updated:new Date().toISOString(),contacts:merged,deleted:del};
+    await this.upload(this.dataName,new Blob([JSON.stringify(payload)],{type:'application/json'}),df&&df.id);
+    for(const f of files)if((f.name.startsWith('p-')||f.name.startsWith('v-'))&&!want.has(f.name))await this.api(`files/${f.id}`,{method:'DELETE'},true).catch(()=>{});
+    await Meta.set('deleted',del);
+    // 7. refresh UI
+    contacts=merged.map(normalize);
+    if(S.sel&&!contacts.some(c=>c.id===S.sel))S.sel=null;
+    renderList();if(!$('#mEdit').classList.contains('on')&&!($('#vForm')&&$('#vForm').style.display==='grid'))renderDetail();
+  }
+};
+function blobToDataURL(b){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.onerror=()=>rej(r.error);r.readAsDataURL(b)})}
+function fmtTime(iso){if(!iso)return '';const d=new Date(iso);return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function paintSync(busyText){
+  if(!navigator.onLine){setSync('📴 離線');}
+  else if(!Sync.linked()){setSync('💾 本機');}
+  else if(busyText){setSync(busyText);}
+  else if(!Sync.tokenOk()){setSync('☁️ 點我同步');}
+  else{const st=Sync.st();setSync(st.err==='fail'?'⚠️ 同步失敗':st.last?'☁️ '+fmtTime(st.last):'☁️ 已連結');}
+  const box=$('#syncBox');if(!box)return;
+  $('#syncSec').hidden=!Sync.enabled();
+  if(!Sync.linked())box.innerHTML=`目前<b>還沒開啟同步</b>，資料只存在這台裝置。<div style="margin-top:8px"><button class="btn pri" id="syLink">🔗 用 Google 帳號開啟同步</button></div>`;
+  else{const st=Sync.st();box.innerHTML=`✅ 已開啟同步<br>上次同步：<b>${st.last?fmtTime(st.last):'還沒同步過'}</b>${!Sync.tokenOk()?'<br><span style="color:var(--org)">登入已過期（Google 每小時會要求重新確認一次），按「立即同步」會自動重新確認。</span>':''}
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" id="syNow">🔄 立即同步</button><button class="btn danger" id="syOff">取消同步</button></div>`}
+}
+document.addEventListener('click',async e=>{
+  if(e.target.closest('#syLink')){if(!navigator.onLine){toast('需要網路才能開啟同步');return}
+    if(contacts.length)await infoBox('接下來會跳到 Google 登入頁面，登入後會自動回到名片管家。\n\n這台裝置上現有的名片會和雲端的合併，不會被刪除。',{ok:'繼續'});Sync.login(true);return}
+  if(e.target.closest('#syNow')||e.target.closest('#syncBadge')){if(!Sync.linked()){if(Sync.enabled()&&e.target.closest('#syncBadge'))openSettings();return}Sync.run(true);return}
+  if(e.target.closest('#syOff')){if(await confirmBox('取消同步後，這台裝置的資料會保留，但不會再和其他裝置同步。\n（雲端硬碟裡的資料不會被刪除）',{ok:'取消同步'})){Sync.unlink();toast('已取消同步')}}
+});
+
 /* ---------- settings UI ---------- */
 function paintProv(){$$('#sProv label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked))}
 function fillProvider(p){const cur=AI.get();$('#sKey').value=cur.keys[p]||'';$('#sModel').value=cur.models[p]||PROVIDERS[p].models[0];
@@ -1201,7 +1378,7 @@ async function openSettings(){
   const cur=AI.get();$$('#sProv input').forEach(i=>i.checked=i.value===cur.provider);paintProv();fillProvider(cur.provider);
   const lb=await Meta.get('lastBackup');$('#sLastBackup').textContent=lb?fmtD(lb.slice(0,10))+`（${daysBetween(lb.slice(0,10),today())} 天前）`:'從未備份';
   try{const e=await navigator.storage.estimate();$('#sStorage').textContent=`目前使用 ${(e.usage/1048576).toFixed(1)} MB`}catch(_){$('#sStorage').textContent=''}
-  $('#sVer').textContent=APP_VERSION;
+  $('#sVer').textContent=APP_VERSION;paintSync();
   openModal('#mSettings');
 }
 $('#bSettings').onclick=openSettings;
@@ -1226,8 +1403,9 @@ async function checkBackup(){
   else setNotice('');
 }
 document.addEventListener('click',e=>{if(e.target.id==='nBackup'){e.preventDefault();openModal('#mExport')}});
-function paintOnline(){setSync(navigator.onLine?'💾 本機':'📴 離線')}
-addEventListener('online',paintOnline);addEventListener('offline',paintOnline);
+function paintOnline(){paintSync()}
+addEventListener('online',()=>{paintSync();Sync.run()});addEventListener('offline',paintOnline);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Sync.linked()&&Sync.tokenOk()){const l=Sync.st().last;if(!l||Date.now()-new Date(l)>60000)Sync.run()}});
 
 /* ---------- start ---------- */
 refresh();
@@ -1238,10 +1416,16 @@ refresh();
   try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(_){}
   try{contacts=(await LDB.all()).map(normalize)}catch(_){contacts=[]}
   refresh();checkBackup();
+  const rd=Sync.takeRedirect();
+  if(rd&&rd.ok){toast('✅ 已連結 Google 雲端硬碟，開始同步…',3000);Sync.run()}
+  else if(rd&&rd.error){toast(rd.error==='access_denied'?'已取消 Google 登入':'❌ Google 登入沒有成功，請再試一次',4000)}
+  else if(Sync.linked())Sync.run();
+  paintSync();
   try{const seen=localStorage.getItem('mpgj.seenVersion');localStorage.setItem('mpgj.seenVersion',APP_VERSION);
     if(seen&&seen!==APP_VERSION){const news=CHANGELOG.slice(0,Math.max(1,CHANGELOG.findIndex(c=>c.v===seen)));
       setTimeout(()=>infoBox(`🎉 已更新到版本 ${APP_VERSION}\n\n`+news.map(c=>c.items.map(i=>'• '+i).join('\n')).join('\n'),{ok:'知道了'}),500)}}catch(_){}
-  if(!AI.get().key&&!contacts.length)setTimeout(()=>infoBox('👋 歡迎使用名片管家！\n\n要自動辨識名片，請先到右上角「⚙️ 設定」選一家 AI，貼上你自己的 API 金鑰。\n\n沒有金鑰也可以用：拍照後按「自己填」手動輸入。',{ok:'知道了'}),400);
+  let welcomed=false;try{welcomed=!!localStorage.getItem('mpgj.welcomed');localStorage.setItem('mpgj.welcomed','1')}catch(_){}
+  if(!welcomed&&!AI.get().key&&!contacts.length&&!/access_token|error=/.test(location.hash))setTimeout(()=>infoBox('👋 歡迎使用名片管家！\n\n要自動辨識名片，請先到右上角「⚙️ 設定」選一家 AI，貼上你自己的 API 金鑰。\n\n沒有金鑰也可以用：拍照後按「自己填」手動輸入。',{ok:'知道了'}),400);
   if('serviceWorker' in navigator&&location.protocol!=='file:'){
     const hadCtl=!!navigator.serviceWorker.controller;let reloaded=false;
     navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadCtl&&!reloaded){reloaded=true;toast('🔄 已更新到新版本');setTimeout(()=>location.reload(),600)}});
