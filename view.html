@@ -314,6 +314,8 @@ label.f.warn>span::after{content:"　請確認";font-weight:500;color:var(--org)
 .err b{display:block;color:var(--ink);font-size:22px;margin-bottom:4px}
 .vfoot{text-align:center;font-size:12.5px;color:var(--sub);margin-top:22px}
 .oneact{margin-top:14px}
+.tsum{margin-top:6px;padding:8px 12px;border-radius:12px;background:var(--chip);font-size:13px;color:var(--sub);line-height:1.6}
+.tsum div:first-child{color:var(--ink);font-weight:600}
 </style>
 </head>
 <body>
@@ -419,7 +421,7 @@ async function unpack(s){
   '<div class="oneact"><a class="btn" target="_blank" rel="noopener" href="https://www.google.com/search?q='+encodeURIComponent(c.co||c.n||'')+'">'+ic('globe')+'Google 查公司</a></div></div>'+
   (rows.length?'<div class="gh">詳細資料</div><div class="dgrp glass">'+rows.map(r=>kv(r[0],r[1],r[2])).join('')+'</div>':'')+
   '<div class="gh">拜訪／聯絡紀錄・'+vs.length+' 筆</div><div class="dgrp glass vwrap">'+
-  (vs.length?'<div class="tl">'+vs.map(v=>'<div class="v"><div class="vd">'+vDate(v[0])+'</div><div class="vt">'+(v[1]?'<div class="ty"><span class="badge">'+esc(v[1])+'</span></div>':'')+(v[2]?'<div class="ct">'+esc(v[2])+'</div>':'')+(v[3]?'<div class="nx">→ '+esc(v[3])+'</div>':'')+'</div></div>').join('')+'</div>':'<div style="color:var(--sub);font-size:14px">沒有紀錄</div>')+
+  (vs.length?'<div class="tl">'+vs.map(v=>'<div class="v"><div class="vd">'+vDate(v[0])+'</div><div class="vt">'+(v[1]?'<div class="ty"><span class="badge">'+esc(v[1])+'</span></div>':'')+(v[4]?'<div class="tsum">'+v[4].split('\n').map(l=>'<div>'+esc(l)+'</div>').join('')+'</div>':'')+(v[2]?'<div class="ct">'+esc(v[2])+'</div>':'')+(v[3]?'<div class="nx">→ '+esc(v[3])+'</div>':'')+'</div></div>').join('')+'</div>':'<div style="color:var(--sub);font-size:14px">沒有紀錄</div>')+
   '</div><div class="vfoot">名片管家・唯讀分享</div>';
 })();
 addEventListener('hashchange',()=>location.reload());
