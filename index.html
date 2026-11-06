@@ -501,8 +501,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t){$('#syncBadge').textContent=t}
 
-const APP_VERSION='2026.11.06-2';
+const APP_VERSION='2026.11.06-3';
 const CHANGELOG=[
+  {v:'2026.11.06-3',items:['開啟 Google 雲端同步：到「⚙️ 設定」最下面按「🔗 用 Google 帳號開啟同步」，手機和電腦的資料就會自動同步','每個人的資料存在自己的 Google 雲端硬碟，不會跟別人混在一起']},
   {v:'2026.11.06-2',items:['拜訪／聯絡紀錄可以加照片（例如試刀後的工件），一筆紀錄可以放好幾張','已經存好的紀錄也能按「📷 加照片」補上，點照片可以放大','照片會跟著完整備份和雲端同步一起保存']},
   {v:'2026.11.06-1',items:['新增「手機和電腦同步」：用 Google 帳號連結後，名片、照片、拜訪紀錄會存到你自己的 Google 雲端硬碟，在每台裝置自動同步','兩台裝置都修改過同一張名片時，以最後修改的為準；拜訪紀錄會合併，不會互相蓋掉','上方的狀態標籤會顯示上次同步時間，點一下就能立即同步']},
   {v:'2026.11.04-5',items:['新增「更新紀錄」：在設定最下面點版本號就能查看','更新到新版本後，會自動告訴你這次改了什麼']},
@@ -1244,7 +1245,7 @@ $('#fSort').onchange=e=>{S.sort=e.target.value;renderList()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#dlg').classList.contains('on'))return;if($('#zoom').classList.contains('on'))$('#zoom').classList.remove('on');else{const m=$$('.modal.on').pop();if(m)closeModal(m)}}});
 
 /* ---------- Google Drive sync ---------- */
-const GOOGLE_CLIENT_ID='';   // 在 Google Cloud 建立的 OAuth 用戶端 ID
+const GOOGLE_CLIENT_ID='509507706932-9ijod4g5nea7dgqtvsillrp9g1va44k5.apps.googleusercontent.com';   // 在 Google Cloud 建立的 OAuth 用戶端 ID
 const Sync={
   scope:'https://www.googleapis.com/auth/drive.appdata',
   dataName:'mpgj-data.json',
