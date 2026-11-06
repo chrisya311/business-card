@@ -1,5 +1,5 @@
 // 名片管家 service worker：讓 App 沒有網路也能打開
-const VERSION = 'mpgj-2026.11.07-9';   // 每次更新 App 都要改這個版本號
+const VERSION = 'mpgj-2026.11.07-10';   // 每次更新 App 都要改這個版本號
 const SHELL = ['./', './index.html', './view.html', './help.html', './manifest.webmanifest', './xlsx.full.min.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
@@ -30,6 +30,8 @@ self.addEventListener('fetch', e => {
       if (res && res.ok && !res.redirected) cache.put(req, res.clone());
       return res;
     }).catch(() => cached);
+    // 分享頁和說明頁：有網路就一定用最新版（別人傳來的連結要能顯示新功能），沒網路才用存好的
+    if (/\/(view|help)\.html$/.test(url.pathname)) return fresh.then(r => (r && r.ok) ? r : (cached || r), () => cached);
     return cached || fresh;
   }));
 });

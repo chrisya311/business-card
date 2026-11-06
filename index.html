@@ -749,8 +749,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-9';
+const APP_VERSION='2026.11.07-10';
 const CHANGELOG=[
+  {v:'2026.11.07-10',items:['修正：打開別人分享的名片時，有時會看到舊版頁面，試刀內容沒有顯示']},
   {v:'2026.11.07-9',items:['拍名片、編輯、拜訪紀錄等全螢幕頁面，右滑返回也改成跟 iPhone 一樣的效果；從螢幕最左邊滑也能正常關閉']},
   {v:'2026.11.07-8',items:['新增／修改拜訪紀錄改成獨立的全螢幕頁面，內容框會跟著字數變大，適合寫長的試刀過程','點一下舊紀錄（或鉛筆圖示）就能修改','新增「試刀」類型，有材質、加工方式、刀具、切削條件、壽命、結果等欄位，Excel 也會一起匯出','寫到一半關掉會自動保留草稿，上方的「清除草稿」可以一次清掉']},
   {v:'2026.11.07-7',items:['「已更新」通知太長時可以上下滑動，「知道了」按鈕一定看得到；點旁邊空白處也能關閉','更新通知只顯示最近的內容，完整紀錄在「設定 → 更新紀錄」']},
