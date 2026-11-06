@@ -70,9 +70,9 @@ header .hbtn.pri{background:var(--pri);color:var(--onpri);box-shadow:var(--fabsh
 header .hbtn:active,.nb:active{box-shadow:var(--neuin)}
 .nb{padding:0;width:44px}
 
-.wrap{position:relative;z-index:1;display:grid;grid-template-columns:400px 1fr;height:calc(100vh - 64px);height:calc(100dvh - 64px - env(safe-area-inset-top))}
-.side{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--sep)}
-.main{overflow:auto;min-height:0;padding:20px 24px;padding-bottom:max(28px,env(safe-area-inset-bottom))}
+.wrap{position:relative;z-index:1;display:grid;grid-template-columns:400px minmax(0,1fr);height:calc(100vh - 64px);height:calc(100dvh - 64px - env(safe-area-inset-top))}
+.side{display:flex;flex-direction:column;min-height:0;min-width:0;border-right:1px solid var(--sep)}
+.main{overflow:auto;min-height:0;min-width:0;padding:20px 24px;padding-bottom:max(28px,env(safe-area-inset-bottom))}
 .lgt{margin:4px 20px 0;font-size:34px;font-weight:700;line-height:1.2;letter-spacing:.01em}
 
 .notice{margin:12px 20px 0;padding:12px 14px;border-radius:16px;font-size:13.5px;line-height:1.55;background:var(--org-soft);color:var(--ink)}
@@ -291,7 +291,7 @@ label.f.warn>span::after{content:"　請確認";font-weight:500;color:var(--org)
   body.detail #bScan{display:none}
   .toast{bottom:max(100px,calc(env(safe-area-inset-bottom) + 92px))}
   body.detail .toast{bottom:max(28px,calc(env(safe-area-inset-bottom) + 16px))}
-  .wrap{grid-template-columns:1fr}
+  .wrap{grid-template-columns:minmax(0,1fr)}
   .side{border-right:0}
   .list{padding-bottom:max(110px,calc(env(safe-area-inset-bottom) + 100px))}
   .main{display:none;padding:12px 20px max(28px,env(safe-area-inset-bottom))}
@@ -647,8 +647,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-2';
+const APP_VERSION='2026.11.07-3';
 const CHANGELOG=[
+  {v:'2026.11.07-3',items:['修正手機上名片很多、公司名稱很長時，畫面變太寬、右邊被切掉的問題']},
   {v:'2026.11.07-2',items:['拍名片、設定、編輯等全螢幕畫面，也可以往右滑回上一頁','拍名片畫面的「正面／背面」拍照按鈕移到下面，單手大拇指就按得到']},
   {v:'2026.11.07-1',items:['全新「森霧」風格：暗色毛玻璃卡片、背景極光、鼠尾草綠主色','右上角太陽／月亮按鈕可以切換亮色和暗色','所有圖示改成線條圖示，不再用 emoji','手機上「拍名片」移到右下角的大按鈕，單手好按','名片詳細頁改成四個大按鈕（編輯、分享、查公司、拜訪前查詢），拜訪紀錄日期更好讀','給同事看的唯讀分享頁和使用說明也換成新風格']},
   {v:'2026.11.06-4',items:['名片詳細頁新增「分享」：產生一個唯讀網址，用 LINE 傳給同事，對方不用安裝 App 也能看到名片資料、備註和拜訪紀錄（不含照片）','分享連結 1 天後自動失效，對方打開只會看到「連結已過期」']},
