@@ -385,7 +385,8 @@ label.f.warn>span::after{content:"　請確認";font-weight:500;color:var(--org)
   <div class="mbox" style="max-width:600px">
     <div class="mhead"><h2>設定</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
     <div class="mbody">
-      <div style="text-align:right;margin:-4px 0 6px"><a href="help.html" target="_blank" rel="noopener">使用說明（安裝、申請金鑰、備份）</a></div>
+      <div style="text-align:right;margin:-4px 0 6px" id="helpLink"><a href="help.html" target="_blank" rel="noopener">使用說明（安裝、申請金鑰、備份）</a></div>
+      <div id="aiSec">
       <div class="sec" style="border:0;padding:0;margin-bottom:10px">名片辨識用的 AI</div>
       <div class="checks" id="sProv">
         <label><input type="radio" name="prov" value="claude">Claude（Anthropic）</label>
@@ -402,6 +403,7 @@ label.f.warn>span::after{content:"　請確認";font-weight:500;color:var(--org)
         <button class="btn" id="sTest">測試連線</button><span id="sTestRes" style="font-size:13.5px"></span>
       </div>
       <div class="note">金鑰只存在<b>這台裝置</b>上。辨識名片時，照片會直接傳給你選的 AI 公司，不會經過其他地方。<br>辨識費用由 AI 公司依用量向你收取，一張名片通常只要很少的費用。</div>
+      </div>
       <div id="syncSec">
       <div class="sec" style="margin-top:18px">手機和電腦同步（Google 雲端硬碟）</div>
       <div id="syncBox" style="font-size:14px;line-height:1.8;margin-top:10px"></div>
@@ -1314,7 +1316,7 @@ async function mergeIn(list,progress){
     progress&&progress(++i,list.length);
     const ph=raw.photos&&typeof raw.photos==='object'?raw.photos:{};
     const inc=normalize(raw);const ex=findMatch(inc);
-    for(const v of inc.visits)for(const ph of v.photos||[]){if(ph.d){try{await VP.put(ph.id,ph.d);ph.h=ph.h||hashStr(ph.d)}catch(_){}delete ph.d}}
+    for(const v of inc.visits)for(const ph of v.photos||[]){if(ph.d){try{await VP.put(ph.id,ph.d,(ex||inc).id);ph.h=ph.h||hashStr(ph.d)}catch(_){}delete ph.d}}
     let m;
     if(!ex){m=inc;add++}else{m={...ex,visits:[...ex.visits]};
       for(const k of [...FIELDS,'category','status'])if(inc[k])m[k]=inc[k];
