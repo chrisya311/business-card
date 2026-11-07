@@ -116,7 +116,7 @@ header .hbtn:active,.nb:active{box-shadow:var(--neuin)}
 .dlogo .ini{font-size:27px}
 .thumb.logo img,.dlogo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:3px;opacity:0;transition:opacity .2s}
 .thumb.logo.has,.dlogo.has{background:#fff!important}
-.has img{opacity:1}
+.thumb.logo.has img,.dlogo.has img{opacity:1}
 .has .ini{display:none}
 .dhead.cohead{flex-wrap:nowrap;align-items:center}
 .cohead .who{min-width:0}
@@ -818,8 +818,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-14';
+const APP_VERSION='2026.11.07-15';
 const CHANGELOG=[
+  {v:'2026.11.07-15',items:['修正：清單上找得到 logo 的公司，圖示是一片白的']},
   {v:'2026.11.07-14',items:['拿掉「在公司的角色」','可以把兩家公司合併：到「編輯公司」最下面按「合併到另一家公司」，舊名字會留在「其他名稱」，公司頁會顯示「也叫：…」','用其他名稱也搜尋得到；之後拍到舊名字的名片，也會自動加入同一家','公司 logo 縮小一點、圖示放大填滿；沒有 logo 的漸層不再放字']},
   {v:'2026.11.07-13',items:['修正：點進公司或名片有時候畫面是空白的','類別、狀態、角色選了之後，再點同一個就能取消','沒有 logo 的公司改用彩色漸層加公司第一個字']},
   {v:'2026.11.07-12',items:['改成以公司為主：清單一家公司一列，下面小字是這家公司的人（最多 2 位，其他顯示 +N）','拜訪紀錄和跟進日期記在公司，每筆紀錄可以選這次的窗口；私人分類照舊記在人身上','公司頁會依接觸次數排聯絡人（還沒有紀錄時依職稱）；換工作的人在舊公司顯示「已離職」，舊紀錄保留','自動找公司網站的 logo，找不到就留白','分享可以選要給哪些人、附幾筆紀錄、要不要附備註','Excel 匯出改成「公司」、「聯絡人」、「拜訪紀錄」三個工作表']},
