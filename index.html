@@ -110,10 +110,11 @@ header .hbtn:active,.nb:active{box-shadow:var(--neuin)}
 .item .chev{color:var(--sub);opacity:.55}
 .item .ppl{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .thumb.logo,.dlogo{position:relative;overflow:hidden;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);text-shadow:0 1px 2px rgba(0,0,0,.25)}
-.dlogo{width:60px;height:60px;border-radius:var(--orrs);flex:none}
+.dlogo{width:48px;height:48px;border-radius:var(--orrs);flex:none}
+.thumb.logo{width:38px;height:38px;margin:0 3px}
 .thumb.logo .ini{font-size:19px}
 .dlogo .ini{font-size:27px}
-.thumb.logo img,.dlogo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:6px;opacity:0;transition:opacity .2s}
+.thumb.logo img,.dlogo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:3px;opacity:0;transition:opacity .2s}
 .thumb.logo.has,.dlogo.has{background:#fff!important}
 .has img{opacity:1}
 .has .ini{display:none}
@@ -564,7 +565,6 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
         <label class="f" data-k="dept" data-m="p"><span>部門</span><input type="text" name="dept"></label>
 
         <div class="sec">聯絡方式</div>
-        <div class="f full" id="eRoleBox" data-m="p"><label class="f"><span>在公司的角色（選填）</span></label><div class="checks" id="eRole"></div></div>
         <label class="f" data-k="mobile" data-m="p"><span>手機</span><input type="tel" name="mobile"></label>
         <label class="f" data-k="phone"><span id="ePhLbl">公司電話（含分機）</span><input type="tel" name="phone" placeholder="例：04-2359-1234 #101"></label>
         <label class="f" data-k="email" data-m="p"><span>Email</span><input type="email" name="email" autocapitalize="off"></label>
@@ -584,6 +584,8 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
         <div class="sec" id="eFollowSec">認識情境與跟進</div>
         <label class="f" data-m="p"><span>在哪裡／怎麼認識</span><input type="text" name="metAt" placeholder="例：2026/10 台中工具機展"></label>
         <label class="f" data-m="c"><span>下次跟進日期</span><input type="date" name="nextFollow"></label>
+        <label class="f full" data-m="o"><span>其他名稱（合併來的、舊名、簡稱，用頓號分開）</span><input type="text" name="aka" placeholder="例：永興機械台中廠、永興"></label>
+        <div class="f full" data-m="o" id="eMergeBox"><button type="button" class="btn sm" id="eMerge" style="align-self:flex-start">合併到另一家公司…</button><small style="color:var(--sub);font-size:12.5px">發現兩家其實是同一家時用。這家的聯絡人和拜訪紀錄會搬過去，名字會留在「其他名稱」。</small></div>
         <label class="f full"><span>備註</span><textarea name="notes" placeholder="例：主要做鋁件 CNC，在找耐用的銑刀片"></textarea></label>
       </div>
     </div>
@@ -626,6 +628,15 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
   </div>
 </div>
 <datalist id="dlMat"></datalist>
+
+<!-- merge companies -->
+<div class="modal" id="mMerge">
+  <div class="mbox" style="max-width:520px">
+    <div class="mhead"><h2>合併到哪一家？</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
+    <div class="mbody"><input type="search" class="search" id="mgQ" placeholder="搜尋公司" style="width:100%;margin-bottom:10px"><div class="shopt" id="mgList"></div></div>
+    <div class="mfoot"><button class="btn" data-close>取消</button></div>
+  </div>
+</div>
 
 <!-- share chooser -->
 <div class="modal" id="mShare">
@@ -807,8 +818,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-13';
+const APP_VERSION='2026.11.07-14';
 const CHANGELOG=[
+  {v:'2026.11.07-14',items:['拿掉「在公司的角色」','可以把兩家公司合併：到「編輯公司」最下面按「合併到另一家公司」，舊名字會留在「其他名稱」，公司頁會顯示「也叫：…」','用其他名稱也搜尋得到；之後拍到舊名字的名片，也會自動加入同一家','公司 logo 縮小一點、圖示放大填滿；沒有 logo 的漸層不再放字']},
   {v:'2026.11.07-13',items:['修正：點進公司或名片有時候畫面是空白的','類別、狀態、角色選了之後，再點同一個就能取消','沒有 logo 的公司改用彩色漸層加公司第一個字']},
   {v:'2026.11.07-12',items:['改成以公司為主：清單一家公司一列，下面小字是這家公司的人（最多 2 位，其他顯示 +N）','拜訪紀錄和跟進日期記在公司，每筆紀錄可以選這次的窗口；私人分類照舊記在人身上','公司頁會依接觸次數排聯絡人（還沒有紀錄時依職稱）；換工作的人在舊公司顯示「已離職」，舊紀錄保留','自動找公司網站的 logo，找不到就留白','分享可以選要給哪些人、附幾筆紀錄、要不要附備註','Excel 匯出改成「公司」、「聯絡人」、「拜訪紀錄」三個工作表']},
   {v:'2026.11.07-11',items:['試刀可以記好幾組條件：按「新增一組條件」會帶入上一組的設定，只要改不同的地方','每組都有刀具、Vc、f、ap、S 轉速、F 進給、冷卻、壽命、結果、備註；按星號標出建議條件','Excel 匯出時每一組條件各佔一列，方便篩選比較；舊的試刀紀錄會自動變成第 1 組']},
@@ -923,7 +935,7 @@ const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join(
 const mapLink=a=>`<a class="btn sm" style="margin-left:6px;vertical-align:middle" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">${ic('map')}地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    kind:'',companyId:'',role:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    kind:'',companyId:'',role:'',aka:[],category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
@@ -953,9 +965,10 @@ function normCo(s){return String(s||'').toLowerCase().replace(/[（(]股[)）]/g
 const PLANT_RE=/((台北|臺北|新北|桃園|新竹|苗栗|台中|臺中|彰化|南投|雲林|嘉義|台南|臺南|高雄|屏東|宜蘭|花蓮|台東|臺東|基隆|林口|觀音|中壢|楊梅|大園|湖口|竹北|大雅|太平|大里|鹿港|和美|斗六|永康|仁武|岡山|路竹|樹林|五股|土城|三重|新莊|泰山|龜山|平鎮|大甲|清水|潭子|豐原|神岡|烏日|霧峰|南科|中科|竹科)(總?廠|廠區|分公司|營業所|辦事處)|第?[一二三四五六七八九十\d]+廠|廠區|分公司|營業所|辦事處)$/;
 function findCo(name,taxId){const t=(taxId||'').replace(/\D/g,'');
   if(validTaxId(t)){const byT=contacts.find(x=>isCo(x)&&x.taxId===t);if(byT)return byT}
-  const n=normCo(name);return n?contacts.find(x=>isCo(x)&&normCo(x.company)===n&&!(validTaxId(t)&&validTaxId(x.taxId)&&x.taxId!==t))||null:null}
+  const n=normCo(name);return n?contacts.find(x=>isCo(x)&&coNames(x).some(m=>normCo(m)===n)&&!(validTaxId(t)&&validTaxId(x.taxId)&&x.taxId!==t))||null:null}
+const coNames=x=>[x.company,...(x.aka||[])].filter(Boolean);
 function fuzzyCo(name){const n=normCo(name);if(n.length<2)return null;
-  return contacts.find(x=>isCo(x)&&(()=>{const m=normCo(x.company);return m.length>=2&&m!==n&&(m.includes(n)||n.includes(m))})())||null}
+  return contacts.find(x=>isCo(x)&&coNames(x).some(nm=>{const m=normCo(nm);return m.length>=2&&m!==n&&(m.includes(n)||n.includes(m))}))||null}
 const TITLE_RANK=[['董事長',0],['總裁',1],['執行長',1],['副總',4],['總經理',2],['特助',5],['協理',6],['副廠長',8],['廠長',7],['總監',7],['副理',10],['經理',9],['襄理',11],['課長',12],['主任',13],['組長',14],['領班',15],['工程師',16],['專員',17],['業務',18],['助理',19]];
 const titleRank=t=>{t=t||'';const r=TITLE_RANK.find(([k])=>t.includes(k));return r?r[1]:50};
 const visitN=(p,co)=>co.visits.filter(v=>v.who.includes(p.id)).length;
@@ -966,6 +979,28 @@ function formerOf(co){const now=new Set(peopleOf(co).map(p=>p.id));const m=new M
 function whoHTML(v,co){const parts=v.who.map((id,i)=>{const p=contacts.find(x=>x.id===id);const n=p?p.name:(v.whoN[i]||'');if(!n)return '';
     return `<b>${esc(n)}</b>${p&&co&&p.companyId!==co.id?'<span class="lft">已離職</span>':''}`}).filter(Boolean);
   if(v.other)parts.push(esc(v.other));return parts.length?`<div class="wh">窗口：${parts.join('、')}</div>`:''}
+/* 合併兩家公司：from 的聯絡人、拜訪紀錄搬到 to，from 的名字留在 to 的「其他名稱」 */
+async function mergeCo(from,to){
+  const t={...to,visits:[...to.visits],addresses:[...to.addresses],processes:[...to.processes],aka:[...(to.aka||[])]};
+  for(const k of ['taxId','phone','fax','address','website','region','brands','status','category','notes'])if(!t[k]&&from[k])t[k]=from[k];
+  if(from.notes&&to.notes&&from.notes!==to.notes)t.notes=to.notes+'\n'+from.notes;
+  const have=new Set([t.address,...t.addresses.map(a=>a.address)]);
+  for(const a of [{label:from.company,address:from.address},...from.addresses])if(a.address&&!have.has(a.address)){t.addresses.push({label:a.label||'',address:a.address});have.add(a.address)}
+  t.processes=[...new Set([...t.processes,...from.processes])];
+  if(from.nextFollow&&(!t.nextFollow||from.nextFollow<t.nextFollow))t.nextFollow=from.nextFollow;
+  t.aka=[...new Set([...t.aka,...coNames(from)])].filter(x=>x!==t.company);
+  const ids=new Set(t.visits.map(v=>v.id));
+  t.visits.push(...from.visits.filter(v=>!ids.has(v.id)).map(v=>({...v,photos:(v.photos||[]).map(ph=>ph.o?ph:{...ph,o:from.id})})));
+  await save(t);
+  for(const p of peopleOf(from))await save({...p,companyId:t.id,company:t.company});
+  await Store.del({...from,visits:[]});contacts=contacts.filter(x=>x.id!==from.id);
+  return t}
+function openMerge(){const me=editing;const q=$('#mgQ');q.value='';
+  const paint=()=>{const w=q.value.trim().toLowerCase();const list=contacts.filter(x=>isCo(x)&&x.id!==me.id&&(!w||coNames(x).join(' ').toLowerCase().includes(w)))
+      .sort((a,b)=>(fuzzyMatchScore(b,me)-fuzzyMatchScore(a,me))||a.company.localeCompare(b.company,'zh-Hant'));
+    $('#mgList').innerHTML=list.map(x=>`<button type="button" class="shrow" data-mg="${x.id}" style="text-align:left">${logoHTML(x,'thumb logo')}<span><b>${esc(x.company)}</b><small>${esc(peopleOf(x).map(p=>p.name).slice(0,3).join('、')||'沒有聯絡人')}・${x.visits.length} 筆紀錄</small></span></button>`).join('')||'<div style="color:var(--sub)">沒有其他公司</div>';wireLogos($('#mgList'))};
+  q.oninput=paint;paint();openModal('#mMerge')}
+function fuzzyMatchScore(x,me){const a=normCo(x.company),b=normCo(me.company);return a&&b&&(a.includes(b)||b.includes(a))?1:0}
 const coPhone=p=>String(p||'').split(/[#＃]|轉|分機|ext/i)[0].trim();
 const FREE_MAIL=/(^|\.)(gmail|yahoo|ymail|hotmail|outlook|msn|live|icloud|me|mac|hinet|seed|pchome|kimo|aol|qq|163|126|sina|naver|proton)\./i;
 function coDomain(co){const m=String(co.website||'').trim().match(/^(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,})/i);
@@ -978,7 +1013,7 @@ const LOGO_GRAD=[['#1F6B4E','#7CCBA4'],['#24587A','#79B4D6'],['#5B4A86','#AE97DA
 function logoBg(co){const n=normCo(co.company)||co.company||'?';let h=0;for(const ch of n)h=(h*31+ch.codePointAt(0))>>>0;const [a,b]=LOGO_GRAD[h%LOGO_GRAD.length];return `background:linear-gradient(135deg,${a},${b})`}
 const logoIni=co=>{const n=String(co.company||'').replace(/^(台灣|臺灣|中華|財團法人)/,'').trim();return esc([...n][0]||'?')};
 function logoHTML(co,cls){const d=coDomain(co);const st=d?logoOK.get(d):false;
-  return `<div class="${cls}${st===true?' has':''}" style="${logoBg(co)}"><span class="ini">${logoIni(co)}</span>${d&&st!==false?`<img alt="" data-logo="${esc(d)}" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128" referrerpolicy="no-referrer">`:''}</div>`}
+  return `<div class="${cls}${st===true?' has':''}" style="${logoBg(co)}">${d&&st!==false?`<img alt="" data-logo="${esc(d)}" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128" referrerpolicy="no-referrer">`:''}</div>`}
 function wireLogos(root){(root||document).querySelectorAll('img[data-logo]').forEach(img=>{const d=img.dataset.logo;
   const ok=()=>{const good=img.naturalWidth>=48;logoOK.set(d,good);if(good)img.parentNode.classList.add('has');else img.remove()};
   const bad=()=>{logoOK.set(d,false);img.remove()};
@@ -1006,8 +1041,8 @@ async function linkTo(p,co,noFill){
   await save(co);
   const np={...p,companyId:co.id,company:co.company,visits:[],nextFollow:'',deletedVisits:[...new Set([...(p.deletedVisits||[]),...p.visits.map(v=>v.id)])]};
   await save(np);return [np,co]}
-let linking=null;
-function linkAll(){if(linking)return linking;linking=(async()=>{let n=0;const made=new Map();
+let linking=null,attaching=0;
+function linkAll(){if(attaching)return Promise.resolve(0);if(linking)return linking;linking=(async()=>{let n=0;const made=new Map();
   const fresh=co=>co&&(made.get(co.id)||co);
   for(const p0 of contacts.filter(x=>!isCo(x))){const p=contacts.find(x=>x.id===p0.id)||p0;
     const cur=fresh(coOf(p)||(p.companyId&&made.get(p.companyId)));
@@ -1036,7 +1071,7 @@ const lastVisit=c=>[...c.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||
 
 /* ---------- filtering ---------- */
 const S={q:'',cat:'',region:'',proc:'',sort:'follow',follow:'all',sel:null};
-const haystack1=c=>[c.name,c.nameEn,c.company,c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
+const haystack1=c=>[c.name,c.nameEn,c.company,...(c.aka||[]),c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
 const haystack=c=>isCo(c)?[haystack1(c),...peopleOf(c).map(haystack1)].join(' '):haystack1(c);
 function filtered(){
   const q=S.q.trim().toLowerCase(),qd=q.replace(/[-\s]/g,'');
@@ -1191,7 +1226,7 @@ function renderDetail(){
 function renderCompany(co){
   const ppl=sortPeople(co),former=formerOf(co);
   const pRow=p=>{const n=visitN(p,co);return `<div class="item pp" data-id="${p.id}"><div class="thumb" style="${p.thumb?`background-image:url('${p.thumb}')`:''}">${p.thumb?'':esc((p.name||'?').trim().charAt(0))}</div>
-    <div class="t"><div class="n">${esc(p.name)}${p.title?` <small>${esc(p.title)}</small>`:''}</div><div class="c">${p.role?`<span class="badge">${esc(p.role)}</span> `:''}${esc(p.mobile||p.phone||p.email||'')}</div></div>
+    <div class="t"><div class="n">${esc(p.name)}${p.title?` <small>${esc(p.title)}</small>`:''}</div><div class="c">${esc(p.mobile||p.phone||p.email||'')}</div></div>
     <div class="r">${n?`<span class="vc">接觸 ${n} 次</span>`:''}</div><span class="chev">${ic('chev')}</span></div>`};
   const gRow=f=>`<div class="item pp gone" ${f.p?`data-id="${f.p.id}"`:''}><div class="thumb">${esc((f.name||'?').charAt(0))}</div>
     <div class="t"><div class="n">${esc(f.name)}<span class="lft">已離職</span></div><div class="c">${f.p&&f.p.company?'現在：'+esc(f.p.company):''}</div></div>
@@ -1211,7 +1246,7 @@ function renderCompany(co){
   <div class="dcard glass">
     <div class="dhead cohead">${logoHTML(co,'dlogo')}
       <div class="who"><h2>${esc(co.company)}</h2>
-        <div class="co">${[co.region,ppl.length?ppl.length+' 位聯絡人':''].filter(Boolean).map(esc).join(' · ')}</div>${tagsHTML(co)}</div>
+        ${co.aka.length?`<div class="co" style="font-size:13px">也叫：${co.aka.map(esc).join('、')}</div>`:''}<div class="co">${[co.region,ppl.length?ppl.length+' 位聯絡人':''].filter(Boolean).map(esc).join(' · ')}</div>${tagsHTML(co)}</div>
     </div>
     ${followBox(co)}
   </div>
@@ -1248,7 +1283,7 @@ function renderPerson(c){
       <div class="who">
         <h2>${esc(c.name)}${c.nameEn?`<span class="en">${esc(c.nameEn)}</span>`:''}</h2>
         <div class="co">${co?`<button class="colink" data-go="${co.id}" title="打開公司頁">${ic('building')}<span>${esc(co.company)}</span>${ic('chev')}</button>`:esc(c.company||'')}${c.title?' · '+esc(c.title):''}</div>
-        ${tagsHTML(co?{}:c,c.role?`<span class="badge">${esc(c.role)}</span>`:'')}
+        ${tagsHTML(co?{}:c)}
       </div>
       <div class="photos" id="dPhotos">${['front','back'].filter(s=>c['has'+(s==='front'?'Front':'Back')]).map(s=>`<img data-zoom data-side="${s}" alt="名片${s==='front'?'正面':'背面'}" ${s==='front'&&c.thumb?`src="${c.thumb}"`:''}>`).join('')}</div>
     </div>
@@ -1630,6 +1665,7 @@ async function storePend(){const arr=[];for(const d of vPend){const id=uid();awa
 let editing=null,editPhotosOrig={front:'',back:''},EM='p';
 function paintEditMode(){const f=$('#eForm');const co=EM==='co';
   $$('#eForm [data-m=p]').forEach(el=>el.hidden=co);
+  $$('#eForm [data-m=o]').forEach(el=>el.hidden=!co);$('#eMergeBox').hidden=!co||!contacts.some(x=>x.id===editing.id);
   $('#eCoLbl').textContent=co?'公司名稱 *':'公司';$('#ePhLbl').textContent=co?'公司電話（總機）':'公司電話（含分機）';
   $('#eFollowSec').textContent=co?'跟進與備註':'認識情境與跟進';
   let hint='',hideC=false;
@@ -1670,8 +1706,8 @@ async function openEdit(c,opt={}){
   $('#eCat').innerHTML=CATS.map(x=>`<label><input type="radio" name="category" value="${x}" ${editing.category===x?'checked':''}>${x}</label>`).join('');
   $('#eStatus').innerHTML=STATUSES.map(x=>`<label><input type="radio" name="status" value="${x}" ${editing.status===x?'checked':''}>${x}</label>`).join('');
   $('#eProc').innerHTML=PROCS.map(p=>`<label><input type="checkbox" value="${p}" ${editing.processes.includes(p)?'checked':''}>${p}</label>`).join('');
-  $('#eRole').innerHTML=ROLES.map(x=>`<label><input type="radio" name="role" value="${x}" ${editing.role===x?'checked':''}>${x}</label>`).join('');
   if(EM==='co')f.querySelector('[name=company]').value=editing.company||'';
+  f.querySelector('[name=aka]').value=(editing.aka||[]).join('、');
   paintChecks();paintEditMode();
   const unc=new Set(opt.uncertain||[]);
   $$('#eForm label.f[data-k]').forEach(l=>l.classList.toggle('warn',unc.has(l.dataset.k)));
@@ -1686,6 +1722,7 @@ async function openEdit(c,opt={}){
 }
 async function saveCoEdit(){const f=$('#eForm');
   for(const k of CO_FIELDS)editing[k]=f.querySelector(`[name=${k}]`).value.trim();
+  editing.aka=[...new Set(f.querySelector('[name=aka]').value.split(/[、,，;；\n]/).map(x=>x.trim()).filter(x=>x&&x!==editing.company))];
   if(!editing.company){toast('請填寫公司名稱');f.querySelector('[name=company]').focus();return}
   editing.taxId=editing.taxId.replace(/\D/g,'');
   if(editing.taxId&&!validTaxId(editing.taxId)&&!await confirmBox(`統一編號「${editing.taxId}」的檢查碼對不起來，可能有一個數字看錯了。\n\n還是要儲存嗎？`,{ok:'仍要儲存',cancel:'回去修改'}))return;
@@ -1712,7 +1749,6 @@ async function saveEdit(){
   editing.category=(f.querySelector('[name=category]:checked')||{}).value||'';
   editing.status=(f.querySelector('[name=status]:checked')||{}).value||'';
   editing.processes=$$('#eProc input:checked').map(i=>i.value);
-  editing.role=(f.querySelector('[name=role]:checked')||{}).value||'';
   editing.addresses=$$('#eAddrs .addr-row').map(r=>({label:r.querySelector('[data-al]').value.trim(),address:r.querySelector('[data-aa]').value.trim()})).filter(a=>a.address);
   if(!editing.region)editing.region=findRegion(editing.address)||'';
   const dig=s=>(s||'').replace(/\D/g,'');
@@ -1726,8 +1762,7 @@ async function saveEdit(){
       editing['has'+(s==='front'?'Front':'Back')]=!!v;
     }
     if(slotState.edit.front!==editPhotosOrig.front||!editing.thumb!==!slotState.edit.front)editing.thumb=await makeThumb(slotState.edit.front);
-    await save(editing);
-    const r=await attach(contacts.find(x=>x.id===editing.id)||editing);
+    attaching++;let r;try{await save(editing);r=await attach(contacts.find(x=>x.id===editing.id)||editing)}finally{attaching--}
     closeModal($('#mEdit'));S.sel=editing.id;if(isNarrow()){if(history.state&&history.state.modal)history.replaceState({detail:S.sel},'');else if(!(history.state&&history.state.detail))history.pushState({detail:S.sel},'')}refresh();toast(r.co?(r.moved?`已改到「${r.co.company}」，舊公司的紀錄會保留並標示已離職`:r.isNew?`已儲存，並建立「${r.co.company}」公司`:`已儲存，加入「${r.co.company}」`):'已儲存',3000);
   }catch(e){toast('儲存失敗：'+(e&&e.code==='quota_exceeded'?'雲端空間已滿':(e&&e.message)||'請檢查網路'),4000)}
   finally{btn.disabled=false;btn.textContent='儲存'}
@@ -1917,6 +1952,11 @@ document.addEventListener('click',async e=>{
 });
 $('#bScan').onclick=()=>openScan();
 $('#shGo').onclick=goShare;
+$('#eMerge').onclick=()=>openMerge();
+$('#mgList').addEventListener('click',async e=>{const b=e.target.closest('[data-mg]');if(!b)return;const to=contacts.find(x=>x.id===b.dataset.mg);const from=contacts.find(x=>x.id===editing.id);if(!to||!from)return;
+  if(!await confirmBox(`把「${from.company}」合併到「${to.company}」？\n\n${peopleOf(from).length} 位聯絡人和 ${from.visits.length} 筆拜訪紀錄會搬過去，「${from.company}」會變成「${to.company}」的其他名稱。`,{ok:'合併'}))return;
+  try{const t=await mergeCo(from,to);closeModal($('#mMerge'),true);closeModal($('#mEdit'),true);
+    S.sel=t.id;if(isNarrow())history.replaceState({detail:t.id},'');refresh();toast(`已合併到「${t.company}」`)}catch(_){toast('合併失敗')}});
 hydrateIcons();Theme.set(Theme.get());
 $('#bTheme').onclick=()=>Theme.set(Theme.get()==='dark'?'light':'dark');
 $('#syncBadge').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#syncBadge').click()}});
