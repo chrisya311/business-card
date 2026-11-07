@@ -109,15 +109,17 @@ header .hbtn:active,.nb:active{box-shadow:var(--neuin)}
 .item .r{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
 .item .chev{color:var(--sub);opacity:.55}
 .item .ppl{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.thumb.logo{background:var(--chip);border:1px solid var(--sep);overflow:hidden}
-.thumb.logo.has{background:#fff}
-.thumb.logo img{width:100%;height:100%;object-fit:contain;padding:5px;display:block}
-.dlogo{width:60px;height:60px;border-radius:var(--orrs);flex:none;overflow:hidden;background:#fff;border:1px solid var(--sep)}
-.dlogo img{width:100%;height:100%;object-fit:contain;padding:6px;display:block}
+.thumb.logo,.dlogo{position:relative;overflow:hidden;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.dlogo{width:60px;height:60px;border-radius:var(--orrs);flex:none}
+.thumb.logo .ini{font-size:19px}
+.dlogo .ini{font-size:27px}
+.thumb.logo img,.dlogo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:6px;opacity:0;transition:opacity .2s}
+.thumb.logo.has,.dlogo.has{background:#fff!important}
+.has img{opacity:1}
+.has .ini{display:none}
 .dhead.cohead{flex-wrap:nowrap;align-items:center}
 .cohead .who{min-width:0}
 .cohead h2{font-size:24px}
-.dlogo:not(.has){display:none}
 .lft{display:inline-block;font-size:11px;font-weight:500;color:var(--sub);background:var(--chip);border:1px solid var(--sep);border-radius:8px;padding:0 6px;margin-left:5px;vertical-align:1px}
 .colink{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:3px 10px 3px 12px;font-size:14px;cursor:pointer;max-width:100%}
 .colink span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -805,8 +807,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-12';
+const APP_VERSION='2026.11.07-13';
 const CHANGELOG=[
+  {v:'2026.11.07-13',items:['修正：點進公司或名片有時候畫面是空白的','類別、狀態、角色選了之後，再點同一個就能取消','沒有 logo 的公司改用彩色漸層加公司第一個字']},
   {v:'2026.11.07-12',items:['改成以公司為主：清單一家公司一列，下面小字是這家公司的人（最多 2 位，其他顯示 +N）','拜訪紀錄和跟進日期記在公司，每筆紀錄可以選這次的窗口；私人分類照舊記在人身上','公司頁會依接觸次數排聯絡人（還沒有紀錄時依職稱）；換工作的人在舊公司顯示「已離職」，舊紀錄保留','自動找公司網站的 logo，找不到就留白','分享可以選要給哪些人、附幾筆紀錄、要不要附備註','Excel 匯出改成「公司」、「聯絡人」、「拜訪紀錄」三個工作表']},
   {v:'2026.11.07-11',items:['試刀可以記好幾組條件：按「新增一組條件」會帶入上一組的設定，只要改不同的地方','每組都有刀具、Vc、f、ap、S 轉速、F 進給、冷卻、壽命、結果、備註；按星號標出建議條件','Excel 匯出時每一組條件各佔一列，方便篩選比較；舊的試刀紀錄會自動變成第 1 組']},
   {v:'2026.11.07-10',items:['修正：打開別人分享的名片時，有時會看到舊版頁面，試刀內容沒有顯示']},
@@ -971,8 +974,11 @@ function coDomain(co){const m=String(co.website||'').trim().match(/^(?:https?:\/
   return ''}
 /* logo：用公司網站（或同事 Email 的網域）去找網站圖示；找不到或太小就留白 */
 const logoOK=new Map();
+const LOGO_GRAD=[['#1F6B4E','#7CCBA4'],['#24587A','#79B4D6'],['#5B4A86','#AE97DA'],['#86562A','#E0AE74'],['#7A3B4B','#D98D9F'],['#2E6964','#93D3C8'],['#4D5E2B','#B5C778'],['#3D4F7A','#9AAEE0']];
+function logoBg(co){const n=normCo(co.company)||co.company||'?';let h=0;for(const ch of n)h=(h*31+ch.codePointAt(0))>>>0;const [a,b]=LOGO_GRAD[h%LOGO_GRAD.length];return `background:linear-gradient(135deg,${a},${b})`}
+const logoIni=co=>{const n=String(co.company||'').replace(/^(台灣|臺灣|中華|財團法人)/,'').trim();return esc([...n][0]||'?')};
 function logoHTML(co,cls){const d=coDomain(co);const st=d?logoOK.get(d):false;
-  return `<div class="${cls}${st===true?' has':''}">${d&&st!==false?`<img alt="" data-logo="${esc(d)}" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128" referrerpolicy="no-referrer">`:''}</div>`}
+  return `<div class="${cls}${st===true?' has':''}" style="${logoBg(co)}"><span class="ini">${logoIni(co)}</span>${d&&st!==false?`<img alt="" data-logo="${esc(d)}" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128" referrerpolicy="no-referrer">`:''}</div>`}
 function wireLogos(root){(root||document).querySelectorAll('img[data-logo]').forEach(img=>{const d=img.dataset.logo;
   const ok=()=>{const good=img.naturalWidth>=48;logoOK.set(d,good);if(good)img.parentNode.classList.add('has');else img.remove()};
   const bad=()=>{logoOK.set(d,false);img.remove()};
@@ -1179,7 +1185,8 @@ function afterDetail(c){document.body.classList.add('detail');const tok=++detail
 function renderDetail(){
   const c=contacts.find(x=>x.id===S.sel);
   if(!c){$('#main').innerHTML=`<div class="empty"><div class="big">${ic('card')}</div>從左邊選一家公司或一個人<br><span style="font-size:13px">或按「拍名片」新增</span></div>`;document.body.classList.remove('detail');return}
-  if(isCo(c))renderCompany(c);else renderPerson(c);
+  try{if(isCo(c))renderCompany(c);else renderPerson(c)}
+  catch(e){document.body.classList.add('detail');$('#main').innerHTML=`<div class="dtop"><button class="nb" id="dBack" aria-label="返回">${ic('back')}</button></div><div class="empty"><div class="big">${ic('note')}</div>這一頁顯示不出來<br><span style="font-size:13px">請截圖給開發的人：${esc((e&&e.message)||e)}</span></div>`}
 }
 function renderCompany(co){
   const ppl=sortPeople(co),former=formerOf(co);
@@ -1260,9 +1267,10 @@ function renderPerson(c){
 }
 const isNarrow=()=>window.innerWidth<=820;
 let navDepth=0,afterPop=null;
-function select(id){const was=S.sel;S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;
+function resetSwipe(){document.body.classList.remove('peek');for(const el of [$('#main'),$('.side')]){if(el){el.style.transition='';el.style.transform='';el.style.opacity=''}}}
+function select(id){resetSwipe();const was=S.sel;S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;
   if(isNarrow()){window.scrollTo(0,0);const inDetail=history.state&&history.state.detail;if(!was||!inDetail){navDepth=0;history.pushState({detail:id},'')}else if(was!==id){navDepth++;history.pushState({detail:id},'')}}}
-function closeDetail(){S.sel=null;navDepth=0;document.body.classList.remove('detail');renderList()}
+function closeDetail(){resetSwipe();S.sel=null;navDepth=0;document.body.classList.remove('detail');renderList()}
 function goBack(){if(history.state&&history.state.detail)history.back();else closeDetail()}
 let skipPop=0;
 addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
@@ -1270,7 +1278,8 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
   if(open.length){const m=open[open.length-1];const c=m.querySelector('[data-close]');if(c)c.click();else closeModal(m,true);
     setTimeout(()=>{if(m.classList.contains('on')&&isNarrow())history.pushState({modal:m.id},'')},300);return}
   const st=history.state&&history.state.detail;
-  if(st&&st!==S.sel&&contacts.some(c=>c.id===st)){navDepth=Math.max(0,navDepth-1);S.sel=st;renderList();renderDetail();$('#main').scrollTop=0;if(afterPop){const f=afterPop;afterPop=null;f()}return}
+  if(st&&!contacts.some(c=>c.id===st)){if(S.sel)closeDetail();return}
+  if(st&&st!==S.sel){navDepth=Math.max(0,navDepth-1);S.sel=st;renderList();renderDetail();$('#main').scrollTop=0;if(afterPop){const f=afterPop;afterPop=null;f()}return}
   if(S.sel&&!st)closeDetail()});
 /* swipe right to go back (phone) — iOS 式互動轉場：詳細頁跟著手指走，清單從左邊稍微滑入並變亮 */
 (()=>{let x0=0,y0=0,t0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0;
@@ -1631,6 +1640,8 @@ function paintEditMode(){const f=$('#eForm');const co=EM==='co';
     else if(name&&cat==='私人')hint='分類是「私人」，紀錄和跟進日期記在這個人身上，不會建立公司。'}
   $$('#eForm [data-m=c]').forEach(el=>el.hidden=hideC);
   const h=$('#eHint');h.hidden=!hint;h.innerHTML=hint}
+$('#eForm').addEventListener('click',e=>{const l=e.target.closest('.checks label');if(!l)return;const i=l.querySelector('input[type=radio]');if(!i)return;
+  e.preventDefault();i.checked=!i.checked;paintChecks();i.dispatchEvent(new Event('change',{bubbles:true}))});
 $('#eForm').addEventListener('input',e=>{if(e.target.name==='company'||e.target.name==='taxId')paintEditMode()});
 $('#eForm').addEventListener('change',e=>{if(e.target.name==='category')paintEditMode()});
 /* 存好一個人之後：接到對的公司（同統編或同名直接加入；很像的問一下；換工作就換公司，舊紀錄留在舊公司） */
