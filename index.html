@@ -108,6 +108,32 @@ header .hbtn:active,.nb:active{box-shadow:var(--neuin)}
 .item .c{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .item .r{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
 .item .chev{color:var(--sub);opacity:.55}
+.item .ppl{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.thumb.logo{background:var(--chip);border:1px solid var(--sep);overflow:hidden}
+.thumb.logo.has{background:#fff}
+.thumb.logo img{width:100%;height:100%;object-fit:contain;padding:5px;display:block}
+.dlogo{width:60px;height:60px;border-radius:var(--orrs);flex:none;overflow:hidden;background:#fff;border:1px solid var(--sep)}
+.dlogo img{width:100%;height:100%;object-fit:contain;padding:6px;display:block}
+.dhead.cohead{flex-wrap:nowrap;align-items:center}
+.cohead .who{min-width:0}
+.cohead h2{font-size:24px}
+.dlogo:not(.has){display:none}
+.lft{display:inline-block;font-size:11px;font-weight:500;color:var(--sub);background:var(--chip);border:1px solid var(--sep);border-radius:8px;padding:0 6px;margin-left:5px;vertical-align:1px}
+.colink{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:3px 10px 3px 12px;font-size:14px;cursor:pointer;max-width:100%}
+.colink span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.colink svg{width:14px;height:14px;opacity:.6;flex:none}
+.pp .n{font-size:15px}
+.pp .vc{font-size:12px;color:var(--sub);white-space:nowrap}
+.pp.gone{opacity:.6}
+.wh{font-size:13px;color:var(--sub);margin:4px 0 2px}
+.wh b{font-weight:600;color:var(--ink)}
+.vco{font-size:12px}
+.ehint{font-size:13px;color:var(--sub);background:var(--chip);border-radius:12px;padding:8px 12px}
+.shopt{display:flex;flex-direction:column;gap:10px}
+.shopt .sec{margin-top:6px}
+.shrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;cursor:pointer;background:var(--field)}
+.shrow input{width:20px;height:20px;accent-color:var(--pri);flex:none}
+.shrow small{color:var(--sub);display:block;font-size:12.5px}
 .item .chev svg{width:16px;height:16px}
 
 .badge{display:inline-block;font-size:12px;font-weight:500;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--sub);white-space:nowrap;line-height:1.35}
@@ -400,7 +426,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
     <div class="banner">
       <button class="od glass" data-f="overdue"><b id="nOd">0</b>逾期跟進</button>
       <button class="wk glass" data-f="week"><b id="nWk">0</b>7 天內</button>
-      <button class="tot glass" data-f="all"><b id="nAll">0</b>全部名片</button>
+      <button class="tot glass" data-f="all"><b id="nAll">0</b>全部</button>
     </div>
     <div class="filters">
       <div class="srow"><input class="search" id="q" type="search" placeholder="搜尋姓名、公司、電話、紀錄" aria-label="搜尋姓名、公司、電話、拜訪內容"><button class="nb fbtn" id="bFilter" aria-label="篩選與排序" aria-expanded="false" title="篩選與排序"><i data-ic="sliders"></i><span class="fdot"></span></button></div>
@@ -521,24 +547,25 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
     <div class="mbody">
       <div class="fgrid" id="eForm">
         <div class="aiNote" id="aiNote" hidden></div>
-        <div class="sec">名片照片</div>
-        <div class="full pbox" id="editSlots">
+        <div class="sec" data-m="p">名片照片</div>
+        <div class="full pbox" id="editSlots" data-m="p">
           <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面</div><div class="pb"><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
           <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）</div><div class="pb"><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
         </div>
 
-        <div class="sec">基本資料</div>
-        <label class="f" data-k="name"><span>姓名 *</span><input type="text" name="name" required></label>
-        <label class="f" data-k="nameEn"><span>英文名</span><input type="text" name="nameEn"></label>
-        <label class="f" data-k="company"><span>公司</span><input type="text" name="company" list="dlCompany"></label>
+        <div class="sec" id="eBasic">基本資料</div>
+        <label class="f" data-k="name" data-m="p"><span>姓名 *</span><input type="text" name="name" required></label>
+        <label class="f" data-k="nameEn" data-m="p"><span>英文名</span><input type="text" name="nameEn"></label>
+        <label class="f" data-k="company"><span id="eCoLbl">公司</span><input type="text" name="company" list="dlCompany"></label>
         <label class="f" data-k="taxId"><span>統一編號</span><input type="text" name="taxId" inputmode="numeric" maxlength="8" placeholder="8 位數字"></label>
-        <label class="f" data-k="title"><span>職稱</span><input type="text" name="title"></label>
-        <label class="f" data-k="dept"><span>部門</span><input type="text" name="dept"></label>
+        <label class="f" data-k="title" data-m="p"><span>職稱</span><input type="text" name="title"></label>
+        <label class="f" data-k="dept" data-m="p"><span>部門</span><input type="text" name="dept"></label>
 
         <div class="sec">聯絡方式</div>
-        <label class="f" data-k="mobile"><span>手機</span><input type="tel" name="mobile"></label>
-        <label class="f" data-k="phone"><span>公司電話（含分機）</span><input type="tel" name="phone" placeholder="例：04-2359-1234 #101"></label>
-        <label class="f" data-k="email"><span>Email</span><input type="email" name="email" autocapitalize="off"></label>
+        <div class="f full" id="eRoleBox" data-m="p"><label class="f"><span>在公司的角色（選填）</span></label><div class="checks" id="eRole"></div></div>
+        <label class="f" data-k="mobile" data-m="p"><span>手機</span><input type="tel" name="mobile"></label>
+        <label class="f" data-k="phone"><span id="ePhLbl">公司電話（含分機）</span><input type="tel" name="phone" placeholder="例：04-2359-1234 #101"></label>
+        <label class="f" data-k="email" data-m="p"><span>Email</span><input type="email" name="email" autocapitalize="off"></label>
         <label class="f" data-k="fax"><span>傳真</span><input type="tel" name="fax"></label>
         <label class="f full" data-k="address"><span>地址（主要）</span><input type="text" name="address"></label>
         <div class="f full"><div class="addrs" id="eAddrs"></div><button type="button" class="btn sm" id="eAddAddr" style="margin-top:8px;align-self:flex-start">新增其他地址（廠區、分公司…）</button></div>
@@ -546,14 +573,15 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
         <label class="f" data-k="website"><span>網站／LINE ID</span><input type="text" name="website" autocapitalize="off"></label>
 
         <div class="sec">分類</div>
+        <div class="full ehint" id="eHint" hidden></div>
         <div class="f full"><label class="f"><span>類別</span></label><div class="checks" id="eCat"></div></div>
-        <div class="f full"><label class="f"><span>狀態</span></label><div class="checks" id="eStatus"></div></div>
-        <div class="f full"><label class="f"><span>加工類型（可複選）</span></label><div class="checks" id="eProc"></div></div>
-        <label class="f full"><span>目前使用的刀具品牌</span><input type="text" name="brands" list="dlBrands" placeholder="例：Sandvik、Mitsubishi"></label>
+        <div class="f full" data-m="c"><label class="f"><span>狀態</span></label><div class="checks" id="eStatus"></div></div>
+        <div class="f full" data-m="c"><label class="f"><span>加工類型（可複選）</span></label><div class="checks" id="eProc"></div></div>
+        <label class="f full" data-m="c"><span>目前使用的刀具品牌</span><input type="text" name="brands" list="dlBrands" placeholder="例：Sandvik、Mitsubishi"></label>
 
-        <div class="sec">認識情境與跟進</div>
-        <label class="f"><span>在哪裡／怎麼認識</span><input type="text" name="metAt" placeholder="例：2026/10 台中工具機展"></label>
-        <label class="f"><span>下次跟進日期</span><input type="date" name="nextFollow"></label>
+        <div class="sec" id="eFollowSec">認識情境與跟進</div>
+        <label class="f" data-m="p"><span>在哪裡／怎麼認識</span><input type="text" name="metAt" placeholder="例：2026/10 台中工具機展"></label>
+        <label class="f" data-m="c"><span>下次跟進日期</span><input type="date" name="nextFollow"></label>
         <label class="f full"><span>備註</span><textarea name="notes" placeholder="例：主要做鋁件 CNC，在找耐用的銑刀片"></textarea></label>
       </div>
     </div>
@@ -573,6 +601,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
       <div class="fgrid">
         <label class="f"><span>日期</span><input type="date" id="vDate"></label>
         <label class="f"><span>類型</span><select id="vType"></select></label>
+        <div class="f full" id="vWhoBox" hidden><span class="fl">窗口（這次跟誰聯絡，可複選）</span><div class="checks" id="vWho"></div><input type="text" id="vOther" placeholder="其他人（沒有名片的，例：現場師傅老陳）" style="margin-top:8px"></div>
         <div class="full" id="vTrial" hidden>
           <div class="sec" style="border-top:0;padding-top:4px;margin-bottom:10px">試刀資料</div>
           <div class="fgrid">
@@ -596,6 +625,15 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 </div>
 <datalist id="dlMat"></datalist>
 
+<!-- share chooser -->
+<div class="modal" id="mShare">
+  <div class="mbox" style="max-width:520px">
+    <div class="mhead"><h2 id="shTitle">分享</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
+    <div class="mbody"><div class="shopt" id="shOpts"></div></div>
+    <div class="mfoot"><button class="btn" data-close>取消</button><button class="btn pri" id="shGo"><i data-ic="share"></i>產生連結</button></div>
+  </div>
+</div>
+
 <!-- export modal -->
 <div class="modal" id="mExport">
   <div class="mbox" style="max-width:560px">
@@ -605,7 +643,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
         <select id="xScope"><option value="all">全部名片</option><option value="filtered">只匯出目前清單（套用搜尋／篩選）</option></select>
       </label>
       <div class="menu" id="xMenu">
-        <button class="opt" data-x="xlsx"><span class="ic"><i data-ic="table"></i></span><span><b>Excel（給 Microsoft 365）</b><small>一個檔案兩個工作表：「客戶名片」和「拜訪紀錄」。上傳到 OneDrive／SharePoint 就能跟同事共用；欄位跟 Lists 範本一樣。</small></span></button>
+        <button class="opt" data-x="xlsx"><span class="ic"><i data-ic="table"></i></span><span><b>Excel（給 Microsoft 365）</b><small>一個檔案三個工作表：「公司」、「聯絡人」和「拜訪紀錄」（含每次的窗口）。上傳到 OneDrive／SharePoint 就能跟同事共用。</small></span></button>
         <button class="opt" data-x="outlook"><span class="ic"><i data-ic="mail"></i></span><span><b>Outlook 聯絡人（CSV）</b><small>新版 Outlook／網頁版：左側「人員」→「匯入連絡人」→ 選這個檔案。</small></span></button>
         <button class="opt" data-x="json"><span class="ic"><i data-ic="save"></i></span><span><b>完整備份（.json，含照片）</b><small>資料只存在這台裝置，請每個月備份一次。iPhone 會跳出分享選單，選「儲存到檔案」。</small></span></button>
       </div>
@@ -674,6 +712,8 @@ function trialLines(t){if(!t)return [];const L=[];
   if(t.surf)L.push(t.surf);return L}
 const resultCls=r=>({成功:'cat-客戶',持平:'wk',失敗:'od'})[r]||'';
 const COMPOUND=['張簡','范姜','張廖','歐陽','司馬','諸葛','上官','東方','皇甫','慕容','令狐','周黃','江謝','陳黃','簡李','司徒','夏侯','尉遲','公孫'];
+const ROLES=['決策者','採購','技術／工程','現場','其他'];
+const CO_FIELDS=['company','taxId','phone','fax','address','region','website','brands','nextFollow','notes'];
 const FIELDS=['name','nameEn','company','taxId','title','dept','mobile','phone','fax','email','address','region','website','brands','metAt','nextFollow','notes'];
 
 /* ---------- utils ---------- */
@@ -747,7 +787,9 @@ const findRegion=a=>a?REGIONS.find(r=>a.includes(r)||a.includes(r.replace('台',
 function toast(msg,ms=2600){const t=$('#toast');t.textContent=noEmoji(msg);t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),ms)}
 
 /* in-page dialogs (alert/confirm/prompt are blocked here) */
-function dialog(msg,{ok='確定',cancel='取消',danger=false,text=null}={}){
+let dlgQ=Promise.resolve();
+function dialog(msg,o){const p=dlgQ.then(()=>dialog1(msg,o));dlgQ=p.catch(()=>{});return p}
+function dialog1(msg,{ok='確定',cancel='取消',danger=false,text=null}={}){
   return new Promise(res=>{
     const d=$('#dlg');$('#dlgMsg').textContent=noEmoji(msg);
     const ta=$('#dlgText');ta.hidden=text==null;if(text!=null){ta.value=text;setTimeout(()=>{ta.focus();ta.select()},50)}
@@ -763,8 +805,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.07-11';
+const APP_VERSION='2026.11.07-12';
 const CHANGELOG=[
+  {v:'2026.11.07-12',items:['改成以公司為主：清單一家公司一列，下面小字是這家公司的人（最多 2 位，其他顯示 +N）','拜訪紀錄和跟進日期記在公司，每筆紀錄可以選這次的窗口；私人分類照舊記在人身上','公司頁會依接觸次數排聯絡人（還沒有紀錄時依職稱）；換工作的人在舊公司顯示「已離職」，舊紀錄保留','自動找公司網站的 logo，找不到就留白','分享可以選要給哪些人、附幾筆紀錄、要不要附備註','Excel 匯出改成「公司」、「聯絡人」、「拜訪紀錄」三個工作表']},
   {v:'2026.11.07-11',items:['試刀可以記好幾組條件：按「新增一組條件」會帶入上一組的設定，只要改不同的地方','每組都有刀具、Vc、f、ap、S 轉速、F 進給、冷卻、壽命、結果、備註；按星號標出建議條件','Excel 匯出時每一組條件各佔一列，方便篩選比較；舊的試刀紀錄會自動變成第 1 組']},
   {v:'2026.11.07-10',items:['修正：打開別人分享的名片時，有時會看到舊版頁面，試刀內容沒有顯示']},
   {v:'2026.11.07-9',items:['拍名片、編輯、拜訪紀錄等全螢幕頁面，右滑返回也改成跟 iPhone 一樣的效果；從螢幕最左邊滑也能正常關閉']},
@@ -877,7 +920,7 @@ const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join(
 const mapLink=a=>`<a class="btn sm" style="margin-left:6px;vertical-align:middle" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">${ic('map')}地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    kind:'',companyId:'',role:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
@@ -885,7 +928,7 @@ function normalize(c){
   o.addresses=(Array.isArray(o.addresses)?o.addresses:[]).map(a=>({label:String(a&&a.label||'').trim(),address:String(a&&a.address||'').trim()})).filter(a=>a.address);
   if(!o.photoHash||typeof o.photoHash!=='object')o.photoHash={};
   if(!Array.isArray(o.deletedVisits))o.deletedVisits=[];
-  o.visits=(Array.isArray(o.visits)?o.visits:[]).map(v=>({id:v.id||uid(),date:v.date||'',type:v.type||'拜訪',content:v.content||'',next:v.next||'',updated:v.updated||'',trial:cleanTrial(v.trial),photos:(Array.isArray(v.photos)?v.photos:[]).filter(x=>x&&x.id).map(x=>x.d?{id:x.id,h:x.h||'',d:x.d}:{id:x.id,h:x.h||''})}));
+  o.visits=(Array.isArray(o.visits)?o.visits:[]).map(v=>({id:v.id||uid(),date:v.date||'',type:v.type||'拜訪',content:v.content||'',next:v.next||'',updated:v.updated||'',trial:cleanTrial(v.trial),who:Array.isArray(v.who)?v.who.filter(Boolean):[],whoN:Array.isArray(v.whoN)?v.whoN:[],other:v.other||'',photos:(Array.isArray(v.photos)?v.photos:[]).filter(x=>x&&x.id).map(x=>{const p={id:x.id,h:x.h||''};if(x.o)p.o=x.o;if(x.d)p.d=x.d;return p})}));
   if(!Array.isArray(o.deletedPhotos))o.deletedPhotos=[];
   if(!o.created)o.created=new Date().toISOString();
   if(!o.updated)o.updated=o.created;
@@ -894,6 +937,92 @@ function normalize(c){
 }
 async function save(c){c.updated=new Date().toISOString();await Store.put(c);const i=contacts.findIndex(x=>x.id===c.id);if(i>=0)contacts[i]=c;else contacts.push(c);Sync.dirty()}
 
+/* ---------- 公司與聯絡人 ----------
+   公司也是一筆資料（kind:'co'），聯絡人用 companyId 連到公司。
+   拜訪紀錄記在公司上，每筆用 who 記下這次的窗口；私人（或沒有公司）的人，紀錄和跟進記在自己身上。 */
+const isCo=c=>!!c&&c.kind==='co';
+const coOf=p=>p&&p.companyId?contacts.find(x=>x.id===p.companyId&&isCo(x))||null:null;
+const peopleOf=co=>contacts.filter(p=>!isCo(p)&&p.companyId===co.id);
+const linkable=p=>!isCo(p)&&!!(p.company||'').trim()&&p.category!=='私人';
+const isRow=c=>isCo(c)||!coOf(c);
+const rowTitle=c=>isCo(c)?c.company:c.name;
+function normCo(s){return String(s||'').toLowerCase().replace(/[（(]股[)）]/g,'').replace(/[\s　()（）．.,，、\-]/g,'').replace(/股份有限公司|有限公司|企業社|工業社|實業社|股份|公司$/g,'').replace(PLANT_RE,'')}
+const PLANT_RE=/((台北|臺北|新北|桃園|新竹|苗栗|台中|臺中|彰化|南投|雲林|嘉義|台南|臺南|高雄|屏東|宜蘭|花蓮|台東|臺東|基隆|林口|觀音|中壢|楊梅|大園|湖口|竹北|大雅|太平|大里|鹿港|和美|斗六|永康|仁武|岡山|路竹|樹林|五股|土城|三重|新莊|泰山|龜山|平鎮|大甲|清水|潭子|豐原|神岡|烏日|霧峰|南科|中科|竹科)(總?廠|廠區|分公司|營業所|辦事處)|第?[一二三四五六七八九十\d]+廠|廠區|分公司|營業所|辦事處)$/;
+function findCo(name,taxId){const t=(taxId||'').replace(/\D/g,'');
+  if(validTaxId(t)){const byT=contacts.find(x=>isCo(x)&&x.taxId===t);if(byT)return byT}
+  const n=normCo(name);return n?contacts.find(x=>isCo(x)&&normCo(x.company)===n&&!(validTaxId(t)&&validTaxId(x.taxId)&&x.taxId!==t))||null:null}
+function fuzzyCo(name){const n=normCo(name);if(n.length<2)return null;
+  return contacts.find(x=>isCo(x)&&(()=>{const m=normCo(x.company);return m.length>=2&&m!==n&&(m.includes(n)||n.includes(m))})())||null}
+const TITLE_RANK=[['董事長',0],['總裁',1],['執行長',1],['副總',4],['總經理',2],['特助',5],['協理',6],['副廠長',8],['廠長',7],['總監',7],['副理',10],['經理',9],['襄理',11],['課長',12],['主任',13],['組長',14],['領班',15],['工程師',16],['專員',17],['業務',18],['助理',19]];
+const titleRank=t=>{t=t||'';const r=TITLE_RANK.find(([k])=>t.includes(k));return r?r[1]:50};
+const visitN=(p,co)=>co.visits.filter(v=>v.who.includes(p.id)).length;
+function sortPeople(co,list){list=list||peopleOf(co);const hasV=co.visits.some(v=>v.who.length);const cmp=(a,b)=>a.localeCompare(b,'zh-Hant');
+  return [...list].sort((a,b)=>(hasV?visitN(b,co)-visitN(a,co):0)||titleRank(a.title)-titleRank(b.title)||cmp(a.name,b.name))}
+function formerOf(co){const now=new Set(peopleOf(co).map(p=>p.id));const m=new Map();
+  co.visits.forEach(v=>v.who.forEach((id,i)=>{if(!now.has(id)&&!m.has(id)){const p=contacts.find(x=>x.id===id);m.set(id,{id,name:p?p.name:(v.whoN[i]||'?'),p})}}));return [...m.values()]}
+function whoHTML(v,co){const parts=v.who.map((id,i)=>{const p=contacts.find(x=>x.id===id);const n=p?p.name:(v.whoN[i]||'');if(!n)return '';
+    return `<b>${esc(n)}</b>${p&&co&&p.companyId!==co.id?'<span class="lft">已離職</span>':''}`}).filter(Boolean);
+  if(v.other)parts.push(esc(v.other));return parts.length?`<div class="wh">窗口：${parts.join('、')}</div>`:''}
+const coPhone=p=>String(p||'').split(/[#＃]|轉|分機|ext/i)[0].trim();
+const FREE_MAIL=/(^|\.)(gmail|yahoo|ymail|hotmail|outlook|msn|live|icloud|me|mac|hinet|seed|pchome|kimo|aol|qq|163|126|sina|naver|proton)\./i;
+function coDomain(co){const m=String(co.website||'').trim().match(/^(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,})/i);
+  if(m&&!/(^|\.)(line\.me|facebook\.com|fb\.com|instagram\.com)$/i.test(m[1]))return m[1].toLowerCase();
+  for(const p of peopleOf(co)){const d=String(p.email||'').split('@')[1];if(d&&/\./.test(d)&&!FREE_MAIL.test(d))return d.trim().toLowerCase()}
+  return ''}
+/* logo：用公司網站（或同事 Email 的網域）去找網站圖示；找不到或太小就留白 */
+const logoOK=new Map();
+function logoHTML(co,cls){const d=coDomain(co);const st=d?logoOK.get(d):false;
+  return `<div class="${cls}${st===true?' has':''}">${d&&st!==false?`<img alt="" data-logo="${esc(d)}" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128" referrerpolicy="no-referrer">`:''}</div>`}
+function wireLogos(root){(root||document).querySelectorAll('img[data-logo]').forEach(img=>{const d=img.dataset.logo;
+  const ok=()=>{const good=img.naturalWidth>=48;logoOK.set(d,good);if(good)img.parentNode.classList.add('has');else img.remove()};
+  const bad=()=>{logoOK.set(d,false);img.remove()};
+  if(img.complete&&img.naturalWidth)ok();else{img.onload=ok;img.onerror=bad}})}
+function fillGaps(co,p){
+  for(const k of ['taxId','fax','address','region','brands','status','category'])if(!co[k]&&p[k])co[k]=p[k];
+  if(!co.phone&&p.phone)co.phone=coPhone(p.phone);
+  if(!co.website&&p.website&&/\./.test(p.website)&&!/line/i.test(p.website))co.website=p.website;
+  const have=new Set(co.addresses.map(a=>a.address));if(p.address&&co.address&&p.address!==co.address&&!have.has(p.address)){co.addresses=[...co.addresses,{label:'',address:p.address}];have.add(p.address)}
+  co.addresses=[...co.addresses,...(p.addresses||[]).filter(a=>!have.has(a.address)&&a.address!==co.address)];
+  co.processes=[...new Set([...co.processes,...(p.processes||[])])];
+  if(p.nextFollow&&(!co.nextFollow||p.nextFollow<co.nextFollow))co.nextFollow=p.nextFollow;
+  if(!co.region)co.region=findRegion(co.address)||'';
+}
+function newCoFor(p){const t=(p.taxId||'').replace(/\D/g,'');
+  let id='co_'+(validTaxId(t)?'t'+t:hashStr(normCo(p.company)));if(contacts.some(x=>x.id===id))id='co_'+uid();
+  return normalize({id,kind:'co',company:(p.company||'').trim(),created:p.created})}
+/* 把一個人接到公司：他自己身上的拜訪紀錄搬到公司，跟進日期也交給公司 */
+async function linkTo(p,co,noFill){
+  co={...co,visits:[...co.visits],addresses:[...co.addresses],processes:[...co.processes]};
+  if(!noFill)fillGaps(co,p);
+  const moved=p.visits.map(v=>({...v,who:v.who.length?v.who:[p.id],whoN:v.whoN.length?v.whoN:[p.name],photos:(v.photos||[]).map(ph=>ph.o?ph:{...ph,o:p.id})}));
+  const ids=new Set(co.visits.map(v=>v.id));co.visits.push(...moved.filter(v=>!ids.has(v.id)));
+  co.deletedVisits=(co.deletedVisits||[]).filter(id=>!moved.some(v=>v.id===id));
+  await save(co);
+  const np={...p,companyId:co.id,company:co.company,visits:[],nextFollow:'',deletedVisits:[...new Set([...(p.deletedVisits||[]),...p.visits.map(v=>v.id)])]};
+  await save(np);return [np,co]}
+let linking=null;
+function linkAll(){if(linking)return linking;linking=(async()=>{let n=0;const made=new Map();
+  const fresh=co=>co&&(made.get(co.id)||co);
+  for(const p0 of contacts.filter(x=>!isCo(x))){const p=contacts.find(x=>x.id===p0.id)||p0;
+    const cur=fresh(coOf(p)||(p.companyId&&made.get(p.companyId)));
+    try{
+      if(cur){if(p.visits.length||p.nextFollow){const [,co]=await linkTo(p,cur);made.set(co.id,co);n++}continue}
+      if(!linkable(p))continue;
+      let co=fresh(findCo(p.company,p.taxId));
+      if(!co){const nc=newCoFor(p);co=made.get(nc.id)||[...made.values()].find(x=>normCo(x.company)===normCo(p.company))||nc}
+      const [,saved]=await linkTo(p,co);made.set(saved.id,saved);n++}catch(_){}}
+  return n})().finally(()=>{linking=null});return linking}
+const needsLink=()=>contacts.some(p=>!isCo(p)&&(coOf(p)?p.visits.length>0:linkable(p)));
+async function maybeMigrate(){
+  if(!needsLink())return;
+  let asked=false;try{asked=!!localStorage.getItem('mpgj.coMigrated')}catch(_){}
+  if(!asked){try{localStorage.setItem('mpgj.coMigrated','1')}catch(_){}
+    const has=contacts.filter(p=>!isCo(p)&&linkable(p)).length;
+    if(has&&await confirmBox(`名片管家改成「以公司為主」了：\n\n• 清單改成一家公司一列，下面小字是這家公司的人\n• 拜訪紀錄和跟進日期記在公司，每筆紀錄可以選這次的窗口\n• 私人（沒有公司）的人照舊記在自己身上\n\n這次會自動把 ${has} 張名片整理到各自的公司。建議先下載一份完整備份再整理。`,{ok:'先下載備份',cancel:'直接整理'})){
+      try{await exportJSON(contacts)}catch(_){}}}
+  const n=await linkAll();if(n&&!asked){refresh();toast('已整理成以公司為主',3000)}else if(n)refresh();
+}
+
 /* ---------- follow-up ---------- */
 function followState(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c.nextFollow);return d<0?'od':d<=7?'wk':'ok'}
 function followText(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c.nextFollow);return d<0?`逾期 ${-d} 天`:d===0?'今天跟進':d===1?'明天跟進':`${d} 天後`}
@@ -901,10 +1030,11 @@ const lastVisit=c=>[...c.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||
 
 /* ---------- filtering ---------- */
 const S={q:'',cat:'',region:'',proc:'',sort:'follow',follow:'all',sel:null};
-const haystack=c=>[c.name,c.nameEn,c.company,c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...c.visits.map(v=>v.content+' '+v.next)].join(' ').toLowerCase();
+const haystack1=c=>[c.name,c.nameEn,c.company,c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
+const haystack=c=>isCo(c)?[haystack1(c),...peopleOf(c).map(haystack1)].join(' '):haystack1(c);
 function filtered(){
   const q=S.q.trim().toLowerCase(),qd=q.replace(/[-\s]/g,'');
-  const arr=contacts.filter(c=>{
+  const arr=contacts.filter(isRow).filter(c=>{
     if(S.cat&&c.category!==S.cat)return false;
     if(S.region&&c.region!==S.region)return false;
     if(S.proc&&!c.processes.includes(S.proc))return false;
@@ -912,21 +1042,22 @@ function filtered(){
     if(S.follow==='overdue'&&fs!=='od')return false;
     if(S.follow==='week'&&fs!=='wk')return false;
     if(q){const h=haystack(c);const phoneHit=qd.length>=3&&/^\d+$/.test(qd)&&[c.mobile,c.phone,c.fax].some(p=>(p||'').replace(/\D/g,'').includes(qd));
-      if(!phoneHit&&!q.split(/\s+/).filter(Boolean).every(w=>h.includes(w)))return false}
+      const ppl=isCo(c)?peopleOf(c):[];const phoneHit2=phoneHit||(qd.length>=3&&/^\d+$/.test(qd)&&ppl.some(p=>[p.mobile,p.phone,p.fax].some(x=>(x||'').replace(/\D/g,'').includes(qd))));
+      if(!phoneHit2&&!q.split(/\s+/).filter(Boolean).every(w=>h.includes(w)))return false}
     return true;
   });
   const cmp=(a,b)=>a.localeCompare(b,'zh-Hant');
   return arr.sort((a,b)=>{switch(S.sort){
     case 'updated':return (b.updated||'').localeCompare(a.updated||'');
-    case 'company':return cmp(a.company||'~',b.company||'~')||cmp(a.name,b.name);
-    case 'name':return cmp(a.name,b.name);
+    case 'company':return cmp(a.company||'~',b.company||'~')||cmp(rowTitle(a),rowTitle(b));
+    case 'name':return cmp(rowTitle(a)||'~',rowTitle(b)||'~');
     default:return (a.nextFollow||'9999').localeCompare(b.nextFollow||'9999')||(b.updated||'').localeCompare(a.updated||'')}});
 }
 
 /* ---------- render list ---------- */
 function renderList(){
-  let od=0,wk=0;contacts.forEach(c=>{const f=followState(c);if(f==='od')od++;else if(f==='wk')wk++});
-  $('#nOd').textContent=od;$('#nWk').textContent=wk;$('#nAll').textContent=contacts.length;
+  const rows=contacts.filter(isRow);let od=0,wk=0;rows.forEach(c=>{const f=followState(c);if(f==='od')od++;else if(f==='wk')wk++});
+  $('#nOd').textContent=od;$('#nWk').textContent=wk;$('#nAll').textContent=rows.length;
   $$('.banner button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.follow&&S.follow!=='all'));
   const used=new Set(contacts.map(c=>c.category).filter(Boolean));
   $('#catChips').innerHTML=['',...CATS.filter(c=>used.has(c)||c===S.cat)].map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c||'全部類別'}</button>`).join('');
@@ -934,13 +1065,22 @@ function renderList(){
   $('#fRegion').innerHTML='<option value="">所有地區</option>'+usedR.map(r=>`<option ${S.region===r?'selected':''}>${esc(r)}</option>`).join('');
   const usedP=PROCS.filter(p=>contacts.some(c=>c.processes.includes(p)));
   $('#fProc').innerHTML='<option value="">所有加工</option>'+usedP.map(p=>`<option ${S.proc===p?'selected':''}>${esc(p)}</option>`).join('');
-  $('#dlCompany').innerHTML=[...new Set(contacts.map(c=>c.company).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
+  $('#dlCompany').innerHTML=[...new Set(contacts.filter(c=>isCo(c)||!c.companyId).map(c=>c.company).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
   const arr=filtered();
   $('#bFilter').classList.toggle('on',!!(S.region||S.proc||S.sort!=='follow'));
-  $('#count').textContent=arr.length===contacts.length?`共 ${arr.length} 張名片`:`顯示 ${arr.length} ／ ${contacts.length} 張`;
+  const nCo=rows.filter(isCo).length,nP=contacts.filter(c=>!isCo(c)).length;
+  $('#count').textContent=arr.length===rows.length?`${nCo} 家公司・${nP} 位聯絡人`:`顯示 ${arr.length} ／ ${rows.length} 筆`;
   if(!contacts.length){$('#list').innerHTML=`<div class="empty" style="margin-top:30px"><div class="big">${ic('card')}</div>還沒有名片<br><button class="bigbtn" data-scan>${ic('cam')}拍第一張名片</button></div>`;return}
   if(!arr.length){$('#list').innerHTML=`<div class="empty" style="margin-top:40px">找不到符合條件的名片</div>`;return}
   $('#list').innerHTML='<div class="grp glass">'+arr.map(c=>{const fs=followState(c);
+    if(isCo(c)){const ppl=sortPeople(c);const sel=S.sel===c.id||ppl.some(p=>p.id===S.sel);
+      return `<div class="item co ${sel?'sel':''}" data-id="${c.id}">
+      ${logoHTML(c,'thumb logo')}
+      <div class="t"><div class="n">${esc(c.company)}</div>
+        <div class="ppl">${ppl.length?ppl.slice(0,2).map(p=>esc(p.name)).join('・')+(ppl.length>2?` +${ppl.length-2}`:''):'（還沒有聯絡人）'}${c.region?' · '+esc(c.region):''}</div></div>
+      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge cat-${esc(c.category)}">${esc(c.category)}</span>`:''}</div>
+      <span class="chev">${ic('chev')}</span>
+    </div>`}
     return `<div class="item ${S.sel===c.id?'sel':''}" data-id="${c.id}">
       <div class="thumb" style="${c.thumb?`background-image:url('${c.thumb}')`:''}">${c.thumb?'':esc((c.name||'?').trim().charAt(0))}</div>
       <div class="t"><div class="n">${esc(c.name)}${c.title?` <small>${esc(c.title)}</small>`:''}</div>
@@ -948,6 +1088,7 @@ function renderList(){
       <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge cat-${esc(c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}).join('')+'</div>';
+  wireLogos($('#list'));
 }
 
 /* ---------- render detail ---------- */
@@ -962,17 +1103,48 @@ async function packShare(obj){
   let bin='';for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));
   return tag+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
-function shareData(c){
-  const o={n:c.name,ne:c.nameEn,co:c.company,ti:c.title,de:c.dept,mo:c.mobile,ph:c.phone,fx:c.fax,em:c.email,ad:c.address,
-    as:(c.addresses||[]).filter(a=>a.address).map(a=>[a.label||'',a.address]),ws:c.website,tx:c.taxId,rg:c.region,pr:c.processes,br:c.brands,mt:c.metAt,no:c.notes,
-    v:[...(c.visits||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(v=>{const r=[v.date||'',v.type||'',v.content||'',v.next||''];const tl=trialLines(v.trial);if(tl.length)r.push(tl.join('\n'));return r}),
-    x:Math.floor(Date.now()/1000)+SHARE_HOURS*3600};
-  for(const k in o){const v=o[k];if(v===''||v==null||(Array.isArray(v)&&!v.length))delete o[k]}
-  return o;
+const SH={rec:null};
+function personVisits(p){const co=coOf(p);if(!co&&!p.companyId)return p.visits.map(v=>({v,o:p,co:null}));
+  const out=[];for(const r of contacts)if(isCo(r))for(const v of r.visits)if(v.who.includes(p.id))out.push({v,o:r,co:r});
+  for(const v of p.visits)out.push({v,o:p,co:null});return out}
+const byDate=(a,b)=>((b.v||b).date||'').localeCompare(((a.v||a).date||''));
+function visitRow(v,co){const r=[v.date||'',v.type||'',v.content||'',v.next||''];const tl=trialLines(v.trial);const w=co?[...v.who.map((id,i)=>{const p=contacts.find(x=>x.id===id);return (p?p.name:v.whoN[i]||'')+(p&&p.companyId!==co.id?'（已離職）':'')}).filter(Boolean),...(v.other?[v.other]:[])].join('、'):'';
+  if(tl.length||w)r.push(tl.join('\n'));if(w)r.push(w);return r}
+function pickVisits(items,mode){items=[...items].sort(byDate);return mode==='none'?[]:mode==='3'?items.slice(0,3):items}
+function personShare(c,o){const co=o.co?coOf(c):null;const g=k=>c[k]||(co&&co[k])||'';
+  const d={n:c.name,ne:c.nameEn,co:c.company,ti:c.title,de:c.dept,mo:c.mobile,ph:c.phone,fx:g('fax'),em:c.email,ad:g('address'),
+    as:[...c.addresses,...(co?co.addresses:[])].filter(a=>a.address).map(a=>[a.label||'',a.address]),ws:g('website'),tx:g('taxId'),rg:g('region'),
+    pr:(co||c).processes,br:(co||c).brands,mt:c.metAt,no:o.notes?c.notes:'',
+    v:pickVisits(personVisits(c),o.visits).map(x=>visitRow(x.v,x.co))};
+  return d}
+function shareData(c,o){o=o||{visits:'all',notes:true,co:true,people:null};let d;
+  if(isCo(c)){const ppl=sortPeople(c).filter(p=>!o.people||o.people.includes(p.id));
+    d={k:'co',co:c.company,ph:c.phone,fx:c.fax,ad:c.address,as:c.addresses.filter(a=>a.address).map(a=>[a.label||'',a.address]),ws:c.website,tx:c.taxId,rg:c.region,pr:c.processes,br:c.brands,no:o.notes?c.notes:'',
+      p:ppl.map(p=>{const r=[p.name,p.title,p.mobile,p.email,p.phone,p.dept,p.nameEn,o.notes?p.notes:''];while(r.length&&!r[r.length-1])r.pop();return r}),
+      v:pickVisits(c.visits.map(v=>({v})),o.visits).map(x=>visitRow(x.v,c))}}
+  else d=personShare(c,o);
+  d.x=Math.floor(Date.now()/1000)+SHARE_HOURS*3600;
+  for(const k in d){const v=d[k];if(v===''||v==null||(Array.isArray(v)&&!v.length))delete d[k]}
+  return d;
 }
-async function shareCard(c){
-  let url;try{url=new URL('view.html',location.href).href+'#'+await packShare(shareData(c))}catch(e){toast('產生分享連結失敗');return}
-  const title=`${c.name}${c.company?'｜'+c.company:''} 的名片`;const text=`${title}（連結 1 天內有效）`;
+function openShare(c){SH.rec=c;const co=isCo(c)?c:coOf(c);
+  const row=(attrs,label,sub,on)=>`<label class="shrow"><input type="checkbox" ${attrs} ${on?'checked':''}><span><b>${label}</b>${sub?`<small>${sub}</small>`:''}</span></label>`;
+  const radio=(v,label,on)=>`<label class="shrow"><input type="radio" name="shV" value="${v}" ${on?'checked':''}><span><b>${label}</b></span></label>`;
+  const nV=isCo(c)?c.visits.length:personVisits(c).length;
+  $('#shTitle').textContent=isCo(c)?'分享公司資料':'分享名片';
+  $('#shOpts').innerHTML=(isCo(c)?`<div class="sec" style="border-top:0;padding-top:0">要給對方看哪些人</div>`+sortPeople(c).map(p=>row(`data-shp="${p.id}"`,esc(p.name)+(p.title?` <small style="display:inline">${esc(p.title)}</small>`:''),esc(p.mobile||p.email||''),true)).join('')
+      :co?row('id="shCo"','附上公司資料',`${esc(co.company)} 的地址、電話、網站、加工類型`,true):'')
+    +`<div class="sec">拜訪紀錄（共 ${nV} 筆）</div>`+radio('3','最近 3 筆',true)+radio('all','全部',false)+radio('none','不附紀錄',false)
+    +`<div class="sec">其他</div>`+row('id="shNotes"','附上備註','備註常有內部資訊，傳給客戶前想一下',false)
+    +`<div style="color:var(--sub);font-size:13px">產生的連結 1 天內有效，不含照片。</div>`;
+  openModal('#mShare')}
+async function goShare(){const c=SH.rec;if(!c)return;
+  const o={visits:(($('#shOpts [name=shV]:checked')||{}).value)||'3',notes:!!($('#shNotes')||{}).checked,co:!!($('#shCo')||{}).checked,
+    people:isCo(c)?$$('#shOpts [data-shp]:checked').map(i=>i.dataset.shp):null};
+  closeModal($('#mShare'));await shareCard(c,o)}
+async function shareCard(c,o){
+  let url;try{url=new URL('view.html',location.href).href+'#'+await packShare(shareData(c,o))}catch(e){toast('產生分享連結失敗');return}
+  const title=isCo(c)?`${c.company} 的資料`:`${c.name}${c.company?'｜'+c.company:''} 的名片`;const text=`${title}（連結 1 天內有效）`;
   if(navigator.share){
     try{await navigator.share({title,text,url});return}
     catch(e){if(e&&e.name==='AbortError')return}
@@ -980,76 +1152,126 @@ async function shareCard(c){
   try{await navigator.clipboard.writeText(text+'\n'+url);toast('已複製分享連結，貼到 LINE 就可以（1 天內有效）',3500)}
   catch(_){await infoBox('請長按下面的文字全選後複製，再貼到 LINE（1 天內有效）：',{text:text+'\n'+url,ok:'關閉'})}
 }
+const yNow0=()=>today().slice(0,4);
+function vDateHTML(d){if(!d)return '<b>—</b>';const [y,m,dd]=d.split('-');return `<b>${+dd}</b><small>${+m} 月</small>${y!==yNow0()?`<small>${y}</small>`:''}`}
+function visitsHTML(items){
+  return `<div class="tl">${items.map(({v,o,co,tag})=>`<div class="v"><div class="vd">${vDateHTML(v.date)}</div><div class="vt" data-vedit="${v.id}" data-o="${o.id}">
+      <div class="ty"><span class="badge">${esc(v.type)}</span>${trialResult(v.trial)?`<span class="badge ${resultCls(trialResult(v.trial))}">${esc(trialResult(v.trial))}</span>`:''}${tag?`<span class="badge vco">${esc(tag)}</span>`:''}<span class="sp"></span><button class="x" data-vedit-btn="${v.id}" title="修改這筆" aria-label="修改這筆紀錄">${ic('edit')}</button><button class="x" data-vdel="${v.id}" title="刪除這筆" aria-label="刪除這筆紀錄">${ic('trash')}</button></div>
+      ${co?whoHTML(v,co):''}
+      ${v.trial?`<div class="tsum">${trialLines(v.trial).map(l=>`<div class="${l.startsWith('★')?'tb':''}">${esc(l)}</div>`).join('')}</div>`:''}
+      ${v.content?`<div class="ct">${esc(v.content)}</div>`:''}${v.next?`<div class="nx">→ ${esc(v.next)}</div>`:''}
+      <div class="vph">${(v.photos||[]).map(ph=>`<div class="th"><img data-vp="${ph.id}" data-zoom alt="拜訪照片"><button data-vpdel="${ph.id}" data-v="${v.id}" title="刪除這張照片" aria-label="刪除這張照片">${ic('x')}</button></div>`).join('')}<button class="add" data-vpadd="${v.id}" title="加照片">${ic('cam')}加照片</button></div></div></div>`).join('')}</div>`}
+const kvRow=(icn,label,val)=>`<div class="kv"><span class="k">${ic(icn)}</span><div style="flex:1;min-width:0"><div class="kl">${label}</div><div class="kvv">${val}</div></div></div>`;
+const webLink=w=>/^https?:|^www\./i.test(w)?`<a target="_blank" rel="noopener" href="${esc(/^www\./i.test(w)?'https://'+w:w)}">${esc(w)}</a>`:esc(w);
+function followBox(c){const fs=followState(c);return `<div class="follow ${fs}">
+      <span class="fi">${ic('clock')}</span>
+      <div class="lbl">${c.nextFollow?`下次跟進 <b>${fmtD(c.nextFollow)}</b>・${followText(c)}`:'還沒設定下次跟進日期'}</div>
+      ${c.nextFollow?`<button class="btn sm" id="fDone">${ic('check')}已跟進</button>`:''}
+      <button class="btn sm" data-snooze="7">+1 週</button><button class="btn sm" data-snooze="30">+1 月</button>
+    </div>`}
+const tagsHTML=(c,extra)=>{const t=[c.category?`<span class="badge cat-${esc(c.category)}">${esc(c.category)}</span>`:'',c.status?`<span class="badge st-${esc(c.status)}">${esc(c.status)}</span>`:'',extra||''].join('');return t?`<div class="tags">${t}</div>`:''};
+const visitsBlock=(n,items,empty)=>`<div class="gh"><span>拜訪／聯絡紀錄・${n} 筆</span><span class="sp"></span><button class="btn sm pri" id="vNew">${ic('plus')}新增紀錄</button></div>
+  <div class="dgrp glass vwrap">${items.length?visitsHTML(items):`<div style="color:var(--sub);font-size:14px">${empty}</div>`}</div>`;
+function afterDetail(c){document.body.classList.add('detail');const tok=++detailToken;
+  $$('#dPhotos img').forEach(async img=>{const src=await Store.getPhoto(c.id,img.dataset.side);if(tok===detailToken&&src)img.src=src});
+  $$('#main img[data-vp]').forEach(async img=>{const src=await VP.get(img.dataset.vp);if(tok===detailToken){if(src)img.src=src;else img.alt='同步中…'}});
+  wireLogos($('#main'));paintPend()}
 function renderDetail(){
   const c=contacts.find(x=>x.id===S.sel);
-  if(!c){$('#main').innerHTML=`<div class="empty"><div class="big">${ic('card')}</div>從左邊選一張名片<br><span style="font-size:13px">或按「拍名片」新增</span></div>`;document.body.classList.remove('detail');return}
-  const fs=followState(c);
-  const kv=(icn,label,val)=>`<div class="kv"><span class="k">${ic(icn)}</span><div style="flex:1;min-width:0"><div class="kl">${label}</div><div class="kvv">${val}</div></div></div>`;
+  if(!c){$('#main').innerHTML=`<div class="empty"><div class="big">${ic('card')}</div>從左邊選一家公司或一個人<br><span style="font-size:13px">或按「拍名片」新增</span></div>`;document.body.classList.remove('detail');return}
+  if(isCo(c))renderCompany(c);else renderPerson(c);
+}
+function renderCompany(co){
+  const ppl=sortPeople(co),former=formerOf(co);
+  const pRow=p=>{const n=visitN(p,co);return `<div class="item pp" data-id="${p.id}"><div class="thumb" style="${p.thumb?`background-image:url('${p.thumb}')`:''}">${p.thumb?'':esc((p.name||'?').trim().charAt(0))}</div>
+    <div class="t"><div class="n">${esc(p.name)}${p.title?` <small>${esc(p.title)}</small>`:''}</div><div class="c">${p.role?`<span class="badge">${esc(p.role)}</span> `:''}${esc(p.mobile||p.phone||p.email||'')}</div></div>
+    <div class="r">${n?`<span class="vc">接觸 ${n} 次</span>`:''}</div><span class="chev">${ic('chev')}</span></div>`};
+  const gRow=f=>`<div class="item pp gone" ${f.p?`data-id="${f.p.id}"`:''}><div class="thumb">${esc((f.name||'?').charAt(0))}</div>
+    <div class="t"><div class="n">${esc(f.name)}<span class="lft">已離職</span></div><div class="c">${f.p&&f.p.company?'現在：'+esc(f.p.company):''}</div></div>
+    <div class="r"><span class="vc">接觸 ${visitN({id:f.id},co)} 次</span></div>${f.p?`<span class="chev">${ic('chev')}</span>`:''}</div>`;
+  const rows=[
+    ['phone','公司電話',co.phone&&telLink(co.phone)],['fax','傳真',co.fax&&esc(co.fax)],
+    ['pin','地址',co.address&&`${esc(co.address)}${mapLink(co.address)}`],
+    ...co.addresses.map(a=>['factory',esc(a.label||'其他地址'),`${esc(a.address)}${mapLink(a.address)}`]),
+    ['link','網站',co.website&&webLink(co.website)],
+    ['receipt','統一編號',co.taxId&&esc(co.taxId)+(validTaxId(co.taxId)?'':' <span class="badge od">格式可能有誤</span>')],['map','地區',co.region&&esc(co.region)],
+    ['cog','加工類型',co.processes.length&&co.processes.map(p=>`<span class="badge">${esc(p)}</span>`).join(' ')],
+    ['tool','刀具品牌',co.brands&&esc(co.brands)],['note','備註',co.notes&&esc(co.notes)]
+  ].filter(r=>r[2]);
+  const visits=[...co.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(v=>({v,o:co,co}));
+  $('#main').innerHTML=`
+  <div class="dtop"><button class="nb" id="dBack" aria-label="返回">${ic('back')}</button></div>
+  <div class="dcard glass">
+    <div class="dhead cohead">${logoHTML(co,'dlogo')}
+      <div class="who"><h2>${esc(co.company)}</h2>
+        <div class="co">${[co.region,ppl.length?ppl.length+' 位聯絡人':''].filter(Boolean).map(esc).join(' · ')}</div>${tagsHTML(co)}</div>
+    </div>
+    ${followBox(co)}
+  </div>
+  <div class="acts">
+    <button class="ab p" id="dEdit"><span>${ic('edit')}</span>編輯公司</button>
+    <button class="ab" id="dShare"><span>${ic('share')}</span>分享</button>
+    <a class="ab" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(co.company)}"><span>${ic('globe')}</span>查公司</a>
+    <button class="ab" id="dAsk"><span>${ic('spark')}</span>拜訪前查詢</button>
+  </div>
+  <div class="gh"><span>聯絡人・${ppl.length} 位</span><span class="sp"></span><button class="btn sm" id="pNew">${ic('plus')}新增聯絡人</button></div>
+  <div class="dgrp glass" style="padding:4px 0">${ppl.map(pRow).join('')||`<div style="color:var(--sub);font-size:14px;padding:12px 16px">還沒有聯絡人</div>`}${former.map(gRow).join('')}</div>
+  ${rows.length?`<div class="gh">公司資料</div><div class="dgrp glass">${rows.map(r=>kvRow(r[0],r[1],r[2])).join('')}</div>`:''}
+  ${visitsBlock(co.visits.length,visits,'還沒有紀錄。拜訪或聯絡後記一筆，選這次的窗口是誰，下次就知道跟誰聊到哪裡。')}
+  <div class="dfoot"><span>建立 ${fmtD((co.created||'').slice(0,10))}・最後更新 ${fmtD((co.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這家公司</button></div>`;
+  afterDetail(co);
+}
+function renderPerson(c){
+  const co=coOf(c);
   const rows=[
     ['mobile','手機',c.mobile&&telLink(c.mobile)],['phone','公司電話',c.phone&&telLink(c.phone)],['fax','傳真',c.fax&&esc(c.fax)],
     ['mail','Email',c.email&&`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`],
     ['pin','地址',c.address&&`${esc(c.address)}${mapLink(c.address)}`],
     ...c.addresses.map(a=>['factory',esc(a.label||'其他地址'),`${esc(a.address)}${mapLink(a.address)}`]),
-    ['link','網站／LINE',c.website&&(/^https?:|^www\./i.test(c.website)?`<a target="_blank" rel="noopener" href="${esc(/^www\./i.test(c.website)?'https://'+c.website:c.website)}">${esc(c.website)}</a>`:esc(c.website))],
-    ['receipt','統一編號',c.taxId&&esc(c.taxId)+(validTaxId(c.taxId)?'':' <span class="badge od">格式可能有誤</span>')],['building','部門',c.dept&&esc(c.dept)],['map','地區',c.region&&esc(c.region)],
-    ['cog','加工類型',c.processes.length&&c.processes.map(p=>`<span class="badge">${esc(p)}</span>`).join(' ')],
-    ['tool','刀具品牌',c.brands&&esc(c.brands)],['users','認識情境',c.metAt&&esc(c.metAt)],['note','備註',c.notes&&esc(c.notes)]
+    ['link','網站／LINE',c.website&&webLink(c.website)],
+    ['receipt','統一編號',!co&&c.taxId&&esc(c.taxId)+(validTaxId(c.taxId)?'':' <span class="badge od">格式可能有誤</span>')],['building','部門',c.dept&&esc(c.dept)],['map','地區',!co&&c.region&&esc(c.region)],
+    ['cog','加工類型',!co&&c.processes.length&&c.processes.map(p=>`<span class="badge">${esc(p)}</span>`).join(' ')],
+    ['tool','刀具品牌',!co&&c.brands&&esc(c.brands)],['users','認識情境',c.metAt&&esc(c.metAt)],['note','備註',c.notes&&esc(c.notes)]
   ].filter(r=>r[2]);
-  const visits=[...c.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  const yNow=today().slice(0,4);
-  const vDate=d=>{if(!d)return '<b>—</b>';const [y,m,dd]=d.split('-');return `<b>${+dd}</b><small>${+m} 月</small>${y!==yNow?`<small>${y}</small>`:''}`};
+  const items=personVisits(c).sort(byDate).map(x=>({...x,tag:co&&x.co&&x.co.id!==co.id?x.co.company:(!co&&x.co?x.co.company:'')}));
   $('#main').innerHTML=`
-  <div class="dtop"><button class="nb" id="dBack" aria-label="返回清單">${ic('back')}</button></div>
+  <div class="dtop"><button class="nb" id="dBack" aria-label="返回">${ic('back')}</button></div>
   <div class="dcard glass">
     <div class="dhead">
       <div class="who">
         <h2>${esc(c.name)}${c.nameEn?`<span class="en">${esc(c.nameEn)}</span>`:''}</h2>
-        <div class="co">${esc(c.company||'')}${c.title?' · '+esc(c.title):''}</div>
-        ${c.category||c.status?`<div class="tags">${c.category?`<span class="badge cat-${esc(c.category)}">${esc(c.category)}</span>`:''}${c.status?`<span class="badge st-${esc(c.status)}">${esc(c.status)}</span>`:''}</div>`:''}
+        <div class="co">${co?`<button class="colink" data-go="${co.id}" title="打開公司頁">${ic('building')}<span>${esc(co.company)}</span>${ic('chev')}</button>`:esc(c.company||'')}${c.title?' · '+esc(c.title):''}</div>
+        ${tagsHTML(co?{}:c,c.role?`<span class="badge">${esc(c.role)}</span>`:'')}
       </div>
       <div class="photos" id="dPhotos">${['front','back'].filter(s=>c['has'+(s==='front'?'Front':'Back')]).map(s=>`<img data-zoom data-side="${s}" alt="名片${s==='front'?'正面':'背面'}" ${s==='front'&&c.thumb?`src="${c.thumb}"`:''}>`).join('')}</div>
     </div>
-    <div class="follow ${fs}">
-      <span class="fi">${ic('clock')}</span>
-      <div class="lbl">${c.nextFollow?`下次跟進 <b>${fmtD(c.nextFollow)}</b>・${followText(c)}`:'還沒設定下次跟進日期'}</div>
-      ${c.nextFollow?`<button class="btn sm" id="fDone">${ic('check')}已跟進</button>`:''}
-      <button class="btn sm" data-snooze="7">+1 週</button><button class="btn sm" data-snooze="30">+1 月</button>
-    </div>
+    ${co?'':followBox(c)}
   </div>
   <div class="acts">
     <button class="ab p" id="dEdit"><span>${ic('edit')}</span>編輯</button>
     <button class="ab" id="dShare"><span>${ic('share')}</span>分享</button>
-    <a class="ab" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(c.company||c.name)}"><span>${ic('globe')}</span>查公司</a>
+    ${co?`<button class="ab" data-go="${co.id}"><span>${ic('building')}</span>公司頁</button>`:`<a class="ab" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(c.company||c.name)}"><span>${ic('globe')}</span>查公司</a>`}
     <button class="ab" id="dAsk"><span>${ic('spark')}</span>拜訪前查詢</button>
   </div>
-  ${rows.length?`<div class="gh">詳細資料</div><div class="dgrp glass">${rows.map(r=>kv(r[0],r[1],r[2])).join('')}</div>`:''}
-  <div class="gh"><span>拜訪／聯絡紀錄・${c.visits.length} 筆</span><span class="sp"></span><button class="btn sm pri" id="vNew">${ic('plus')}新增紀錄</button></div>
-  <div class="dgrp glass vwrap">
-    ${visits.length?`<div class="tl">${visits.map(v=>`<div class="v"><div class="vd">${vDate(v.date)}</div><div class="vt" data-vedit="${v.id}">
-      <div class="ty"><span class="badge">${esc(v.type)}</span>${trialResult(v.trial)?`<span class="badge ${resultCls(trialResult(v.trial))}">${esc(trialResult(v.trial))}</span>`:''}<span class="sp"></span><button class="x" data-vedit-btn="${v.id}" title="修改這筆" aria-label="修改這筆紀錄">${ic('edit')}</button><button class="x" data-vdel="${v.id}" title="刪除這筆" aria-label="刪除這筆紀錄">${ic('trash')}</button></div>
-      ${v.trial?`<div class="tsum">${trialLines(v.trial).map(l=>`<div class="${l.startsWith('★')?'tb':''}">${esc(l)}</div>`).join('')}</div>`:''}
-      ${v.content?`<div class="ct">${esc(v.content)}</div>`:''}${v.next?`<div class="nx">→ ${esc(v.next)}</div>`:''}
-      <div class="vph">${(v.photos||[]).map(ph=>`<div class="th"><img data-vp="${ph.id}" data-zoom alt="拜訪照片"><button data-vpdel="${ph.id}" data-v="${v.id}" title="刪除這張照片" aria-label="刪除這張照片">${ic('x')}</button></div>`).join('')}<button class="add" data-vpadd="${v.id}" title="加照片">${ic('cam')}加照片</button></div></div></div>`).join('')}</div>`
-    :`<div style="color:var(--sub);font-size:14px">還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。</div>`}
-  </div>
+  ${rows.length?`<div class="gh">詳細資料</div><div class="dgrp glass">${rows.map(r=>kvRow(r[0],r[1],r[2])).join('')}</div>`:''}
+  ${visitsBlock(items.length,items,co?`還沒有跟${esc(c.name)}有關的紀錄。新增的紀錄會記在「${esc(co.company)}」，窗口選${esc(c.name)}。`:'還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。')}
   <div class="dfoot"><span>建立 ${fmtD((c.created||'').slice(0,10))}・最後更新 ${fmtD((c.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這張名片</button></div>`;
-  document.body.classList.add('detail');
-  const tok=++detailToken;
-  $$('#dPhotos img').forEach(async img=>{const src=await Store.getPhoto(c.id,img.dataset.side);if(tok===detailToken&&src)img.src=src});
-  $$('img[data-vp]').forEach(async img=>{const src=await VP.get(img.dataset.vp);if(tok===detailToken){if(src)img.src=src;else img.alt='同步中…'}});
-  paintPend();
+  afterDetail(c);
 }
 const isNarrow=()=>window.innerWidth<=820;
+let navDepth=0,afterPop=null;
 function select(id){const was=S.sel;S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;
-  if(isNarrow()){window.scrollTo(0,0);if(!was||!(history.state&&history.state.detail))history.pushState({detail:id},'')}}
-function closeDetail(){S.sel=null;document.body.classList.remove('detail');renderList()}
+  if(isNarrow()){window.scrollTo(0,0);const inDetail=history.state&&history.state.detail;if(!was||!inDetail){navDepth=0;history.pushState({detail:id},'')}else if(was!==id){navDepth++;history.pushState({detail:id},'')}}}
+function closeDetail(){S.sel=null;navDepth=0;document.body.classList.remove('detail');renderList()}
 function goBack(){if(history.state&&history.state.detail)history.back();else closeDetail()}
 let skipPop=0;
 addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
   const open=$$('.modal.on');
   if(open.length){const m=open[open.length-1];const c=m.querySelector('[data-close]');if(c)c.click();else closeModal(m,true);
     setTimeout(()=>{if(m.classList.contains('on')&&isNarrow())history.pushState({modal:m.id},'')},300);return}
-  if(S.sel&&!(history.state&&history.state.detail))closeDetail()});
+  const st=history.state&&history.state.detail;
+  if(st&&st!==S.sel&&contacts.some(c=>c.id===st)){navDepth=Math.max(0,navDepth-1);S.sel=st;renderList();renderDetail();$('#main').scrollTop=0;if(afterPop){const f=afterPop;afterPop=null;f()}return}
+  if(S.sel&&!st)closeDetail()});
 /* swipe right to go back (phone) — iOS 式互動轉場：詳細頁跟著手指走，清單從左邊稍微滑入並變亮 */
 (()=>{let x0=0,y0=0,t0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0;
   const main=()=>$('#main'),side=()=>$('.side'),EASE='cubic-bezier(.2,.8,.2,1)';
@@ -1069,7 +1291,7 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
     const done=dx>W*.4||(vx>.35&&dx>20);const ms=Math.round(Math.max(160,Math.min(320,(done?W-dx:dx)/Math.max(Math.abs(vx),.9))));
     for(const el of [main(),side()])el.style.transition=`transform ${ms}ms ${EASE},opacity ${ms}ms ${EASE}`;
     requestAnimationFrame(()=>paint(done?W:0));
-    setTimeout(()=>{if(done){closeDetail();clean();if(history.state&&history.state.detail)history.back()}else clean()},ms+20)};
+    setTimeout(()=>{if(done){if(navDepth>0&&history.state&&history.state.detail){afterPop=clean;history.back();setTimeout(()=>{if(afterPop){afterPop=null;clean()}},600)}else{closeDetail();clean();if(history.state&&history.state.detail)history.back()}}else clean()},ms+20)};
   document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
 })();
 /* swipe right to close a full-screen sheet (phone) — iOS 式：整頁跟著手指走，後面的畫面慢慢露出來 */
@@ -1280,6 +1502,7 @@ async function saveBatch(){
       await save(c);r.state='saved';r.on=false;
     }catch(e){r.state='err';r.err=e&&e.code==='quota_exceeded'?'雲端空間已滿':'儲存失敗';r.on=false;fail++}
   }
+  try{await linkAll()}catch(_){}
   btn.textContent='儲存勾選的名片';
   const saved=list.filter(r=>r.state==='saved').length;
   B.rows=B.rows.filter(r=>r.state!=='saved');
@@ -1295,8 +1518,14 @@ function addAddrRow(a={label:'',address:''},focus){
 }
 
 /* ---------- visit photos ---------- */
-let vPend=[];let vPhotoTarget=null; // null = visit page, else visit id (quick add from the list)
-const VS={cid:null,vid:null,photos:[],removed:[],key:''};const draftPhotos=new Map();let draftT=null;
+let vPend=[];let vPhotoTarget=null,vPhotoOwner=null; // null = visit page, else visit id (quick add from the list)
+const VS={cid:null,vid:null,photos:[],removed:[],key:''};
+function paintWho(sel,other){const c=contacts.find(x=>x.id===VS.cid);const box=$('#vWhoBox');if(!isCo(c)){box.hidden=true;$('#vWho').innerHTML='';$('#vOther').value='';return}box.hidden=false;sel=sel||[];
+  const ppl=sortPeople(c);const extra=sel.filter(id=>!ppl.some(p=>p.id===id));
+  $('#vWho').innerHTML=ppl.map(p=>`<label data-who="${p.id}" class="${sel.includes(p.id)?'on':''}">${esc(p.name)}</label>`).join('')
+    +extra.map(id=>{const p=contacts.find(x=>x.id===id);const v=c.visits.find(x=>x.who.includes(id));const n=(p?p.name:(v?v.whoN[v.who.indexOf(id)]:''))||'?';return `<label data-who="${id}" class="on">${esc(n)}（已離職）</label>`}).join('')
+    +(ppl.length||extra.length?'':'<span style="color:var(--sub);font-size:13px">這家公司還沒有聯絡人，可以填在下面「其他人」</span>');
+  $('#vOther').value=other||''}const draftPhotos=new Map();let draftT=null;
 const draftKey=(cid,vid)=>'mpgj.vdraft.'+cid+'.'+(vid||'new');
 function paintPend(){const el=$('#vPend');if(!el)return;
   el.innerHTML=VS.photos.filter(p=>!VS.removed.includes(p.id)).map(p=>`<div class="th"><img data-vp="${p.id}" data-zoom alt="拜訪照片"><button data-pxdel="${p.id}" title="移除" aria-label="移除這張照片">${ic('x')}</button></div>`).join('')
@@ -1328,24 +1557,24 @@ function readRuns(){return $$('#tRuns .run').map(el=>{const r={};el.querySelecto
   r.result=((el.querySelector('.rres label.on')||{}).dataset||{}).res||'';r.best=el.classList.contains('best');return r})}
 function renderRuns(runs){runs=runs&&runs.length?runs:[{}];$('#tRuns').innerHTML=runs.map((r,i)=>runCard(r,i,runs.length>1)).join('')}
 function readVisitForm(){const t={mat:$('#tMat').value,proc:$('#tProc').value,ref:$('#tRef').value,refLife:$('#tRefLife').value,surf:$('#tSurf').value,runs:readRuns()};
-  return{date:$('#vDate').value,type:$('#vType').value,content:$('#vContent').value,next:$('#vNext').value,follow:$('#vFollow').value,trial:t}}
+  return{date:$('#vDate').value,type:$('#vType').value,content:$('#vContent').value,next:$('#vNext').value,follow:$('#vFollow').value,trial:t,who:$$('#vWho label.on').map(l=>l.dataset.who),other:$('#vOther').value}}
 function fillVisitForm(d){$('#vDate').value=d.date||today();$('#vType').value=VTYPES.includes(d.type)?d.type:'拜訪';$('#vContent').value=d.content||'';$('#vNext').value=d.next||'';$('#vFollow').value=d.follow||'';
   const t=cleanTrial(d.trial)||{};for(const k of TRIAL_SHARED){const el=$('#t'+k[0].toUpperCase()+k.slice(1));if(el)el.value=t[k]||''}
-  renderRuns(t.runs);paintTrial();setTimeout(growTA,0)}
-function visitBase(c,vid){const v=vid&&c.visits.find(x=>x.id===vid);
-  return v?{date:v.date,type:v.type,content:v.content,next:v.next,follow:'',trial:v.trial||{}}:{date:today(),type:'拜訪',content:'',next:'',follow:c.nextFollow&&c.nextFollow>today()?c.nextFollow:'',trial:{}}}
+  renderRuns(t.runs);paintTrial();paintWho(d.who,d.other);setTimeout(growTA,0)}
+function visitBase(c,vid,who){const v=vid&&c.visits.find(x=>x.id===vid);
+  return v?{date:v.date,type:v.type,content:v.content,next:v.next,follow:'',trial:v.trial||{},who:v.who,other:v.other}:{date:today(),type:'拜訪',content:'',next:'',follow:c.nextFollow&&c.nextFollow>today()?c.nextFollow:'',trial:{},who:who||[],other:''}}
 function showDraftBar(at){const b=$('#vDraft');const has=!!at;b.hidden=!has;if(has)$('#vDraftTx').textContent=(VS.vid?'有還沒儲存的修改':'已自動保存草稿')+'・'+fmtTime(at)}
 function saveDraft(){clearTimeout(draftT);const key=VS.key,vid=VS.vid;draftT=setTimeout(()=>{if(VS.key!==key)return;
   const d={...readVisitForm(),at:new Date().toISOString()};
   const empty=!vid&&!d.content.trim()&&!d.next.trim()&&!cleanTrial(d.trial)&&!vPend.length;
   if(empty){try{localStorage.removeItem(key)}catch(_){}draftPhotos.delete(key);showDraftBar(null);return}
   try{localStorage.setItem(key,JSON.stringify(d))}catch(_){}draftPhotos.set(key,{pend:[...vPend],removed:[...VS.removed]});showDraftBar(d.at)},400)}
-function openVisit(c,vid){
+function openVisit(c,vid,opt={}){VS.preWho=opt.who||[];
   VS.cid=c.id;VS.vid=vid||null;VS.key=draftKey(c.id,vid);const v=vid&&c.visits.find(x=>x.id===vid);VS.photos=v?[...(v.photos||[])]:[];
   $('#vTitle').textContent=v?'修改紀錄':'新增紀錄';
   let d=null;try{d=JSON.parse(localStorage.getItem(VS.key)||'null')}catch(_){}
   const mem=draftPhotos.get(VS.key);vPend=mem?[...mem.pend]:[];VS.removed=mem?[...mem.removed]:[];
-  fillVisitForm(d||visitBase(c,vid));showDraftBar(d&&d.at);paintPend();openModal('#mVisit');
+  fillVisitForm(d||visitBase(c,vid,VS.preWho));showDraftBar(d&&d.at);paintPend();openModal('#mVisit');
   if(!v&&!d)setTimeout(()=>$('#vContent').focus({preventScroll:true}),250)}
 function clearDraft(){clearTimeout(draftT);try{localStorage.removeItem(VS.key)}catch(_){}draftPhotos.delete(VS.key)}
 async function saveVisit(){const c=contacts.find(x=>x.id===VS.cid);if(!c)return;const f=readVisitForm();
@@ -1354,7 +1583,8 @@ async function saveVisit(){const c=contacts.find(x=>x.id===VS.cid);if(!c)return;
   if(!f.content.trim()&&!f.next.trim()&&!vPend.length&&!keep.length&&!trial){toast('請填寫內容、下一步，或加一張照片');return}
   const btn=$('#vSave');btn.disabled=true;
   try{const added=await storePend();
-    const v={id:VS.vid||uid(),date:f.date||today(),type:f.type,content:f.content.trim(),next:f.next.trim(),updated:new Date().toISOString(),trial,photos:[...keep,...added]};
+    const isC=isCo(c);const who=isC?f.who:[];const whoN=who.map(id=>{const p=contacts.find(x=>x.id===id);if(p)return p.name;const o=c.visits.find(x=>x.who.includes(id));return o?o.whoN[o.who.indexOf(id)]||'':''});
+    const v={id:VS.vid||uid(),date:f.date||today(),type:f.type,content:f.content.trim(),next:f.next.trim(),updated:new Date().toISOString(),trial,who,whoN,other:isC?f.other.trim():'',photos:[...keep,...added]};
     for(const pid of VS.removed)await VP.del(pid,c.id);
     const nc={...c,visits:VS.vid?c.visits.map(x=>x.id===VS.vid?v:x):[...c.visits,v],deletedPhotos:[...(c.deletedPhotos||[]),...VS.removed]};
     if(f.follow)nc.nextFollow=f.follow;
@@ -1373,30 +1603,55 @@ $('#vType').addEventListener('change',()=>{paintTrial();saveDraft()});
 $('#mVisit').addEventListener('change',e=>{if(e.target.matches('select'))saveDraft()});
 $('#mVisit').addEventListener('input',e=>{if(e.target.id==='vContent')growTA();saveDraft()});
 $('#vSave').onclick=saveVisit;
+$('#vWho').addEventListener('click',e=>{const l=e.target.closest('[data-who]');if(!l)return;l.classList.toggle('on');saveDraft()});
 $('#vDraftClr').onclick=async()=>{if(!await confirmBox('清除這份草稿？\n（還沒儲存的內容和照片都會清掉）',{ok:'清除',danger:true}))return;
-  clearDraft();vPend=[];VS.removed=[];const c=contacts.find(x=>x.id===VS.cid);fillVisitForm(visitBase(c||{visits:[]},VS.vid));showDraftBar(null);paintPend();toast('已清除草稿')};
+  clearDraft();vPend=[];VS.removed=[];const c=contacts.find(x=>x.id===VS.cid);fillVisitForm(visitBase(c||{visits:[]},VS.vid,VS.preWho));showDraftBar(null);paintPend();toast('已清除草稿')};
 const vpInput=document.createElement('input');vpInput.type='file';vpInput.accept='image/*';vpInput.multiple=true;vpInput.hidden=true;document.body.appendChild(vpInput);
 vpInput.onchange=async()=>{const files=[...vpInput.files];if(!files.length)return;const out=[];
   for(const f of files){try{out.push(await fileToPhoto(f))}catch(e){toast(e.message)}}
   if(vPhotoTarget===null){vPend=vPend.concat(out);paintPend();saveDraft();return}
-  const c=contacts.find(x=>x.id===S.sel);if(!c)return;const v=c.visits.find(x=>x.id===vPhotoTarget);if(!v)return;
+  const c=contacts.find(x=>x.id===(vPhotoOwner||S.sel));if(!c)return;const v=c.visits.find(x=>x.id===vPhotoTarget);if(!v)return;
   const add=[];for(const d of out){const id=uid();await VP.put(id,d,c.id);add.push({id,h:hashStr(d)})}
   const nc={...c,visits:c.visits.map(x=>x.id===v.id?{...x,photos:[...(x.photos||[]),...add]}:x)};
   try{await save(nc);renderDetail();toast(`已加入 ${add.length} 張照片`)}catch(_){toast('儲存失敗')}};
-function pickVisitPhotos(target){vPhotoTarget=target;vpInput.value='';vpInput.click()}
+function pickVisitPhotos(target,owner){vPhotoTarget=target;vPhotoOwner=owner||null;vpInput.value='';vpInput.click()}
 async function storePend(){const arr=[];for(const d of vPend){const id=uid();await VP.put(id,d,VS.cid);arr.push({id,h:hashStr(d)})}vPend=[];return arr}
 
 /* ---------- edit modal ---------- */
-let editing=null,editPhotosOrig={front:'',back:''};
+let editing=null,editPhotosOrig={front:'',back:''},EM='p';
+function paintEditMode(){const f=$('#eForm');const co=EM==='co';
+  $$('#eForm [data-m=p]').forEach(el=>el.hidden=co);
+  $('#eCoLbl').textContent=co?'公司名稱 *':'公司';$('#ePhLbl').textContent=co?'公司電話（總機）':'公司電話（含分機）';
+  $('#eFollowSec').textContent=co?'跟進與備註':'認識情境與跟進';
+  let hint='',hideC=false;
+  if(!co){const cat=(f.querySelector('[name=category]:checked')||{}).value||'';const name=f.querySelector('[name=company]').value.trim();
+    if(name&&cat!=='私人'){const cur=coOf(editing);const ex=cur&&normCo(cur.company)===normCo(name)?cur:findCo(name,f.querySelector('[name=taxId]').value);
+      if(ex){hideC=true;hint=`狀態、加工類型、刀具品牌、跟進日期和拜訪紀錄都記在「${esc(ex.company)}」的公司頁。`}
+      else hint=`儲存後會建立「${esc(name)}」公司（或讓你選要加入哪一家），下面的狀態、加工類型、刀具品牌、跟進日期會記在公司。`}
+    else if(name&&cat==='私人')hint='分類是「私人」，紀錄和跟進日期記在這個人身上，不會建立公司。'}
+  $$('#eForm [data-m=c]').forEach(el=>el.hidden=hideC);
+  const h=$('#eHint');h.hidden=!hint;h.innerHTML=hint}
+$('#eForm').addEventListener('input',e=>{if(e.target.name==='company'||e.target.name==='taxId')paintEditMode()});
+$('#eForm').addEventListener('change',e=>{if(e.target.name==='category')paintEditMode()});
+/* 存好一個人之後：接到對的公司（同統編或同名直接加入；很像的問一下；換工作就換公司，舊紀錄留在舊公司） */
+async function attach(p){
+  if(!linkable(p)){if(p.companyId){const np={...p,companyId:''};await save(np);return{p:np}}return{p}}
+  const cur=coOf(p);
+  if(cur&&(normCo(cur.company)===normCo(p.company)||(validTaxId(p.taxId)&&p.taxId===cur.taxId)))return{p};
+  let target=findCo(p.company,p.taxId);
+  if(!target){const fz=fuzzyCo(p.company);if(fz&&await confirmBox(`「${p.company}」跟已經有的「${fz.company}」很像。\n\n是同一家公司嗎？（不同廠區也算同一家）`,{ok:'加入這家公司',cancel:'建立新公司'}))target=fz}
+  const isNew=!target;const [np,co]=await linkTo(p,target||newCoFor(p),!!cur&&!!target);
+  return{p:np,co,isNew,moved:!!cur&&cur.id!==co.id}}
+
 function openModal(id){const el=$(id);const was=el.classList.contains('on');el.classList.add('on');document.body.style.overflow='hidden';
   if(!was&&isNarrow()){const st={modal:el.id};if(history.state&&history.state.modal)history.replaceState(st,'');else history.pushState(st,'')}}
 function closeModal(el,fromPop){el.classList.remove('on');if(!$$('.modal.on').length)document.body.style.overflow='';
   if(!fromPop)setTimeout(()=>{if(!$$('.modal.on').length&&history.state&&history.state.modal){skipPop++;history.back()}},0)}
 function paintChecks(){$$('#eForm .checks label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked))}
 async function openEdit(c,opt={}){
-  editing=JSON.parse(JSON.stringify(c||normalize({})));
+  editing=JSON.parse(JSON.stringify(c||normalize({})));EM=isCo(editing)?'co':'p';
   const isNew=!contacts.some(x=>x.id===editing.id);
-  $('#eTitle').textContent=isNew?(opt.fromScan?'確認辨識結果':'新增名片'):'編輯名片';
+  $('#eTitle').textContent=EM==='co'?(isNew?'新增公司':'編輯公司'):isNew?(opt.fromScan?'確認辨識結果':'新增名片'):'編輯名片';
   const f=$('#eForm');
   f.querySelector('[name=region]').innerHTML='<option value="">（未選）</option>'+REGIONS.map(r=>`<option>${r}</option>`).join('');
   FIELDS.forEach(k=>{f.querySelector(`[name=${k}]`).value=editing[k]||''});
@@ -1404,7 +1659,9 @@ async function openEdit(c,opt={}){
   $('#eCat').innerHTML=CATS.map(x=>`<label><input type="radio" name="category" value="${x}" ${editing.category===x?'checked':''}>${x}</label>`).join('');
   $('#eStatus').innerHTML=STATUSES.map(x=>`<label><input type="radio" name="status" value="${x}" ${editing.status===x?'checked':''}>${x}</label>`).join('');
   $('#eProc').innerHTML=PROCS.map(p=>`<label><input type="checkbox" value="${p}" ${editing.processes.includes(p)?'checked':''}>${p}</label>`).join('');
-  paintChecks();
+  $('#eRole').innerHTML=ROLES.map(x=>`<label><input type="radio" name="role" value="${x}" ${editing.role===x?'checked':''}>${x}</label>`).join('');
+  if(EM==='co')f.querySelector('[name=company]').value=editing.company||'';
+  paintChecks();paintEditMode();
   const unc=new Set(opt.uncertain||[]);
   $$('#eForm label.f[data-k]').forEach(l=>l.classList.toggle('warn',unc.has(l.dataset.k)));
   const note=$('#aiNote');
@@ -1416,7 +1673,26 @@ async function openEdit(c,opt={}){
   openModal('#mEdit');
   $('#mEdit .mbox').scrollIntoView({block:'start'});
 }
+async function saveCoEdit(){const f=$('#eForm');
+  for(const k of CO_FIELDS)editing[k]=f.querySelector(`[name=${k}]`).value.trim();
+  if(!editing.company){toast('請填寫公司名稱');f.querySelector('[name=company]').focus();return}
+  editing.taxId=editing.taxId.replace(/\D/g,'');
+  if(editing.taxId&&!validTaxId(editing.taxId)&&!await confirmBox(`統一編號「${editing.taxId}」的檢查碼對不起來，可能有一個數字看錯了。\n\n還是要儲存嗎？`,{ok:'仍要儲存',cancel:'回去修改'}))return;
+  editing.category=(f.querySelector('[name=category]:checked')||{}).value||'';
+  editing.status=(f.querySelector('[name=status]:checked')||{}).value||'';
+  editing.processes=$$('#eProc input:checked').map(i=>i.value);
+  editing.addresses=$$('#eAddrs .addr-row').map(r=>({label:r.querySelector('[data-al]').value.trim(),address:r.querySelector('[data-aa]').value.trim()})).filter(a=>a.address);
+  if(!editing.region)editing.region=findRegion(editing.address)||'';
+  const dupCo=contacts.find(x=>isCo(x)&&x.id!==editing.id&&(normCo(x.company)===normCo(editing.company)||(validTaxId(editing.taxId)&&x.taxId===editing.taxId)));
+  if(dupCo&&!await confirmBox(`已經有「${dupCo.company}」了，可能是同一家公司。\n\n還是要另外存一家嗎？（要合併的話，到其中一家的「編輯公司」最下面選「合併到另一家」）`,{ok:'仍要儲存'}))return;
+  const btn=$('#eSave');btn.disabled=true;btn.textContent='儲存中…';
+  try{await save(editing);
+    for(const p of peopleOf(editing))if(p.company!==editing.company||(!p.taxId&&editing.taxId))await save({...p,company:editing.company});
+    closeModal($('#mEdit'));S.sel=editing.id;if(isNarrow()){if(history.state&&history.state.modal)history.replaceState({detail:S.sel},'');else if(!(history.state&&history.state.detail))history.pushState({detail:S.sel},'')}refresh();toast('已儲存')}
+  catch(e){toast('儲存失敗：'+((e&&e.message)||'請檢查網路'),4000)}
+  finally{btn.disabled=false;btn.textContent='儲存'}}
 async function saveEdit(){
+  if(EM==='co')return saveCoEdit();
   const f=$('#eForm');
   FIELDS.forEach(k=>{editing[k]=f.querySelector(`[name=${k}]`).value.trim()});
   if(!editing.name){toast('請填寫姓名');f.querySelector('[name=name]').focus();return}
@@ -1425,10 +1701,11 @@ async function saveEdit(){
   editing.category=(f.querySelector('[name=category]:checked')||{}).value||'';
   editing.status=(f.querySelector('[name=status]:checked')||{}).value||'';
   editing.processes=$$('#eProc input:checked').map(i=>i.value);
+  editing.role=(f.querySelector('[name=role]:checked')||{}).value||'';
   editing.addresses=$$('#eAddrs .addr-row').map(r=>({label:r.querySelector('[data-al]').value.trim(),address:r.querySelector('[data-aa]').value.trim()})).filter(a=>a.address);
   if(!editing.region)editing.region=findRegion(editing.address)||'';
   const dig=s=>(s||'').replace(/\D/g,'');
-  const dup=contacts.find(x=>x.id!==editing.id&&((editing.email&&x.email&&x.email.toLowerCase()===editing.email.toLowerCase())||(dig(editing.mobile).length>=8&&dig(x.mobile)===dig(editing.mobile))));
+  const dup=contacts.find(x=>!isCo(x)&&x.id!==editing.id&&((editing.email&&x.email&&x.email.toLowerCase()===editing.email.toLowerCase())||(dig(editing.mobile).length>=8&&dig(x.mobile)===dig(editing.mobile))));
   if(dup&&!await confirmBox(`「${dup.name}（${dup.company||'無公司'}）」的 Email 或手機跟這張一樣，可能是同一個人。\n\n還是要另外儲存一張嗎？`,{ok:'仍要儲存'}))return;
   const btn=$('#eSave');btn.disabled=true;btn.textContent='儲存中…';
   try{
@@ -1439,7 +1716,8 @@ async function saveEdit(){
     }
     if(slotState.edit.front!==editPhotosOrig.front||!editing.thumb!==!slotState.edit.front)editing.thumb=await makeThumb(slotState.edit.front);
     await save(editing);
-    closeModal($('#mEdit'));S.sel=editing.id;if(isNarrow()){if(history.state&&history.state.modal)history.replaceState({detail:S.sel},'');else if(!(history.state&&history.state.detail))history.pushState({detail:S.sel},'')}refresh();toast('已儲存');
+    const r=await attach(contacts.find(x=>x.id===editing.id)||editing);
+    closeModal($('#mEdit'));S.sel=editing.id;if(isNarrow()){if(history.state&&history.state.modal)history.replaceState({detail:S.sel},'');else if(!(history.state&&history.state.detail))history.pushState({detail:S.sel},'')}refresh();toast(r.co?(r.moved?`已改到「${r.co.company}」，舊公司的紀錄會保留並標示已離職`:r.isNew?`已儲存，並建立「${r.co.company}」公司`:`已儲存，加入「${r.co.company}」`):'已儲存',3000);
   }catch(e){toast('儲存失敗：'+(e&&e.code==='quota_exceeded'?'雲端空間已滿':(e&&e.message)||'請檢查網路'),4000)}
   finally{btn.disabled=false;btn.textContent='儲存'}
 }
@@ -1472,34 +1750,46 @@ async function saveFile(filename,data){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);return true;
 }
 const scopeList=()=>$('#xScope').value==='filtered'?filtered():contacts;
+function expand(list){const out=[],seen=new Set();const add=x=>{if(!seen.has(x.id)){seen.add(x.id);out.push(x)}};
+  for(const r of list){add(r);if(isCo(r))peopleOf(r).forEach(add)}return out}
+const lastOf=items=>[...items].sort(byDate)[0];
+const whoText=(v,co)=>co?[...v.who.map((id,i)=>{const p=contacts.find(x=>x.id===id);return (p?p.name:v.whoN[i]||'')+(p&&p.companyId!==co.id?'（已離職）':'')}).filter(Boolean),...(v.other?[v.other]:[])].join('、'):'';
 const XCOLS=['姓名','英文名','公司','統一編號','職稱','部門','手機','公司電話','傳真','Email','地址','其他地址','地區','網站','類別','狀態','加工類型','刀具品牌','認識情境','下次跟進','備註','最近拜訪日','最近拜訪內容','拜訪次數','建立日期','ID'];
 const toDate=s=>s?new Date(s.slice(0,10)+'T00:00:00'):'';
 function exportXLSX(list){
   if(!window.XLSX){toast('Excel 元件載入失敗，改用 Outlook CSV 或重新整理頁面',4000);return}
-  const rows=list.map(c=>{const lv=lastVisit(c);return[c.name,c.nameEn,c.company,c.taxId,c.title,c.dept,c.mobile,c.phone,c.fax,c.email,c.address,addrText(c),c.region,c.website,c.category,c.status,c.processes.join('、'),c.brands,c.metAt,toDate(c.nextFollow),c.notes,lv?toDate(lv.date):'',lv?`[${lv.type}] ${lv.content}${lv.next?'（下一步：'+lv.next+'）':''}`:'',c.visits.length,toDate(c.created),c.id]});
-  const ws=XLSX.utils.aoa_to_sheet([XCOLS,...rows],{cellDates:true,dateNF:'yyyy/mm/dd'});
-  ws['!cols']=[10,14,22,11,12,10,15,20,14,26,32,40,9,20,10,9,16,18,20,12,36,12,40,8,12,14].map(w=>({wch:w}));
-  ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:XCOLS.length-1}})};
-  const vr=[['日期','姓名','公司','方式','內容','下一步','工件材質','加工方式','組別','建議條件','試用刀具','對照刀具','Vc','f','ap','S 轉速','F 進給','冷卻','壽命','對照壽命','結果','組備註','觀察','照片數','聯絡人ID']];
-  list.forEach(c=>c.visits.forEach(v=>{const t=v.trial;const runs=t&&t.runs&&t.runs.length?t.runs:[null];
-    runs.forEach((r,i)=>{r=r||{};vr.push([toDate(v.date),c.name,c.company,v.type,i?'':v.content,i?'':v.next,t?t.mat:'',t?t.proc:'',t&&runs.length>1?i+1:'',r.best?'★':'',r.tool||'',t?t.ref:'',r.vc||'',r.f||'',r.ap||'',r.n||'',r.fm||'',r.cool||'',r.life||'',t?t.refLife:'',r.result||'',r.note||'',i?'':(t?t.surf:''),i?'':((v.photos||[]).length||''),c.id])})}));
-  vr.splice(1,vr.length-1,...vr.slice(1).sort((a,b)=>(b[0]||0)-(a[0]||0)));
-  const ws2=XLSX.utils.aoa_to_sheet(vr,{cellDates:true,dateNF:'yyyy/mm/dd'});
-  ws2['!cols']=[12,10,22,9,50,24,12,10,6,8,20,18,7,7,7,8,9,8,12,12,8,20,24,8,14].map(w=>({wch:w}));
-  ws2['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:vr.length-1,c:23}})};
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'客戶名片');XLSX.utils.book_append_sheet(wb,ws2,'拜訪紀錄');
+  list=expand(list);const cos=list.filter(isCo),ppl=list.filter(c=>!isCo(c));
+  const book=(rows,head,widths,name,wb)=>{const ws=XLSX.utils.aoa_to_sheet([head,...rows],{cellDates:true,dateNF:'yyyy/mm/dd'});
+    ws['!cols']=widths.map(w=>({wch:w}));ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:head.length-1}})};XLSX.utils.book_append_sheet(wb,ws,name)};
+  const wb=XLSX.utils.book_new();
+  const CH=['公司','統一編號','公司電話','傳真','地址','其他地址','地區','網站','類別','狀態','加工類型','刀具品牌','下次跟進','備註','聯絡人','拜訪次數','最近拜訪日','最近拜訪內容','建立日期','ID'];
+  book(cos.map(c=>{const lv=lastVisit(c);return[c.company,c.taxId,c.phone,c.fax,c.address,addrText(c),c.region,c.website,c.category,c.status,c.processes.join('、'),c.brands,toDate(c.nextFollow),c.notes,
+    sortPeople(c).map(p=>p.name+(p.title?'（'+p.title+'）':'')).join('、'),c.visits.length,lv?toDate(lv.date):'',lv?`[${lv.type}] ${lv.content}${lv.next?'（下一步：'+lv.next+'）':''}`:'',toDate(c.created),c.id]}),
+    CH,[22,11,16,14,32,40,9,20,10,9,16,18,12,36,30,8,12,40,12,14],'公司',wb);
+  book(ppl.map(c=>{const co=coOf(c)||{};const g=k=>c[k]||co[k]||'';const its=personVisits(c);const lv=(lastOf(its)||{}).v;
+    return[c.name,c.nameEn,c.company,g('taxId'),c.title,c.dept,c.mobile,c.phone,g('fax'),c.email,g('address'),addrText(c),g('region'),g('website'),co.category||c.category,co.id?co.status:c.status,((co.id?co:c).processes||[]).join('、'),co.id?co.brands:c.brands,c.metAt,toDate(co.id?co.nextFollow:c.nextFollow),c.notes,lv?toDate(lv.date):'',lv?`[${lv.type}] ${lv.content}${lv.next?'（下一步：'+lv.next+'）':''}`:'',its.length,toDate(c.created),c.id]}),
+    XCOLS,[10,14,22,11,12,10,15,20,14,26,32,40,9,20,10,9,16,18,20,12,36,12,40,8,12,14],'聯絡人',wb);
+  const vr=[];
+  for(const r of list){if(!r.visits.length)continue;const co=isCo(r)?r:null;
+    r.visits.forEach(v=>{const t=v.trial;const runs=t&&t.runs&&t.runs.length?t.runs:[null];const w=co?whoText(v,co):r.name;
+      runs.forEach((x,i)=>{x=x||{};vr.push([toDate(v.date),r.company,w,v.type,i?'':v.content,i?'':v.next,t?t.mat:'',t?t.proc:'',t&&runs.length>1?i+1:'',x.best?'★':'',x.tool||'',t?t.ref:'',x.vc||'',x.f||'',x.ap||'',x.n||'',x.fm||'',x.cool||'',x.life||'',t?t.refLife:'',x.result||'',x.note||'',i?'':(t?t.surf:''),i?'':((v.photos||[]).length||''),r.id])})})}
+  vr.sort((a,b)=>(b[0]||0)-(a[0]||0));
+  book(vr,['日期','公司','窗口','方式','內容','下一步','工件材質','加工方式','組別','建議條件','試用刀具','對照刀具','Vc','f','ap','S 轉速','F 進給','冷卻','壽命','對照壽命','結果','組備註','觀察','照片數','所屬ID'],
+    [12,22,16,9,50,24,12,10,6,8,20,18,7,7,7,8,9,8,12,12,8,20,24,8,14],'拜訪紀錄',wb);
   const buf=XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true});
   return saveFile(`客戶名片_${stamp()}.xlsx`,new Blob([buf]));
 }
 const csvCell=v=>{v=String(v??'');return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
 const toCSV=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
-function noteBlock(c){const p=[];if(c.taxId)p.push('統編：'+c.taxId);if(c.addresses.length)p.push('其他地址：\n'+addrText(c));if(c.metAt)p.push('認識：'+c.metAt);if(c.status)p.push('狀態：'+c.status);if(c.processes.length)p.push('加工：'+c.processes.join('、'));if(c.brands)p.push('刀具品牌：'+c.brands);if(c.nextFollow)p.push('下次跟進：'+fmtD(c.nextFollow));if(c.notes)p.push(c.notes);const lv=lastVisit(c);if(lv)p.push(`最近聯絡 ${fmtD(lv.date)}（${lv.type}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`);return p.join('\n')}
+function noteBlock(c0){const co=coOf(c0);const c=co?{...c0,taxId:c0.taxId||co.taxId,status:co.status,processes:co.processes,brands:co.brands,nextFollow:co.nextFollow,visits:personVisits(c0).map(x=>x.v)}:c0;const p=[];if(c.taxId)p.push('統編：'+c.taxId);if(c.addresses.length)p.push('其他地址：\n'+addrText(c));if(c.metAt)p.push('認識：'+c.metAt);if(c.status)p.push('狀態：'+c.status);if(c.processes.length)p.push('加工：'+c.processes.join('、'));if(c.brands)p.push('刀具品牌：'+c.brands);if(c.nextFollow)p.push('下次跟進：'+fmtD(c.nextFollow));if(c.notes)p.push(c.notes);const lv=lastVisit(c);if(lv)p.push(`最近聯絡 ${fmtD(lv.date)}（${lv.type}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`);return p.join('\n')}
 function exportOutlook(list){
+  list=expand(list).filter(c=>!isCo(c));
   const H=['First Name','Last Name','Nickname','Company','Department','Job Title','E-mail Address','Mobile Phone','Business Phone','Business Fax','Business Street','Business City','Business Country/Region','Other Street','Web Page','Notes','Categories'];
   const rows=[H,...list.map(c=>{const[f,l]=splitName(c.name);const tw=c.region&&c.region!=='海外';return[f,l,c.nameEn,c.company,c.dept,c.title,c.email,c.mobile,c.phone,c.fax,c.address,tw?c.region:'',tw?'Taiwan':'',c.addresses[0]?c.addresses[0].address:'',c.website,noteBlock(c),c.category]})];
   return saveFile(`Outlook聯絡人_${stamp()}.csv`,toCSV(rows));
 }
 async function exportJSON(list){
+  const full=list===contacts;list=expand(list);
   const out=[];let i=0;
   for(const c of list){toast(`準備備份檔… ${++i}/${list.length}`,60000);const photos={};
     for(const s of ['front','back'])if(c['has'+(s==='front'?'Front':'Back')]){const d=await Store.getPhoto(c.id,s);if(d)photos[s]=d}
@@ -1507,7 +1797,7 @@ async function exportJSON(list){
     out.push({...c,visits,photos})}
   toast('備份檔準備好了',1500);
   const ok=await saveFile(`名片管家備份_含照片_${stamp()}.json`,JSON.stringify({app:'名片管家',version:2,exported:new Date().toISOString(),contacts:out}));
-  if(ok&&list===contacts){await Meta.set('lastBackup',new Date().toISOString());checkBackup()}
+  if(ok&&full){await Meta.set('lastBackup',new Date().toISOString());checkBackup()}
   return ok;
 }
 
@@ -1556,6 +1846,7 @@ async function handleImport(file,kind){
       if(!H.includes('姓名'))throw new Error('找不到「姓名」欄位');
       list=rows.slice(1).map(r=>{const o={};H.forEach((h,i)=>{const k=CSVMAP[h];if(k)o[k]=(r[i]||'').trim()});o.nextFollow=normDate(o.nextFollow);if(!o.id)delete o.id;return o}).filter(o=>o.name)}
     const r=await mergeIn(list,(i,n)=>toast(`匯入中… ${i}/${n}`,60000));
+    try{await linkAll()}catch(_){}
     refresh();checkBackup();toast(`新增 ${r.add} 位、更新 ${r.upd} 位`);
   }catch(e){toast('匯入失敗：'+(e&&e.message||'請檢查檔案'),4000)}
 }
@@ -1568,7 +1859,8 @@ document.addEventListener('click',async e=>{
     if(m.id==='mBatch'&&B.rows.some(r=>r.state==='ok')&&!await confirmBox('還有辨識好、但還沒儲存的名片，確定要關掉嗎？\n（關掉後這些辨識結果會清掉）',{ok:'關掉',danger:true}))return;
     if(m.id==='mBatch'){if(B.ctl)B.ctl.abort();B.rows=[]}
     closeModal(m);return}
-  const it=t.closest('.item');if(it){select(it.dataset.id);return}
+  const it=t.closest('.item');if(it){if(it.dataset.id)select(it.dataset.id);return}
+  const go=t.closest('[data-go]');if(go){select(go.dataset.go);return}
   if(t.closest('[data-scan]')){openScan();return}
   const chip=t.closest('[data-cat]');if(chip){S.cat=chip.dataset.cat;renderList();return}
   const bn=t.closest('.banner button');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;renderList();return}
@@ -1583,33 +1875,37 @@ document.addEventListener('click',async e=>{
   if(t.closest('#dBack')){goBack();return}
   if(!c)return;
   if(t.closest('#dEdit')){openEdit(c);return}
-  if(t.closest('#dDel')){if(await confirmBox(`確定要刪除「${c.name}」？\n（包含照片和所有拜訪紀錄，無法復原）`,{ok:'刪除',danger:true})){try{await Store.del(c);contacts=contacts.filter(x=>x.id!==c.id);S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('刪除失敗')}}return}
-  if(t.closest('#dShare')){shareCard(c);return}
+  if(t.closest('#pNew')){openEdit(normalize({company:c.company,taxId:c.taxId,companyId:c.id,category:c.category}));return}
+  if(t.closest('#dDel')&&isCo(c)){const ppl=peopleOf(c);if(await confirmBox(`確定要刪除「${c.company}」？\n\n會一起刪除 ${c.visits.length} 筆拜訪紀錄${ppl.length?`和 ${ppl.length} 位聯絡人（${ppl.slice(0,3).map(p=>p.name).join('、')}${ppl.length>3?'…':''}）的名片`:''}，無法復原。`,{ok:'全部刪除',danger:true})){try{for(const p of ppl)await Store.del(p);await Store.del(c);const gone=new Set([c.id,...ppl.map(p=>p.id)]);contacts=contacts.filter(x=>!gone.has(x.id));S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('刪除失敗')}}return}
+  if(t.closest('#dDel')){if(await confirmBox(coOf(c)?`確定要刪除「${c.name}」的名片？\n（公司的拜訪紀錄會留著）`:`確定要刪除「${c.name}」？\n（包含照片和所有拜訪紀錄，無法復原）`,{ok:'刪除',danger:true})){try{await Store.del(c);contacts=contacts.filter(x=>x.id!==c.id);S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('刪除失敗')}}return}
+  if(t.closest('#dShare')){openShare(c);return}
   if(t.closest('#dAsk')){
-    const lv=lastVisit(c);
-    const txt=`幫我做拜訪前準備，請上網查這家公司，整理成一頁重點（公司做什麼產品、規模、主要客戶產業、可能用到哪些刀具或加工、最近新聞，以及我拜訪時可以聊的切入點）：\n\n公司：${c.company||'（未填）'}\n地址：${c.address||'（未填）'}\n網站：${c.website||'（未填）'}\n對象：${c.name}${c.title?'（'+c.title+'）':''}\n已知加工類型：${c.processes.join('、')||'不清楚'}\n目前使用的刀具品牌：${c.brands||'不清楚'}\n備註：${c.notes||'無'}${lv?`\n上次聯絡（${fmtD(lv.date)}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`:''}`;
+    const P0=isCo(c)?sortPeople(c)[0]:c;const C0=isCo(c)?c:(coOf(c)||c);const lv=isCo(C0)?lastVisit(C0):(personVisits(c).sort(byDate)[0]||{}).v;
+    const txt=`幫我做拜訪前準備，請上網查這家公司，整理成一頁重點（公司做什麼產品、規模、主要客戶產業、可能用到哪些刀具或加工、最近新聞，以及我拜訪時可以聊的切入點）：\n\n公司：${C0.company||'（未填）'}\n地址：${C0.address||c.address||'（未填）'}\n網站：${C0.website||'（未填）'}\n對象：${isCo(c)?sortPeople(c).map(p=>p.name+(p.title?'（'+p.title+'）':'')).join('、')||'（未填）':c.name+(c.title?'（'+c.title+'）':'')}\n已知加工類型：${C0.processes.join('、')||'不清楚'}\n目前使用的刀具品牌：${C0.brands||'不清楚'}\n備註：${C0.notes||(P0&&P0.notes)||'無'}${lv?`\n上次聯絡（${fmtD(lv.date)}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`:''}`;
     try{await navigator.clipboard.writeText(txt);toast('已複製，貼給 Claude 就可以')}catch(_){await infoBox('請長按下面的文字全選後複製，再貼給 Claude：',{text:txt,ok:'關閉'})}
     return}
   if(t.closest('#fDone')){c.nextFollow='';await save(c).catch(()=>toast('儲存失敗'));refresh();toast('已清除跟進日期，記得記一筆紀錄');openVisit(c);return}
   const sn=t.closest('[data-snooze]');if(sn){const base=c.nextFollow&&c.nextFollow>today()?c.nextFollow:today();c.nextFollow=addDays(base,+sn.dataset.snooze);await save(c).catch(()=>toast('儲存失敗'));refresh();toast('跟進日期改為 '+fmtD(c.nextFollow));return}
-  if(t.closest('#vNew')){openVisit(c);return}
-  const veb=t.closest('[data-vedit-btn]');if(veb){openVisit(c,veb.dataset.veditBtn);return}
+  if(t.closest('#vNew')){const co=coOf(c);if(!isCo(c)&&co)openVisit(co,null,{who:[c.id]});else openVisit(c);return}
+  const own=el=>{const o=el.closest('[data-o]');return (o&&contacts.find(x=>x.id===o.dataset.o))||c};
+  const veb=t.closest('[data-vedit-btn]');if(veb){openVisit(own(veb),veb.dataset.veditBtn);return}
   if(t.closest('[data-padd]')){pickVisitPhotos(null);return}
   const pd=t.closest('[data-pdel]');if(pd){vPend.splice(+pd.dataset.pdel,1);paintPend();saveDraft();return}
   const pxd=t.closest('[data-pxdel]');if(pxd){VS.removed.push(pxd.dataset.pxdel);paintPend();saveDraft();return}
-  const va=t.closest('[data-vpadd]');if(va){pickVisitPhotos(va.dataset.vpadd);return}
-  const vpd=t.closest('[data-vpdel]');if(vpd){if(await confirmBox('刪除這張照片？',{ok:'刪除',danger:true})){const pid=vpd.dataset.vpdel;
+  const va=t.closest('[data-vpadd]');if(va){pickVisitPhotos(va.dataset.vpadd,own(va).id);return}
+  const vpd=t.closest('[data-vpdel]');if(vpd){if(await confirmBox('刪除這張照片？',{ok:'刪除',danger:true})){const pid=vpd.dataset.vpdel;const c=own(vpd);
     const nc={...c,visits:c.visits.map(x=>x.id===vpd.dataset.v?{...x,photos:(x.photos||[]).filter(p=>p.id!==pid)}:x),deletedPhotos:[...(c.deletedPhotos||[]),pid]};
     await VP.del(pid);await save(nc).catch(()=>toast('刪除失敗'));renderDetail()}return}
-  const ve=t.closest('[data-vedit]');if(ve&&!t.closest('button,a,img,.vph')){openVisit(c,ve.dataset.vedit);return}
-  const vd=t.closest('[data-vdel]');if(vd){if(await confirmBox('刪除這筆紀錄？',{ok:'刪除',danger:true})){const gone=c.visits.find(v=>v.id===vd.dataset.vdel);for(const ph of (gone&&gone.photos)||[])await VP.del(ph.id);const nc={...c,visits:c.visits.filter(v=>v.id!==vd.dataset.vdel),deletedVisits:[...(c.deletedVisits||[]),vd.dataset.vdel]};await save(nc).catch(()=>toast('刪除失敗'));refresh()}return}
+  const ve=t.closest('[data-vedit]');if(ve&&!t.closest('button,a,img,.vph')){openVisit(own(ve),ve.dataset.vedit);return}
+  const vd=t.closest('[data-vdel]');if(vd){if(await confirmBox('刪除這筆紀錄？',{ok:'刪除',danger:true})){const c=own(vd);const gone=c.visits.find(v=>v.id===vd.dataset.vdel);for(const ph of (gone&&gone.photos)||[])await VP.del(ph.id);const nc={...c,visits:c.visits.filter(v=>v.id!==vd.dataset.vdel),deletedVisits:[...(c.deletedVisits||[]),vd.dataset.vdel]};await save(nc).catch(()=>toast('刪除失敗'));refresh()}return}
 });
 document.addEventListener('click',async e=>{
   const x=e.target.closest('[data-x]');if(x){const list=scopeList();if(!list.length){toast('沒有可匯出的名片');return}
-    const ok=await ({xlsx:exportXLSX,outlook:exportOutlook,json:exportJSON})[x.dataset.x](list);if(ok){toast(`已匯出 ${list.length} 位`);closeModal($('#mExport'))}return}
+    const ok=await ({xlsx:exportXLSX,outlook:exportOutlook,json:exportJSON})[x.dataset.x](list);if(ok){toast('已匯出');closeModal($('#mExport'))}return}
   const im=e.target.closest('[data-i]');if(im){const inp=$('#importInput');inp.dataset.kind=im.dataset.i;inp.accept=im.dataset.i==='json'?'.json,application/json':'.csv,text/csv';inp.value='';inp.click()}
 });
 $('#bScan').onclick=()=>openScan();
+$('#shGo').onclick=goShare;
 hydrateIcons();Theme.set(Theme.get());
 $('#bTheme').onclick=()=>Theme.set(Theme.get()==='dark'?'light':'dark');
 $('#syncBadge').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#syncBadge').click()}});
@@ -1758,6 +2054,7 @@ const Sync={
     await Meta.set('deleted',del);
     // 7. refresh UI
     contacts=merged.map(normalize);
+    if(needsLink()&&localStorage.getItem('mpgj.coMigrated'))await linkAll();
     if(S.sel&&!contacts.some(c=>c.id===S.sel))S.sel=null;
     renderList();if(!$('#mEdit').classList.contains('on')&&!$('#mVisit').classList.contains('on'))renderDetail();
   }
@@ -1830,6 +2127,7 @@ refresh();
   try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(_){}
   try{contacts=(await LDB.all()).map(normalize)}catch(_){contacts=[]}
   refresh();checkBackup();
+  try{await maybeMigrate()}catch(_){}
   const rd=Sync.takeRedirect();
   if(rd&&rd.ok){toast('已連結 Google 雲端硬碟，開始同步…',3000);Sync.run()}
   else if(rd&&rd.error){toast(rd.error==='access_denied'?'已取消 Google 登入':'Google 登入沒有成功，請再試一次',4000)}

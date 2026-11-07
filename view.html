@@ -317,6 +317,7 @@ label.f.warn>span::after{content:"　請確認";font-weight:500;color:var(--org)
 .tsum{margin-top:6px;padding:8px 12px;border-radius:12px;background:var(--chip);font-size:13px;color:var(--sub);line-height:1.6}
 .tsum div:first-child{color:var(--ink);font-weight:600}
 .tsum .tb{color:var(--ink)}
+.wh{font-size:13px;color:var(--sub);margin:4px 0 2px}
 </style>
 </head>
 <body>
@@ -406,9 +407,10 @@ async function unpack(s){
   try{c=await unpack(decodeURIComponent(h))}
   catch(e){if(e.message==='old')msg('mobile','打不開這個連結','這支手機的瀏覽器版本太舊，請更新系統後再試');else msg('link','連結不完整','請再跟分享的人要一次');return}
   if(!c.x||Date.now()/1000>c.x){msg('clock','連結已過期','');return}
-  document.title=(c.n||'名片')+(c.co?'｜'+c.co:'');
+  const isCo=c.k==='co';
+  document.title=isCo?(c.co||'公司資料'):(c.n||'名片')+(c.co?'｜'+c.co:'');
   const kv=(icn,label,val)=>'<div class="kv"><span class="k">'+ic(icn)+'</span><div style="flex:1;min-width:0"><div class="kl">'+label+'</div><div class="kvv">'+val+'</div></div></div>';
-  const rows=[['mobile','手機',c.mo&&tel(c.mo)],['phone','公司電話',c.ph&&tel(c.ph)],['fax','傳真',c.fx&&esc(c.fx)],
+  const rows=[['mobile','手機',c.mo&&tel(c.mo)],['phone',isCo?'公司電話':'公司電話',c.ph&&tel(c.ph)],['fax','傳真',c.fx&&esc(c.fx)],
     ['mail','Email',c.em&&'<a href="mailto:'+esc(c.em)+'">'+esc(c.em)+'</a>'],['pin','地址',c.ad&&esc(c.ad)+map(c.ad)],
     ...(c.as||[]).map(a=>['factory',esc(a[0]||'其他地址'),esc(a[1])+map(a[1])]),
     ['link','網站／LINE',c.ws&&web(c.ws)],['receipt','統一編號',c.tx&&esc(c.tx)],['building','部門',c.de&&esc(c.de)],['map','地區',c.rg&&esc(c.rg)],
@@ -416,13 +418,17 @@ async function unpack(s){
     ['tool','刀具品牌',c.br&&esc(c.br)],['users','認識情境',c.mt&&esc(c.mt)],['note','備註',c.no&&esc(c.no)]].filter(r=>r[2]);
   const vs=c.v||[];const yNow=String(new Date().getFullYear());
   const vDate=d=>{if(!d)return '<b>—</b>';const [y,m,dd]=d.split('-');return '<b>'+(+dd)+'</b><small>'+(+m)+' 月</small>'+(y!==yNow?'<small>'+y+'</small>':'')};
+  const ppl=(c.p||[]).map(r=>({n:r[0],ti:r[1],mo:r[2],em:r[3],ph:r[4],de:r[5],ne:r[6],no:r[7]}));
+  const pBlock=ppl.length?'<div class="gh">聯絡人・'+ppl.length+' 位</div><div class="dgrp glass">'+ppl.map(p=>'<div class="kv"><span class="k">'+ic('users')+'</span><div style="flex:1;min-width:0"><div class="kvv"><b>'+esc(p.n)+'</b>'+(p.ne?' <span style="color:var(--sub)">'+esc(p.ne)+'</span>':'')+(p.ti||p.de?' <span style="color:var(--sub);font-size:13px">'+esc([p.de,p.ti].filter(Boolean).join(' '))+'</span>':'')+'</div>'+
+    [p.mo&&tel(p.mo),p.ph&&tel(p.ph),p.em&&'<a href="mailto:'+esc(p.em)+'">'+esc(p.em)+'</a>'].filter(Boolean).map(x=>'<div class="kvv" style="font-size:14px">'+x+'</div>').join('')+(p.no?'<div class="kvv" style="font-size:13px;color:var(--sub)">'+esc(p.no)+'</div>':'')+'</div></div>').join('')+'</div>':'';
   $m.innerHTML=
+  (isCo?'<div class="dcard glass"><div class="dhead"><div class="who"><h2>'+esc(c.co)+'</h2>'+(c.rg?'<div class="co">'+esc(c.rg)+'</div>':'')+'</div></div>':
   '<div class="dcard glass"><div class="dhead"><div class="who"><h2>'+esc(c.n)+(c.ne?'<span class="en">'+esc(c.ne)+'</span>':'')+'</h2>'+
-  '<div class="co">'+esc(c.co||'')+(c.ti?' · '+esc(c.ti):'')+'</div></div></div>'+
+  '<div class="co">'+esc(c.co||'')+(c.ti?' · '+esc(c.ti):'')+'</div></div></div>')+
   '<div class="oneact"><a class="btn" target="_blank" rel="noopener" href="https://www.google.com/search?q='+encodeURIComponent(c.co||c.n||'')+'">'+ic('globe')+'Google 查公司</a></div></div>'+
-  (rows.length?'<div class="gh">詳細資料</div><div class="dgrp glass">'+rows.map(r=>kv(r[0],r[1],r[2])).join('')+'</div>':'')+
+  pBlock+(rows.length?'<div class="gh">'+(isCo?'公司資料':'詳細資料')+'</div><div class="dgrp glass">'+rows.map(r=>kv(r[0],r[1],r[2])).join('')+'</div>':'')+
   '<div class="gh">拜訪／聯絡紀錄・'+vs.length+' 筆</div><div class="dgrp glass vwrap">'+
-  (vs.length?'<div class="tl">'+vs.map(v=>'<div class="v"><div class="vd">'+vDate(v[0])+'</div><div class="vt">'+(v[1]?'<div class="ty"><span class="badge">'+esc(v[1])+'</span></div>':'')+(v[4]?'<div class="tsum">'+v[4].split('\n').map(l=>'<div>'+esc(l)+'</div>').join('')+'</div>':'')+(v[2]?'<div class="ct">'+esc(v[2])+'</div>':'')+(v[3]?'<div class="nx">→ '+esc(v[3])+'</div>':'')+'</div></div>').join('')+'</div>':'<div style="color:var(--sub);font-size:14px">沒有紀錄</div>')+
+  (vs.length?'<div class="tl">'+vs.map(v=>'<div class="v"><div class="vd">'+vDate(v[0])+'</div><div class="vt">'+(v[1]?'<div class="ty"><span class="badge">'+esc(v[1])+'</span></div>':'')+(v[5]?'<div class="wh">窗口：'+esc(v[5])+'</div>':'')+(v[4]?'<div class="tsum">'+v[4].split('\n').map(l=>'<div>'+esc(l)+'</div>').join('')+'</div>':'')+(v[2]?'<div class="ct">'+esc(v[2])+'</div>':'')+(v[3]?'<div class="nx">→ '+esc(v[3])+'</div>':'')+'</div></div>').join('')+'</div>':'<div style="color:var(--sub);font-size:14px">沒有紀錄</div>')+
   '</div><div class="vfoot">名片管家・唯讀分享</div>';
 })();
 addEventListener('hashchange',()=>location.reload());
