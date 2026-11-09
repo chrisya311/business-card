@@ -147,7 +147,7 @@ function renderList(){
   $('#nOd').textContent=od;$('#nWk').textContent=wk;$('#nAll').textContent=rows.length;
   $$('.banner button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.follow&&S.follow!=='all'));
   const used=new Set(contacts.map(c=>c.category).filter(Boolean));
-  $('#catChips').innerHTML=['',...optWith('cat',[...used]).filter(c=>used.has(c)||c===S.cat)].map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c?esc(c):'全部類別'}</button>`).join('');
+  $('#catChips').innerHTML=['',...optWith('cat',[...used]).filter(c=>used.has(c)||c===S.cat)].map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c?esc(c):'全部類別'}</button>`).join('');paintGlass();
   const usedR=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort((a,b)=>{const o=optWith('region',[a,b]);return o.indexOf(a)-o.indexOf(b)});
   $('#fRegion').innerHTML='<option value="">所有地區</option>'+usedR.map(r=>`<option ${S.region===r?'selected':''}>${esc(r)}</option>`).join('');
   const usedP=optWith('proc',contacts.flatMap(c=>c.processes)).filter(p=>contacts.some(c=>c.processes.includes(p)));
@@ -410,25 +410,41 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
       requestAnimationFrame(()=>{clean(b,m);m.style.visibility=''})}else clean(b,m)},ms+20)};
   document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
 })();
+/* 類別按鈕的「液態玻璃」：一塊半透明玻璃墊在選中的類別下面，換類別時滑過去（會稍微超過再彈回，移動中被壓扁一點） */
+const Glass={x:null,w:null,t:0};
+function glassEl(){const box=$('#catChips');let g=box.querySelector('.chipglass');
+  if(!g){g=document.createElement('span');g.className='chipglass';g.setAttribute('aria-hidden','true');box.prepend(g);if(Glass.x!=null)glassPos(Glass.x,Glass.w,false)}return g}
+function glassPos(x,w,anim){const g=glassEl();if(!anim)g.style.transition='none';g.style.left=x+'px';g.style.width=w+'px';
+  if(!anim){void g.offsetWidth;g.style.transition=''}Glass.x=x;Glass.w=w}
+function paintGlass(){const on=$('#catChips .chip.on');if(!on||!on.offsetWidth)return;const g=glassEl();const x=on.offsetLeft,w=on.offsetWidth;
+  g.classList.remove('hold');if(Glass.x===x&&Glass.w===w)return;
+  if(Glass.x==null){glassPos(x,w,false);return}
+  requestAnimationFrame(()=>{g.classList.add('move');glassPos(x,w,true);clearTimeout(Glass.t);Glass.t=setTimeout(()=>g.classList.remove('move'),280)})}
+/* 手指拖到一半：玻璃在兩個按鈕之間，中途被拉長；沒有下一個類別時只稍微被拉一下 */
+function glassDrag(a,b,p,dx){if(!a)return;const g=glassEl();g.classList.add('hold');
+  if(!b){const s=Math.min(Math.abs(dx)*.12,14);glassPos(dx<0?a.offsetLeft:a.offsetLeft-s,a.offsetWidth+s,false);return}
+  const x=a.offsetLeft+(b.offsetLeft-a.offsetLeft)*p,w=a.offsetWidth+(b.offsetWidth-a.offsetWidth)*p,s=Math.sin(Math.PI*p)*18;
+  glassPos(x-s/2,w+s,false)}
 /* 首頁左右滑切換類別（手機）：清單跟著手指走，放開後換到上一個／下一個類別；到盡頭會輕輕彈回 */
-(()=>{let x0=0,y0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0,cats=[],idx=0;
+(()=>{let x0=0,y0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0,cats=[],idx=0,chipEls=[];
   const list=()=>$('#list'),EASE='cubic-bezier(.2,.8,.2,1)';
   const set=(x,ms,op)=>{const l=list();l.style.transition=ms?`transform ${ms}ms ${EASE},opacity ${ms}ms ${EASE}`:'none';l.style.transform=x?`translate3d(${x}px,0,0)`:'';l.style.opacity=op==null?'':String(op)};
   const showChip=()=>{const on=$('#catChips .chip.on');if(on){const box=$('#catChips');box.scrollTo({left:on.offsetLeft-(box.clientWidth-on.offsetWidth)/2,behavior:'smooth'})}};
   document.addEventListener('touchstart',e=>{active=false;if(!isNarrow()||document.body.classList.contains('detail')||$$('.modal.on').length||$('#dlg.on')||e.touches.length!==1)return;
     if(!e.target.closest('#list'))return;const t=e.touches[0];if(t.clientX<24)return;
-    cats=$$('#catChips [data-cat]').map(b=>b.dataset.cat);idx=cats.indexOf(S.cat);if(cats.length<2||idx<0)return;
+    chipEls=$$('#catChips [data-cat]');cats=chipEls.map(b=>b.dataset.cat);idx=cats.indexOf(S.cat);if(cats.length<2||idx<0)return;
     x0=lastX=t.clientX;y0=t.clientY;lastT=e.timeStamp;dx=0;vx=0;locked=null;W=window.innerWidth;active=true},{passive:true});
   document.addEventListener('touchmove',e=>{if(!active)return;const t=e.touches[0];const mx=t.clientX-x0,my=t.clientY-y0;
     if(locked===null&&(Math.abs(mx)>10||Math.abs(my)>10)){locked=Math.abs(mx)>Math.abs(my)*1.2?'h':'v';if(locked==='h')document.body.classList.add('catswipe')}
     if(locked!=='h')return;e.preventDefault();
     const dt=e.timeStamp-lastT;if(dt>0)vx=.8*((t.clientX-lastX)/dt)+.2*vx;lastX=t.clientX;lastT=e.timeStamp;
     const has=mx>0?idx>0:idx<cats.length-1;dx=has?mx:mx*.25;   // 沒有下一個類別時，拉起來比較重（彈性）
-    set(dx,0,has?1-Math.min(Math.abs(dx)/W,1)*.5:1)},{passive:false});
+    set(dx,0,has?1-Math.min(Math.abs(dx)/W,1)*.5:1);
+    glassDrag(chipEls[idx],has?chipEls[idx+(mx<0?1:-1)]:null,Math.min(Math.abs(dx)/(W*.6),1),dx)},{passive:false});
   const end=()=>{if(!active)return;active=false;if(locked!=='h')return;
     const dir=dx<0?1:-1,to=idx+dir,has=to>=0&&to<cats.length;
     const go=has&&(Math.abs(dx)>W*.25||(Math.abs(vx)>.35&&Math.abs(dx)>20&&Math.sign(vx)===Math.sign(dx)));
-    if(!go){set(0,240,1);setTimeout(()=>{set(0,0);document.body.classList.remove('catswipe')},260);return}
+    if(!go){paintGlass();set(0,240,1);setTimeout(()=>{set(0,0);document.body.classList.remove('catswipe')},260);return}
     const ms=Math.round(Math.max(140,Math.min(260,(W-Math.abs(dx))/Math.max(Math.abs(vx),1.2))));
     set(-dir*W,ms,.3);
     setTimeout(()=>{S.cat=cats[to];renderList();list().scrollTop=0;showChip();

@@ -125,8 +125,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.09-6';
+const APP_VERSION='2026.11.09-7';
 const CHANGELOG=[
+  {v:'2026.11.09-7',items:['首頁的類別按鈕改成「液態玻璃」效果：選中的類別下面墊一塊半透明玻璃，換類別時會滑過去','在清單上左右滑時，玻璃會跟著手指移動']},
   {v:'2026.11.09-6',items:['首頁可以左右滑切換類別：往左滑換到下一個，往右滑回上一個，上方的類別按鈕會跟著移動']},
   {v:'2026.11.09-5',items:['確認刪除的按鈕改成紅底白字，比較清楚']},
   {v:'2026.11.09-4',items:['修正：在編輯選項的畫面點選項時，會跳出 iPhone 的「檔案」App','選項可以長按拖曳調整順序（或按住右邊的 ≡ 直接拖）；點一下名字就能改名']},

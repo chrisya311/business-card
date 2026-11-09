@@ -452,3 +452,18 @@ body.peek .wrap{overflow:hidden}
 /* 首頁左右滑切換類別：滑動時把超出的部分剪掉，畫面不會被撐寬 */
 body.catswipe .side{overflow:hidden}
 body.catswipe .list{will-change:transform,opacity}
+/* 類別按鈕：液態玻璃指示器 */
+#catChips{position:relative}
+#catChips .chip{position:relative;z-index:1;transition:color .25s}
+#catChips .chip.on{background:transparent;box-shadow:none}
+.chipglass{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:12px;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.05));
+  -webkit-backdrop-filter:blur(8px) saturate(180%);backdrop-filter:blur(8px) saturate(180%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 1px rgba(255,255,255,.1),inset 0 0 0 1px rgba(255,255,255,.14),0 6px 16px rgba(0,0,0,.35);
+  transition:left .5s cubic-bezier(.3,1.4,.5,1),width .5s cubic-bezier(.3,1.4,.5,1),transform .28s cubic-bezier(.3,1.4,.5,1)}
+.chipglass::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(120% 90% at 28% 0%,rgba(255,255,255,.38),transparent 55%);opacity:.75}
+.chipglass.move{transform:scale(1.04,.86)}
+.chipglass.hold{transform:scale(1.03,.9)}
+:root[data-theme=light] .chipglass{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.62));
+  box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.9),0 4px 14px rgba(21,32,26,.16),0 1px 2px rgba(21,32,26,.12)}
+:root[data-theme=light] .chipglass::before{background:radial-gradient(120% 90% at 28% 0%,rgba(255,255,255,.9),transparent 60%)}
