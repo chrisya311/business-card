@@ -394,3 +394,10 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 @media (max-width:820px){.mbox,.mhead,.mfoot{background:var(--sheet-solid)}}
 :root,:root[data-theme=dark]{--sheet-solid:#161D1A}
 :root[data-theme=light]{--sheet-solid:#F3F6F2}
+/* 右滑返回時：上方按鈕列固定不動（滑出去的頁面被剪掉，不會把整個畫面撐寬）；從人返回公司時，底下露出的是公司頁 */
+body.peek .wrap{overflow:hidden}
+.main.under{display:none}
+@media (max-width:820px){
+  body.detail.peek.deep .side{display:none}
+  body.detail.peek.deep .main.under{display:block;position:absolute;inset:0;z-index:0;box-shadow:none;will-change:transform,opacity}
+}

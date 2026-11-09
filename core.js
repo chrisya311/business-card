@@ -121,8 +121,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.09-1';
+const APP_VERSION='2026.11.09-2';
 const CHANGELOG=[
+  {v:'2026.11.09-2',items:['右滑返回時，上方的按鈕列固定不動','修正：從公司點進聯絡人，再右滑返回時，會先閃到首頁才回到公司頁；現在會直接回到公司頁，也會回到原本捲動的位置']},
   {v:'2026.11.09-1',items:['程式整理：拆成幾個小檔案，之後比較好維護。功能和外觀都沒有改變']},
   {v:'2026.11.07-18',items:['Logo 去背，不再有白色底；深色 logo 在暗色模式會加一圈淡淡的白邊，才看得清楚','修正：用 Gemini 時找不到 logo（Gemini 回報位置的方式不一樣），之前沒找到的公司會再找一次']},
   {v:'2026.11.07-17',items:['公司 logo 改成直接從名片上剪下來：拍名片時一起找，已經存好的名片也會自動補（每家公司找一次）','不用再上網找網站圖示','剪得不好看可以到「編輯公司」按「不要這個 logo」','沒有 logo 的公司，漸層圖示再縮小一點']},
