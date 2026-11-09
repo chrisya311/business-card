@@ -348,10 +348,13 @@ function renderPerson(c){
 }
 const isNarrow=()=>window.innerWidth<=820;
 let navDepth=0,afterPop=null;
+/* 公司→人這種「往裡面點」時，把上一頁拍一張快照（navStack），右滑返回時底下露出的是上一頁，不是首頁清單 */
+const navStack=[];
+const trimNav=()=>{if(navStack.length>navDepth)navStack.length=navDepth};
 function resetSwipe(){document.body.classList.remove('peek');for(const el of [$('#main'),$('.side')]){if(el){el.style.transition='';el.style.transform='';el.style.opacity=''}}}
-function select(id){resetSwipe();const was=S.sel;S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;
-  if(isNarrow()){window.scrollTo(0,0);const inDetail=history.state&&history.state.detail;if(!was||!inDetail){navDepth=0;history.pushState({detail:id},'')}else if(was!==id){navDepth++;history.pushState({detail:id},'')}}}
-function closeDetail(){resetSwipe();S.sel=null;navDepth=0;document.body.classList.remove('detail');renderList()}
+function select(id){resetSwipe();const was=S.sel;const snap=was&&isNarrow()?{el:$('#main').cloneNode(true),top:$('#main').scrollTop,id:was}:null;S.sel=id;renderList();renderDetail();$('#main').scrollTop=0;
+  if(isNarrow()){window.scrollTo(0,0);const inDetail=history.state&&history.state.detail;if(!was||!inDetail){navDepth=0;history.pushState({detail:id},'')}else if(was!==id){navStack[navDepth]=snap;navDepth++;history.pushState({detail:id},'')}trimNav()}}
+function closeDetail(){resetSwipe();S.sel=null;navDepth=0;trimNav();document.body.classList.remove('detail');renderList()}
 function goBack(){if(history.state&&history.state.detail)history.back();else closeDetail()}
 let skipPop=0;
 addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
@@ -360,20 +363,22 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
     setTimeout(()=>{if(m.classList.contains('on')&&isNarrow())history.pushState({modal:m.id},'')},300);return}
   const st=history.state&&history.state.detail;
   if(st&&!contacts.some(c=>c.id===st)){if(S.sel)closeDetail();return}
-  if(st&&st!==S.sel){navDepth=Math.max(0,navDepth-1);S.sel=st;renderList();renderDetail();$('#main').scrollTop=0;if(afterPop){const f=afterPop;afterPop=null;f()}return}
+  if(st&&st!==S.sel){navDepth=Math.max(0,navDepth-1);const back=navStack[navDepth];trimNav();S.sel=st;renderList();renderDetail();$('#main').scrollTop=back&&back.id===st?back.top:0;if(afterPop){const f=afterPop;afterPop=null;f()}return}
   if(S.sel&&!st)closeDetail()});
 /* swipe right to go back (phone) — iOS 式互動轉場：詳細頁跟著手指走，清單從左邊稍微滑入並變亮 */
 (()=>{let x0=0,y0=0,t0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0;
-  const main=()=>$('#main'),side=()=>$('.side'),EASE='cubic-bezier(.2,.8,.2,1)';
+  let under=null;
+  const main=()=>$('#main'),side=()=>under||$('.side'),EASE='cubic-bezier(.2,.8,.2,1)';
+  const showUnder=()=>{const b=navDepth>0&&navStack[navDepth-1];if(!b||!b.el)return;under=b.el;under.removeAttribute('id');under.classList.add('under');under.style.cssText='';$('#main').after(under);under.scrollTop=b.top;document.body.classList.add('deep')};
   const paint=x=>{const p=Math.min(Math.max(x/W,0),1);main().style.transform=`translate3d(${x}px,0,0)`;
     side().style.transform=`translate3d(${-30*(1-p)}%,0,0)`;side().style.opacity=String(.55+.45*p)};
-  const clean=()=>{const m=main(),sd=side();for(const el of [m,sd]){el.style.transition='';el.style.transform='';el.style.opacity=''}document.body.classList.remove('peek')};
+  const clean=()=>{const m=main(),sd=side();for(const el of [m,sd]){el.style.transition='';el.style.transform='';el.style.opacity=''}if(under){under.remove();under=null}document.body.classList.remove('peek','deep')};
   document.addEventListener('touchstart',e=>{active=false;if(!isNarrow()||!document.body.classList.contains('detail')||$$('.modal.on').length||$('#dlg.on')||e.touches.length!==1)return;
     const t=e.touches[0];if(t.clientX<24)return; // 螢幕最左邊交給 iPhone 系統自己的返回手勢
     if(e.target.closest('input,textarea,select'))return;x0=lastX=t.clientX;y0=t.clientY;t0=lastT=e.timeStamp;dx=0;vx=0;active=true;locked=null;W=window.innerWidth},{passive:true});
   document.addEventListener('touchmove',e=>{if(!active)return;const t=e.touches[0];const mx=t.clientX-x0,my=t.clientY-y0;
     if(locked===null&&(Math.abs(mx)>10||Math.abs(my)>10)){locked=Math.abs(mx)>Math.abs(my)*1.2&&mx>0?'h':'v';
-      if(locked==='h'){document.body.classList.add('peek');main().style.transition='none';side().style.transition='none'}}
+      if(locked==='h'){showUnder();document.body.classList.add('peek');main().style.transition='none';side().style.transition='none'}}
     if(locked!=='h')return;
     const dt=e.timeStamp-lastT;if(dt>0)vx=.8*((t.clientX-lastX)/dt)+.2*vx;lastX=t.clientX;lastT=e.timeStamp;
     dx=Math.max(0,mx);paint(dx)},{passive:true});
