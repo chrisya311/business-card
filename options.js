@@ -55,17 +55,15 @@ function openOpts(k,done){const D=OPT_DEF[k];
   OE.k=k;OE.done=done||null;OE.pick=-1;OE.newColor='gray';
   OE.items=D.a.map(n=>({n,o:n,c:Opts.color(k,n),cnt:optUsage(k,n)}));
   $('#oTitle').textContent='編輯'+D.t;$('#oNew').value='';$('#oNew').placeholder='新的'+D.t;
-  $('#oNote').innerHTML='點名字可以改名，用箭頭調整順序。'+(D.color?'點左邊的圓點可以換顏色。':'')+'<br>正在使用的選項改名或刪除時，舊資料會保留原本的名字。';
+  $('#oNote').innerHTML='點一下名字可以改名；長按一列（或按住右邊的 ≡）上下拖曳，可以調整順序。'+(D.color?'點左邊的圓點可以換顏色。':'')+'<br>正在使用的選項改名或刪除時，舊資料會保留原本的名字。';
   paintOpts();openModal('#mOpt')}
 function paintPal(cur,attr){return OPT_COLORS.map(([c,t])=>`<button type="button" ${attr}="${c}" class="${c===cur?'on':''}"><span class="odot c-${c}"></span>${t}</button>`).join('')}
 function paintOpts(){const D=OPT_DEF[OE.k];const lock=D.lock||{};const n=OE.items.length;
   const np=$('#oNewPal');np.hidden=!D.color;if(D.color)np.innerHTML=paintPal(OE.newColor,'data-onewc');
   $('#oList').innerHTML=OE.items.map((it,i)=>{const lk=lock[it.o];
-    return `<div class="orow" data-i="${i}">${D.color?`<button type="button" class="odot c-${it.c}${OE.pick===i?' on':''}" data-ocolor aria-label="換顏色"></button>`:''}
-      <input type="text" value="${esc(it.n)}" data-oname aria-label="選項名稱"${lk?' readonly':''}>${it.cnt?`<span class="ocnt">${it.cnt} 筆</span>`:''}
-      <button type="button" class="rbtn" data-oup aria-label="往上" ${i===0?'disabled':''}>${ic('up')}</button>
-      <button type="button" class="rbtn" data-odown aria-label="往下" ${i===n-1?'disabled':''}>${ic('down')}</button>
-      ${lk?`<button type="button" class="olock" data-olock aria-label="不能刪除" title="不能改名或刪除">${ic('lock')}</button>`:`<button type="button" class="rbtn" data-odel aria-label="刪除">${ic('trash')}</button>`}</div>`+
+    return `<div class="orow" data-oi="${i}">${D.color?`<button type="button" class="odot c-${it.c}${OE.pick===i?' on':''}" data-ocolor aria-label="換顏色"></button>`:''}
+      <input type="text" value="${esc(it.n)}" data-oname aria-label="選項名稱（點一下改名）" readonly>${it.cnt?`<span class="ocnt">${it.cnt} 筆</span>`:''}
+      ${lk?`<button type="button" class="olock" data-olock aria-label="不能刪除" title="不能改名或刪除">${ic('lock')}</button>`:`<button type="button" class="rbtn" data-odel aria-label="刪除">${ic('trash')}</button>`}<span class="ogrip" data-ogrip title="按住拖曳排序" aria-hidden="true">${ic('grip')}</span></div>`+
       (OE.pick===i?`<div class="opal">${paintPal(it.c,'data-oc')}</div>`:'')}).join('')||'<div class="orow" style="color:var(--sub);padding:14px">還沒有任何選項</div>'}
 const optDup=(name,except)=>OE.items.some((x,j)=>j!==except&&x.n===name);
 async function optRename(i,el){const it=OE.items[i];const name=el.value.trim();
@@ -82,13 +80,15 @@ function optAdd(){const el=$('#oNew');const name=el.value.trim();if(!name)return
   const rows=$$('#oList .orow');const last=rows[rows.length-1];if(last)last.scrollIntoView({block:'nearest'})}
 $('#oAdd').onclick=optAdd;
 $('#oNew').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();optAdd()}});
-$('#oList').addEventListener('change',e=>{const el=e.target.closest('[data-oname]');if(el)optRename(+el.closest('.orow').dataset.i,el)});
+$('#oList').addEventListener('change',e=>{const el=e.target.closest('[data-oname]');if(el)optRename(+el.closest('.orow').dataset.oi,el)});
+$('#oList').addEventListener('focusout',e=>{if(e.target.matches('[data-oname]'))e.target.readOnly=true});
 $('#oList').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.target.matches('[data-oname]')){e.preventDefault();e.target.blur()}});
 $('#mOpt').addEventListener('click',async e=>{const t=e.target;
   const nc=t.closest('[data-onewc]');if(nc){OE.newColor=nc.dataset.onewc;paintOpts();return}
   const row=t.closest('.orow');const pal=t.closest('.opal');
   if(pal&&!row){const c=t.closest('[data-oc]');if(c&&OE.pick>=0){OE.items[OE.pick].c=c.dataset.oc;OE.pick=-1;paintOpts()}return}
-  if(!row||row.dataset.i===undefined)return;const i=+row.dataset.i;const it=OE.items[i];
+  if(!row||row.dataset.oi===undefined||OE.justDragged)return;const i=+row.dataset.oi;const it=OE.items[i];
+  const nm=t.closest('[data-oname]');if(nm){if(OPT_DEF[OE.k].lock&&OPT_DEF[OE.k].lock[it.o]){infoBox(OPT_DEF[OE.k].lock[it.o]);return}if(nm.readOnly){nm.readOnly=false;nm.focus();const n=nm.value.length;try{nm.setSelectionRange(n,n)}catch(_){}}return}
   if(t.closest('[data-ocolor]')){OE.pick=OE.pick===i?-1:i;paintOpts();return}
   if(t.closest('[data-oup]')&&i>0){[OE.items[i-1],OE.items[i]]=[OE.items[i],OE.items[i-1]];OE.pick=-1;paintOpts();return}
   if(t.closest('[data-odown]')&&i<OE.items.length-1){[OE.items[i+1],OE.items[i]]=[OE.items[i],OE.items[i+1]];OE.pick=-1;paintOpts();return}
@@ -114,3 +114,37 @@ function optRefresh(){
   if($('#mEdit').classList.contains('on')&&typeof paintEditOpts==='function')paintEditOpts(readEditOpts());
   if($('#mVisit').classList.contains('on')&&typeof renderRuns==='function')renderRuns(readRuns());
   refresh()}
+/* 長按一列（或按住右邊的 ≡）上下拖曳排序 */
+(()=>{let timer=null,drag=null,sx=0,sy=0,lastY=0,scr=null;
+  const box=()=>$('#mOpt');
+  const start=(row,y)=>{timer=null;
+    if(OE.pick>=0){const i=row.dataset.oi;OE.pick=-1;paintOpts();row=$(`#oList .orow[data-oi="${i}"]`);if(!row)return}
+    const ae=document.activeElement;if(ae&&ae.matches&&ae.matches('[data-oname]'))ae.blur();
+    const r=row.getBoundingClientRect();drag={row,off:y-r.top,ty:0};lastY=y;row.classList.add('drag');
+    // 拖到視窗上下邊緣時自動捲動
+    scr=setInterval(()=>{if(!drag)return;const m=box(),h=window.innerHeight;const v=lastY<110?-10:lastY>h-110?10:0;if(v){m.scrollTop+=v;move(lastY)}},30)};
+  const move=y=>{lastY=y;const d=drag,row=d.row,want=y-d.off;
+    for(let k=0;k<50;k++){const prev=row.previousElementSibling,next=row.nextElementSibling;
+      if(prev&&prev.matches('.orow[data-oi]')){const pr=prev.getBoundingClientRect();if(want<pr.top+pr.height/2){row.after(prev);continue}}
+      if(next&&next.matches('.orow[data-oi]')){const nr=next.getBoundingClientRect();if(want+row.offsetHeight>nr.top+nr.height/2){next.after(row);continue}}
+      break}
+    const nat=row.getBoundingClientRect().top-d.ty;d.ty=want-nat;row.style.transform=`translateY(${d.ty}px)`};
+  const end=()=>{clearTimeout(timer);timer=null;clearInterval(scr);if(!drag)return;const row=drag.row;drag=null;
+    row.style.transform='';row.classList.remove('drag');
+    const order=$$('#oList .orow[data-oi]').map(r=>+r.dataset.oi);OE.items=order.map(i=>OE.items[i]);
+    paintOpts();OE.justDragged=true;setTimeout(()=>{OE.justDragged=false},80)};
+  const begin=(e,y,x)=>{const row=e.target.closest('#oList .orow[data-oi]');if(!row||drag)return false;
+    if(e.target.closest('[data-ogrip]')){start(row,y);return true}
+    if(e.target.closest('button,.opal'))return false;
+    const inp=e.target.closest('[data-oname]');if(inp&&!inp.readOnly)return false;
+    sx=x;sy=y;clearTimeout(timer);timer=setTimeout(()=>start(row,sy),400);return false};
+  const L=$('#oList');
+  L.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const t=e.touches[0];if(begin(e,t.clientY,t.clientX))e.preventDefault()},{passive:false});
+  document.addEventListener('touchmove',e=>{const t=e.touches[0];if(drag){e.preventDefault();move(t.clientY);return}
+    if(timer&&(Math.abs(t.clientX-sx)>8||Math.abs(t.clientY-sy)>8)){clearTimeout(timer);timer=null}},{passive:false});
+  document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
+  L.addEventListener('mousedown',e=>{if(e.button===0&&begin(e,e.clientY,e.clientX))e.preventDefault()});
+  document.addEventListener('mousemove',e=>{if(drag){e.preventDefault();move(e.clientY);return}if(timer&&(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8)){clearTimeout(timer);timer=null}});
+  document.addEventListener('mouseup',end);
+  L.addEventListener('contextmenu',e=>{if(e.target.closest('.orow'))e.preventDefault()});
+})();

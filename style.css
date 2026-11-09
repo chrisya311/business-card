@@ -438,3 +438,10 @@ body.peek .wrap{overflow:hidden}
 #mOpt{z-index:55}
 .oplus.mini{height:auto;min-width:0;border:0;padding:0;gap:2px;font-size:11px;line-height:inherit}
 .oplus.mini svg{width:12px;height:12px}
+/* 拖曳排序 */
+.orow{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative}
+.orow input[readonly]{cursor:pointer;-webkit-user-select:none;user-select:none;color:var(--ink)}
+.orow input:not([readonly]){-webkit-user-select:text;user-select:text}
+.ogrip{width:36px;height:40px;display:inline-flex;align-items:center;justify-content:center;color:var(--sub);cursor:grab;touch-action:none;flex:none}
+.ogrip svg{width:18px;height:18px}
+.orow.drag{z-index:3;background:var(--sheet-solid);box-shadow:0 10px 28px rgba(0,0,0,.4);border-radius:12px;opacity:.97}
