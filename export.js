@@ -58,7 +58,7 @@ async function exportJSON(list){
     const visits=[];for(const v of c.visits){const ps=[];for(const ph of v.photos||[]){const d=await VP.get(ph.id);ps.push(d?{...ph,d}:ph)}visits.push({...v,photos:ps})}
     out.push({...c,visits,photos})}
   toast('備份檔準備好了',1500);
-  const ok=await saveFile(`名片管家備份_含照片_${stamp()}.json`,JSON.stringify({app:'名片管家',version:2,exported:new Date().toISOString(),contacts:out}));
+  const ok=await saveFile(`名片管家備份_含照片_${stamp()}.json`,JSON.stringify({app:'名片管家',version:2,exported:new Date().toISOString(),contacts:out,...(full&&Opts.data.updated?{options:Opts.data}:{})}));
   if(ok&&full){await Meta.set('lastBackup',new Date().toISOString());checkBackup()}
   return ok;
 }
@@ -103,7 +103,8 @@ async function handleImport(file,kind){
   closeModal($('#mImport'));
   try{
     let list;
-    if(kind==='json'){const d=JSON.parse(text);list=Array.isArray(d)?d:d.contacts;if(!Array.isArray(list))throw new Error('檔案格式不對')}
+    if(kind==='json'){const d=JSON.parse(text);list=Array.isArray(d)?d:d.contacts;if(!Array.isArray(list))throw new Error('檔案格式不對');
+      if(d&&d.options&&Opts.adopt(d.options))optRefresh()}
     else{const rows=parseCSV(text);if(rows.length<2)throw new Error('檔案裡沒有資料');const H=rows[0].map(h=>h.trim());
       if(!H.includes('姓名'))throw new Error('找不到「姓名」欄位');
       list=rows.slice(1).map(r=>{const o={};H.forEach((h,i)=>{const k=CSVMAP[h];if(k)o[k]=(r[i]||'').trim()});o.nextFollow=normDate(o.nextFollow);if(!o.id)delete o.id;return o}).filter(o=>o.name)}

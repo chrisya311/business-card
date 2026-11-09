@@ -58,6 +58,8 @@ const Sync={
     // 1. remote data
     let remote={contacts:[],deleted:{}};const df=byName.get(this.dataName);
     if(df){const r=await this.api(`files/${df.id}?alt=media`,{},true);try{remote=await r.json()}catch(_){}}
+    // 自訂選項：比較新的那一份贏（舊版 App 上傳的資料沒有 options，就保留這台的）
+    const optNew=Opts.adopt(remote.options);
     const rDel=remote.deleted||{};const lDel=(await Meta.get('deleted'))||{};
     const del={...rDel};for(const k in lDel)if(!del[k]||lDel[k]>del[k])del[k]=lDel[k];
     // 2. make sure local photo hashes exist (older records)
@@ -95,7 +97,7 @@ const Sync={
     // local cleanup of visit photos that were deleted elsewhere
     for(const c of contacts)for(const v of c.visits||[])for(const ph of v.photos||[])if(!want.has(`v-${ph.id}-${ph.h}.jpg`)&&!merged.some(m=>m.visits.some(x=>(x.photos||[]).some(p=>p.id===ph.id))))await VP.del(ph.id);
     // 6. upload data + clean old photos
-    const payload={app:'名片管家',version:3,updated:new Date().toISOString(),contacts:merged,deleted:del};
+    const payload={app:'名片管家',version:3,updated:new Date().toISOString(),contacts:merged,deleted:del};if(Opts.data.updated)payload.options=Opts.data;
     await this.upload(this.dataName,new Blob([JSON.stringify(payload)],{type:'application/json'}),df&&df.id);
     for(const f of files)if((f.name.startsWith('p-')||f.name.startsWith('v-'))&&!want.has(f.name))await this.api(`files/${f.id}`,{method:'DELETE'},true).catch(()=>{});
     await Meta.set('deleted',del);
@@ -103,6 +105,7 @@ const Sync={
     contacts=merged.map(normalize);
     if(needsLink()&&localStorage.getItem('mpgj.coMigrated'))await linkAll();
     if(S.sel&&!contacts.some(c=>c.id===S.sel))S.sel=null;
+    if(optNew)optRefresh();
     renderList();if(!$('#mEdit').classList.contains('on')&&!$('#mVisit').classList.contains('on'))renderDetail();
   }
 };

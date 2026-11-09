@@ -36,10 +36,10 @@ function runCard(r,i,many){r=r||{};const v=k=>esc(r[k]||'');
       <label>ap<small>mm</small><input type="text" inputmode="decimal" data-k="ap" value="${v('ap')}"></label>
       <label>S 轉速<small>min⁻¹</small><input type="text" inputmode="decimal" data-k="n" value="${v('n')}"></label>
       <label>F 進給<small>mm/min</small><input type="text" inputmode="decimal" data-k="fm" value="${v('fm')}"></label>
-      <label>冷卻<small>&nbsp;</small><select data-k="cool"><option value=""></option>${COOLANTS.map(c=>`<option ${r.cool===c?'selected':''}>${c}</option>`).join('')}</select></label>
+      <label>冷卻<small>${optPlus('cool',' data-opt-for="cool"').replace('class="oplus"','class="oplus mini"').replace('</svg>','</svg>新增')}</small><select data-k="cool"><option value=""></option>${optWith('cool',[r.cool]).map(c=>`<option ${r.cool===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
     </div>
     <label class="f"><span>壽命</span><input type="text" data-k="life" value="${v('life')}" placeholder="例：120 件、45 分鐘、崩刃"></label>
-    <div class="f"><span class="fl">結果</span><div class="checks rres">${RESULTS.map(x=>`<label class="${r.result===x?'on':''}" data-res="${x}">${x}</label>`).join('')}</div></div>
+    <div class="f"><span class="fl">結果</span><div class="checks rres">${optWith('result',[r.result]).map(x=>`<label class="${r.result===x?'on':''}${optOld('result',x)?' old':''}" data-res="${esc(x)}">${esc(x)}</label>`).join('')}${optPlus('result',' data-opt-for="result"')}</div></div>
     <label class="f"><span>這組的備註</span><input type="text" data-k="note" value="${v('note')}" placeholder="例：第 2 件開始有振刀"></label>
   </div>`}
 function readRuns(){return $$('#tRuns .run').map(el=>{const r={};el.querySelectorAll('[data-k]').forEach(i=>r[i.dataset.k]=i.value);
@@ -47,11 +47,12 @@ function readRuns(){return $$('#tRuns .run').map(el=>{const r={};el.querySelecto
 function renderRuns(runs){runs=runs&&runs.length?runs:[{}];$('#tRuns').innerHTML=runs.map((r,i)=>runCard(r,i,runs.length>1)).join('')}
 function readVisitForm(){const t={mat:$('#tMat').value,proc:$('#tProc').value,ref:$('#tRef').value,refLife:$('#tRefLife').value,surf:$('#tSurf').value,runs:readRuns()};
   return{date:$('#vDate').value,type:$('#vType').value,content:$('#vContent').value,next:$('#vNext').value,follow:$('#vFollow').value,trial:t,who:$$('#vWho label.on').map(l=>l.dataset.who),other:$('#vOther').value}}
-function fillVisitForm(d){$('#vDate').value=d.date||today();$('#vType').value=VTYPES.includes(d.type)?d.type:'拜訪';$('#vContent').value=d.content||'';$('#vNext').value=d.next||'';$('#vFollow').value=d.follow||'';
+function fillVisitForm(d){const t0=cleanTrial(d.trial)||{};const ty=d.type||(VTYPES.includes('拜訪')?'拜訪':VTYPES[0]);fillOptSelects({vtype:ty,proc:t0.proc});
+  $('#vDate').value=d.date||today();$('#vType').value=ty;$('#vContent').value=d.content||'';$('#vNext').value=d.next||'';$('#vFollow').value=d.follow||'';
   const t=cleanTrial(d.trial)||{};for(const k of TRIAL_SHARED){const el=$('#t'+k[0].toUpperCase()+k.slice(1));if(el)el.value=t[k]||''}
   renderRuns(t.runs);paintTrial();paintWho(d.who,d.other);setTimeout(growTA,0)}
 function visitBase(c,vid,who){const v=vid&&c.visits.find(x=>x.id===vid);
-  return v?{date:v.date,type:v.type,content:v.content,next:v.next,follow:'',trial:v.trial||{},who:v.who,other:v.other}:{date:today(),type:'拜訪',content:'',next:'',follow:c.nextFollow&&c.nextFollow>today()?c.nextFollow:'',trial:{},who:who||[],other:''}}
+  return v?{date:v.date,type:v.type,content:v.content,next:v.next,follow:'',trial:v.trial||{},who:v.who,other:v.other}:{date:today(),type:VTYPES.includes('拜訪')?'拜訪':VTYPES[0],content:'',next:'',follow:c.nextFollow&&c.nextFollow>today()?c.nextFollow:'',trial:{},who:who||[],other:''}}
 function showDraftBar(at){const b=$('#vDraft');const has=!!at;b.hidden=!has;if(has)$('#vDraftTx').textContent=(VS.vid?'有還沒儲存的修改':'已自動保存草稿')+'・'+fmtTime(at)}
 function saveDraft(){clearTimeout(draftT);const key=VS.key,vid=VS.vid;draftT=setTimeout(()=>{if(VS.key!==key)return;
   const d={...readVisitForm(),at:new Date().toISOString()};
@@ -79,9 +80,24 @@ async function saveVisit(){const c=contacts.find(x=>x.id===VS.cid);if(!c)return;
     if(f.follow)nc.nextFollow=f.follow;
     await save(nc);clearDraft();VS.removed=[];closeModal($('#mVisit'));refresh();toast(VS.vid?'已更新紀錄':'已新增紀錄')}
   catch(_){toast('儲存失敗，請檢查網路')}finally{btn.disabled=false}}
-$('#vType').innerHTML=VTYPES.map(t=>`<option>${t}</option>`).join('');
-$('#tProc').innerHTML='<option value="">（選擇）</option>'+PROCS.map(p=>`<option>${p}</option>`).join('');
-$('#dlMat').innerHTML=MATERIALS.map(m=>`<option value="${m}">`).join('');
+/* 下拉選單：跟著自訂選項走；目前選的是舊名字時也保留 */
+function fillOptSelects(cur){cur=cur||{vtype:$('#vType').value,proc:$('#tProc').value};
+  $('#vType').innerHTML=optWith('vtype',[cur.vtype]).map(t=>`<option>${esc(t)}</option>`).join('');if(cur.vtype)$('#vType').value=cur.vtype;
+  $('#tProc').innerHTML='<option value="">（選擇）</option>'+optWith('proc',[cur.proc]).map(p=>`<option>${esc(p)}</option>`).join('');$('#tProc').value=cur.proc||'';
+  $('#dlMat').innerHTML=MATERIALS.map(m=>`<option value="${esc(m)}">`).join('')}
+fillOptSelects();
+/* 下拉選單、輸入框旁邊放「＋」 */
+for(const [sel,k] of [['#vType','vtype'],['#tProc','proc'],['#tMat','mat'],['#eForm [name=region]','region']]){const el=$(sel);const w=document.createElement('span');w.className='optrow';
+  el.replaceWith(w);w.append(el);w.insertAdjacentHTML('beforeend',optPlus(k,` data-opt-for="${sel}"`))}
+/* 按「＋」→ 編輯選項；剛新增的選項直接幫你選好 */
+document.addEventListener('click',e=>{const b=e.target.closest('[data-opt]');if(!b)return;e.preventDefault();e.stopPropagation();
+  const k=b.dataset.opt,fr=b.dataset.optFor||'',run=b.closest('.run'),ri=run?+run.dataset.ri:-1;
+  openOpts(k,added=>{const a=added[0];if(!a)return;
+    if(fr==='eCat'||fr==='eStatus'){const i=$(`#${fr} input[value="${CSS.escape(a)}"]`);if(i){i.checked=true;paintChecks();i.dispatchEvent(new Event('change',{bubbles:true}))}}
+    else if(fr==='eProc'){for(const n of added){const i=$(`#eProc input[value="${CSS.escape(n)}"]`);if(i)i.checked=true}paintChecks()}
+    else if(fr==='cool'||fr==='result'){const r=$$('#tRuns .run')[ri];if(r){if(fr==='cool')r.querySelector('[data-k=cool]').value=a;else{const l=r.querySelector(`.rres label[data-res="${CSS.escape(a)}"]`);if(l){r.querySelectorAll('.rres label').forEach(x=>x.classList.remove('on'));l.classList.add('on')}}}}
+    else if(fr){const el=$(fr);if(el){el.value=a;if(fr==='#vType')paintTrial()}}
+    if($('#mVisit').classList.contains('on'))saveDraft()})},true);
 $('#tRuns').addEventListener('click',e=>{const run=e.target.closest('.run');if(!run)return;
   const rl=e.target.closest('.rres label');if(rl){const on=!rl.classList.contains('on');run.querySelectorAll('.rres label').forEach(l=>l.classList.remove('on'));if(on)rl.classList.add('on');saveDraft();return}
   if(e.target.closest('[data-rbest]')){const runs=readRuns();const i=+run.dataset.ri;const was=runs[i].best;runs.forEach(r=>r.best=false);runs[i].best=!was;renderRuns(runs);saveDraft();return}
@@ -140,17 +156,22 @@ function openModal(id){const el=$(id);const was=el.classList.contains('on');el.c
 function closeModal(el,fromPop){el.classList.remove('on');if(!$$('.modal.on').length)document.body.style.overflow='';
   if(!fromPop)setTimeout(()=>{if(!$$('.modal.on').length&&history.state&&history.state.modal){skipPop++;history.back()}},0)}
 function paintChecks(){$$('#eForm .checks label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked))}
+/* 類別、狀態、加工類型、地區的選項（舊名字也列出來，虛線框，存檔時不會不見） */
+function paintEditOpts(cur){const f=$('#eForm');const chip=(type,name,k,val,on)=>`<label${optOld(k,val)?' class="old" title="這個選項已經改名或刪除，舊資料保留原本的名字"':''}><input type="${type}"${name?` name="${name}"`:''} value="${esc(val)}" ${on?'checked':''}>${esc(val)}</label>`;
+  const rg=f.querySelector('[name=region]');rg.innerHTML='<option value="">（未選）</option>'+optWith('region',[cur.region]).map(r=>`<option>${esc(r)}</option>`).join('');rg.value=cur.region||'';
+  $('#eCat').innerHTML=optWith('cat',[cur.category]).map(x=>chip('radio','category','cat',x,cur.category===x)).join('')+optPlus('cat',' data-opt-for="eCat"');
+  $('#eStatus').innerHTML=optWith('status',[cur.status]).map(x=>chip('radio','status','status',x,cur.status===x)).join('')+optPlus('status',' data-opt-for="eStatus"');
+  $('#eProc').innerHTML=optWith('proc',cur.processes||[]).map(p=>chip('checkbox','','proc',p,(cur.processes||[]).includes(p))).join('')+optPlus('proc',' data-opt-for="eProc"');
+  paintChecks()}
+function readEditOpts(){const f=$('#eForm');return{category:(f.querySelector('[name=category]:checked')||{}).value||'',status:(f.querySelector('[name=status]:checked')||{}).value||'',processes:$$('#eProc input:checked').map(i=>i.value),region:f.querySelector('[name=region]').value}}
 async function openEdit(c,opt={}){
   editing=JSON.parse(JSON.stringify(c||normalize({})));EM=isCo(editing)?'co':'p';
   const isNew=!contacts.some(x=>x.id===editing.id);
   $('#eTitle').textContent=EM==='co'?(isNew?'新增公司':'編輯公司'):isNew?(opt.fromScan?'確認辨識結果':'新增名片'):'編輯名片';
   const f=$('#eForm');
-  f.querySelector('[name=region]').innerHTML='<option value="">（未選）</option>'+REGIONS.map(r=>`<option>${r}</option>`).join('');
+  paintEditOpts(editing);
   FIELDS.forEach(k=>{f.querySelector(`[name=${k}]`).value=editing[k]||''});
   $('#eAddrs').innerHTML='';(editing.addresses||[]).forEach(a=>addAddrRow(a));
-  $('#eCat').innerHTML=CATS.map(x=>`<label><input type="radio" name="category" value="${x}" ${editing.category===x?'checked':''}>${x}</label>`).join('');
-  $('#eStatus').innerHTML=STATUSES.map(x=>`<label><input type="radio" name="status" value="${x}" ${editing.status===x?'checked':''}>${x}</label>`).join('');
-  $('#eProc').innerHTML=PROCS.map(p=>`<label><input type="checkbox" value="${p}" ${editing.processes.includes(p)?'checked':''}>${p}</label>`).join('');
   if(EM==='co')f.querySelector('[name=company]').value=editing.company||'';
   f.querySelector('[name=aka]').value=(editing.aka||[]).join('、');
   paintLogoEdit();

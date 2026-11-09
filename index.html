@@ -115,6 +115,20 @@
   </div>
 </div>
 
+<!-- 自訂選項（類別、狀態、加工類型…）-->
+<div class="modal" id="mOpt">
+  <div class="mbox" style="max-width:540px">
+    <div class="mhead"><h2 id="oTitle">編輯選項</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
+    <div class="mbody">
+      <div class="oadd"><input type="text" id="oNew" placeholder="輸入新的選項" enterkeyhint="done"><button type="button" class="btn pri" id="oAdd"><i data-ic="plus"></i>新增</button></div>
+      <div class="opal" id="oNewPal" hidden></div>
+      <div class="olist" id="oList"></div>
+      <div class="note" id="oNote"></div>
+    </div>
+    <div class="mfoot"><button class="btn" data-close>取消</button><button class="btn pri" id="oSave">完成</button></div>
+  </div>
+</div>
+
 <!-- changelog modal -->
 <div class="modal" id="mLog">
   <div class="mbox" style="max-width:560px">
@@ -303,6 +317,7 @@
 </datalist>
 
 <script src="core.js"></script>
+<script src="options.js"></script>
 <script src="companies.js"></script>
 <script src="forms.js"></script>
 <script src="ai-scan.js"></script>
