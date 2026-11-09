@@ -142,24 +142,11 @@ function filtered(){
 }
 
 /* ---------- render list ---------- */
-function renderList(){
-  const rows=contacts.filter(isRow);let od=0,wk=0;rows.forEach(c=>{const f=followState(c);if(f==='od')od++;else if(f==='wk')wk++});
-  $('#nOd').textContent=od;$('#nWk').textContent=wk;$('#nAll').textContent=rows.length;
-  $$('.banner button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.follow&&S.follow!=='all'));
-  const used=new Set(contacts.map(c=>c.category).filter(Boolean));
-  $('#catChips').innerHTML=['',...optWith('cat',[...used]).filter(c=>used.has(c)||c===S.cat)].map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c?esc(c):'全部類別'}</button>`).join('');paintGlass();
-  const usedR=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort((a,b)=>{const o=optWith('region',[a,b]);return o.indexOf(a)-o.indexOf(b)});
-  $('#fRegion').innerHTML='<option value="">所有地區</option>'+usedR.map(r=>`<option ${S.region===r?'selected':''}>${esc(r)}</option>`).join('');
-  const usedP=optWith('proc',contacts.flatMap(c=>c.processes)).filter(p=>contacts.some(c=>c.processes.includes(p)));
-  $('#fProc').innerHTML='<option value="">所有加工</option>'+usedP.map(p=>`<option ${S.proc===p?'selected':''}>${esc(p)}</option>`).join('');
-  $('#dlCompany').innerHTML=[...new Set(contacts.filter(c=>isCo(c)||!c.companyId).map(c=>c.company).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
-  const arr=filtered();
-  $('#bFilter').classList.toggle('on',!!(S.region||S.proc||S.sort!=='follow'));
-  const nCo=rows.filter(isCo).length,nP=contacts.filter(c=>!isCo(c)).length;
-  $('#count').textContent=arr.length===rows.length?`${nCo} 家公司・${nP} 位聯絡人`:`顯示 ${arr.length} ／ ${rows.length} 筆`;
-  if(!contacts.length){$('#list').innerHTML=`<div class="empty" style="margin-top:30px"><div class="big">${ic('card')}</div>還沒有名片<br><button class="bigbtn" data-scan>${ic('cam')}拍第一張名片</button></div>`;return}
-  if(!arr.length){$('#list').innerHTML=`<div class="empty" style="margin-top:40px">找不到符合條件的名片</div>`;return}
-  $('#list').innerHTML='<div class="grp glass">'+arr.map(c=>{const fs=followState(c);
+let listReuse=null,listVer=0,catPrebuild=null;   // 左右滑換類別時，直接搬用已經準備好的那頁，不用重新產生
+function listHTML(arr){
+  if(!contacts.length)return `<div class="empty" style="margin-top:30px"><div class="big">${ic('card')}</div>還沒有名片<br><button class="bigbtn" data-scan>${ic('cam')}拍第一張名片</button></div>`;
+  if(!arr.length)return `<div class="empty" style="margin-top:40px">找不到符合條件的名片</div>`;
+  return '<div class="grp glass">'+arr.map(c=>{const fs=followState(c);
     if(isCo(c)){const ppl=sortPeople(c);const sel=S.sel===c.id||ppl.some(p=>p.id===S.sel);
       return `<div class="item co ${sel?'sel':''}" data-id="${c.id}">
       ${logoHTML(c,'thumb logo')}
@@ -175,6 +162,27 @@ function renderList(){
       <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}).join('')+'</div>';
+}
+function renderList(){
+  const rows=contacts.filter(isRow);let od=0,wk=0;rows.forEach(c=>{const f=followState(c);if(f==='od')od++;else if(f==='wk')wk++});
+  $('#nOd').textContent=od;$('#nWk').textContent=wk;$('#nAll').textContent=rows.length;
+  $$('.banner button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.follow&&S.follow!=='all'));
+  const used=new Set(contacts.map(c=>c.category).filter(Boolean));
+  {const cs=['',...optWith('cat',[...used]).filter(c=>used.has(c)||c===S.cat)],box=$('#catChips'),key=cs.join('\u0001');
+    if(box.dataset.k===key)box.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('on',b.dataset.cat===S.cat));
+    else{box.innerHTML=cs.map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c?esc(c):'全部類別'}</button>`).join('');box.dataset.k=key}
+    paintGlass()}
+  const usedR=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort((a,b)=>{const o=optWith('region',[a,b]);return o.indexOf(a)-o.indexOf(b)});
+  $('#fRegion').innerHTML='<option value="">所有地區</option>'+usedR.map(r=>`<option ${S.region===r?'selected':''}>${esc(r)}</option>`).join('');
+  const usedP=optWith('proc',contacts.flatMap(c=>c.processes)).filter(p=>contacts.some(c=>c.processes.includes(p)));
+  $('#fProc').innerHTML='<option value="">所有加工</option>'+usedP.map(p=>`<option ${S.proc===p?'selected':''}>${esc(p)}</option>`).join('');
+  $('#dlCompany').innerHTML=[...new Set(contacts.filter(c=>isCo(c)||!c.companyId).map(c=>c.company).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
+  const arr=filtered();
+  $('#bFilter').classList.toggle('on',!!(S.region||S.proc||S.sort!=='follow'));
+  const nCo=rows.filter(isCo).length,nP=contacts.filter(c=>!isCo(c)).length;
+  $('#count').textContent=arr.length===rows.length?`${nCo} 家公司・${nP} 位聯絡人`:`顯示 ${arr.length} ／ ${rows.length} 筆`;
+  if(listReuse){$('#list').replaceChildren(...listReuse.childNodes);listReuse=null}else $('#list').innerHTML=listHTML(arr);
+  listVer++;if(typeof catPrebuild==='function')catPrebuild();
   wireLogos($('#list'));
 }
 
@@ -420,36 +428,53 @@ function paintGlass(){const on=$('#catChips .chip.on');if(!on||!on.offsetWidth)r
   g.classList.remove('hold');if(Glass.x===x&&Glass.w===w)return;
   if(Glass.x==null){glassPos(x,w,false);return}
   requestAnimationFrame(()=>{g.classList.add('move');glassPos(x,w,true);clearTimeout(Glass.t);Glass.t=setTimeout(()=>g.classList.remove('move'),280)})}
+function glassTo(el){if(!el)return;const g=glassEl();g.classList.remove('hold');g.classList.add('move');glassPos(el.offsetLeft,el.offsetWidth,true);clearTimeout(Glass.t);Glass.t=setTimeout(()=>g.classList.remove('move'),280)}
 /* 手指拖到一半：玻璃在兩個按鈕之間，中途被拉長；沒有下一個類別時只稍微被拉一下 */
 function glassDrag(a,b,p,dx){if(!a)return;const g=glassEl();g.classList.add('hold');
   if(!b){const s=Math.min(Math.abs(dx)*.12,14);glassPos(dx<0?a.offsetLeft:a.offsetLeft-s,a.offsetWidth+s,false);return}
   const x=a.offsetLeft+(b.offsetLeft-a.offsetLeft)*p,w=a.offsetWidth+(b.offsetWidth-a.offsetWidth)*p,s=Math.sin(Math.PI*p)*18;
   glassPos(x-s/2,w+s,false)}
-/* 首頁左右滑切換類別（手機）：清單跟著手指走，放開後換到上一個／下一個類別；到盡頭會輕輕彈回 */
-(()=>{let x0=0,y0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0,cats=[],idx=0,chipEls=[];
-  const list=()=>$('#list'),EASE='cubic-bezier(.2,.8,.2,1)';
-  const set=(x,ms,op)=>{const l=list();l.style.transition=ms?`transform ${ms}ms ${EASE},opacity ${ms}ms ${EASE}`:'none';l.style.transform=x?`translate3d(${x}px,0,0)`:'';l.style.opacity=op==null?'':String(op)};
+/* 首頁左右滑切換類別（手機）：像翻書，手指一滑就先把隔壁類別的清單放在旁邊，兩頁一起跟著手指走；
+   放開後新的那頁剛好停在定位，中間不會空白；到盡頭會輕輕彈回 */
+(()=>{let x0=0,y0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0,cats=[],idx=0,chipEls=[],busy=false;
+  const pages={};   // -1：左邊（上一個類別）、1：右邊（下一個類別）
+  const list=()=>$('#list'),EASE='cubic-bezier(.22,.8,.24,1)';
+  const mv=(el,x,ms)=>{el.style.transition=ms?`transform ${ms}ms ${EASE}`:'none';el.style.transform=`translate3d(${x}px,0,0)`};
+  const pre={};   // 有空時先準備好的隔壁兩頁（藏起來）
+  const make=(d,cs,i)=>{const to=i+d;if(to<0||to>=cs.length)return null;
+    const keep=S.cat;S.cat=cs[to];let html='';try{html=listHTML(filtered())}finally{S.cat=keep}
+    const el=document.createElement('div');el.className='list catpage';el.innerHTML=html;el.dataset.cat=cs[to];el.dataset.v=listVer;list().after(el);return el};
+  const place=(el,d)=>{const l=list();el.style.top=l.offsetTop+'px';el.style.height=l.offsetHeight+'px';mv(el,d*W)};
+  const page=d=>{if(pages[d])return pages[d];const to=idx+d;if(to<0||to>=cats.length)return null;
+    let el=pre[d];delete pre[d];
+    if(!el||el.dataset.cat!==cats[to]||+el.dataset.v!==listVer){if(el)el.remove();el=make(d,cats,idx)}
+    place(el,d);el.style.visibility='visible';return pages[d]=el};
+  let preT=0;
+  catPrebuild=()=>{clearTimeout(preT);preT=setTimeout(()=>{if(busy||!isNarrow()||document.body.classList.contains('detail'))return;
+    const cs=$$('#catChips [data-cat]').map(b=>b.dataset.cat),i=cs.indexOf(S.cat);W=list().offsetWidth;
+    for(const d of [-1,1]){if(pre[d]){pre[d].remove();delete pre[d]}if(i<0)continue;const el=make(d,cs,i);if(el){el.style.visibility='hidden';place(el,d);mv(el,0);pre[d]=el}}},250)};
+  const paint=x=>{mv(list(),x);for(const d of [-1,1])if(pages[d])mv(pages[d],x+d*W)};
+  const cleanup=keep=>{for(const d of [-1,1]){const el=pages[d];delete pages[d];if(!el)continue;
+      if(keep&&el.isConnected){el.style.visibility='hidden';mv(el,0);pre[d]=el}else el.remove()}
+    const l=list();l.style.transition=l.style.transform='';document.body.classList.remove('catswipe');busy=false};
   const showChip=()=>{const on=$('#catChips .chip.on');if(on){const box=$('#catChips');box.scrollTo({left:on.offsetLeft-(box.clientWidth-on.offsetWidth)/2,behavior:'smooth'})}};
-  document.addEventListener('touchstart',e=>{active=false;if(!isNarrow()||document.body.classList.contains('detail')||$$('.modal.on').length||$('#dlg.on')||e.touches.length!==1)return;
+  document.addEventListener('touchstart',e=>{active=false;if(busy||!isNarrow()||document.body.classList.contains('detail')||$$('.modal.on').length||$('#dlg.on')||e.touches.length!==1)return;
     if(!e.target.closest('#list'))return;const t=e.touches[0];if(t.clientX<24)return;
     chipEls=$$('#catChips [data-cat]');cats=chipEls.map(b=>b.dataset.cat);idx=cats.indexOf(S.cat);if(cats.length<2||idx<0)return;
-    x0=lastX=t.clientX;y0=t.clientY;lastT=e.timeStamp;dx=0;vx=0;locked=null;W=window.innerWidth;active=true},{passive:true});
+    x0=lastX=t.clientX;y0=t.clientY;lastT=e.timeStamp;dx=0;vx=0;locked=null;W=list().offsetWidth;active=true},{passive:true});
   document.addEventListener('touchmove',e=>{if(!active)return;const t=e.touches[0];const mx=t.clientX-x0,my=t.clientY-y0;
-    if(locked===null&&(Math.abs(mx)>10||Math.abs(my)>10)){locked=Math.abs(mx)>Math.abs(my)*1.2?'h':'v';if(locked==='h')document.body.classList.add('catswipe')}
+    if(locked===null&&(Math.abs(mx)>10||Math.abs(my)>10)){locked=Math.abs(mx)>Math.abs(my)*1.2?'h':'v';if(locked==='h'){busy=true;document.body.classList.add('catswipe')}}
     if(locked!=='h')return;e.preventDefault();
     const dt=e.timeStamp-lastT;if(dt>0)vx=.8*((t.clientX-lastX)/dt)+.2*vx;lastX=t.clientX;lastT=e.timeStamp;
-    const has=mx>0?idx>0:idx<cats.length-1;dx=has?mx:mx*.25;   // 沒有下一個類別時，拉起來比較重（彈性）
-    set(dx,0,has?1-Math.min(Math.abs(dx)/W,1)*.5:1);
-    glassDrag(chipEls[idx],has?chipEls[idx+(mx<0?1:-1)]:null,Math.min(Math.abs(dx)/(W*.6),1),dx)},{passive:false});
+    const d=mx<0?1:-1,nb=page(d);dx=nb?mx:mx*.25;   // 沒有下一個類別時，拉起來比較重（彈性）
+    paint(dx);glassDrag(chipEls[idx],nb?chipEls[idx+d]:null,Math.min(Math.abs(dx)/W,1),dx)},{passive:false});
   const end=()=>{if(!active)return;active=false;if(locked!=='h')return;
-    const dir=dx<0?1:-1,to=idx+dir,has=to>=0&&to<cats.length;
-    const go=has&&(Math.abs(dx)>W*.25||(Math.abs(vx)>.35&&Math.abs(dx)>20&&Math.sign(vx)===Math.sign(dx)));
-    if(!go){paintGlass();set(0,240,1);setTimeout(()=>{set(0,0);document.body.classList.remove('catswipe')},260);return}
-    const ms=Math.round(Math.max(140,Math.min(260,(W-Math.abs(dx))/Math.max(Math.abs(vx),1.2))));
-    set(-dir*W,ms,.3);
-    setTimeout(()=>{S.cat=cats[to];renderList();list().scrollTop=0;showChip();
-      set(dir*W*.35,0,.3);requestAnimationFrame(()=>requestAnimationFrame(()=>{set(0,220,1);
-        setTimeout(()=>{set(0,0);document.body.classList.remove('catswipe')},240)}))},ms)};
+    const d=dx<0?1:-1,to=idx+d,nb=pages[d];
+    const go=!!nb&&(Math.abs(dx)>W*.25||(Math.abs(vx)>.35&&Math.abs(dx)>20&&Math.sign(vx)===Math.sign(dx)));
+    if(!go){const ms=240;mv(list(),0,ms);for(const k of [-1,1])if(pages[k])mv(pages[k],k*W,ms);paintGlass();setTimeout(()=>cleanup(true),ms+20);return}
+    const ms=Math.round(Math.max(160,Math.min(300,(W-Math.abs(dx))/Math.max(Math.abs(vx),1))));
+    mv(list(),-d*W,ms);mv(nb,0,ms);glassTo(chipEls[to]);
+    setTimeout(()=>{const top=nb.scrollTop;S.cat=cats[to];listReuse=nb;for(const k of [-1,1])if(pre[k]){pre[k].remove();delete pre[k]}cleanup();renderList();const l=list();l.scrollTop=top;showChip()},ms+20)};
   document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
 })();
 function refresh(){renderList();renderDetail()}

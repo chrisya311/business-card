@@ -451,7 +451,11 @@ body.peek .wrap{overflow:hidden}
 .btn.pri.danger{background:var(--danger-bg);color:#fff;box-shadow:0 10px 24px rgba(201,58,48,.3),inset 0 1px 0 rgba(255,255,255,.25)}
 /* 首頁左右滑切換類別：滑動時把超出的部分剪掉，畫面不會被撐寬 */
 body.catswipe .side{overflow:hidden}
-body.catswipe .list{will-change:transform,opacity}
+@media (max-width:820px){.side{position:relative}}
+body.catswipe .list{will-change:transform}
+.list.catpage{position:absolute;left:0;right:0;z-index:1;overflow:hidden}
+/* 滑動中暫時不算毛玻璃模糊（背景本來就是模糊的光暈，看起來幾乎一樣），手機才不會掉格 */
+body.catswipe .list .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 /* 類別按鈕：液態玻璃指示器 */
 #catChips{position:relative}
 #catChips .chip{position:relative;z-index:1;transition:color .25s}
