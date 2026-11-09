@@ -439,7 +439,12 @@ function glassDrag(a,b,p,dx){if(!a)return;const g=glassEl();g.classList.add('hol
 (()=>{let x0=0,y0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0,cats=[],idx=0,chipEls=[],busy=false;
   const pages={};   // -1：左邊（上一個類別）、1：右邊（下一個類別）
   const list=()=>$('#list'),EASE='cubic-bezier(.22,.8,.24,1)';
-  const mv=(el,x,ms)=>{el.style.transition=ms?`transform ${ms}ms ${EASE}`:'none';el.style.transform=`translate3d(${x}px,0,0)`};
+  const mv=(el,x,ms,ease)=>{el.style.transition=ms?`transform ${ms}ms ${ease||EASE}`:'none';el.style.transform=`translate3d(${x}px,0,0)`};
+  /* 放開後的動畫：起步速度接上手指放開時的速度，之後只慢慢減速，不會突然加速。
+     D＝還要移動的距離，v＝手指往那個方向的速度（像素／毫秒） */
+  const fling=(D,v)=>{D=Math.max(D,1);
+    if(v>.15){const ms=Math.round(Math.min(520,Math.max(220,2*D/v)));const k=v*ms/D;return{ms,ease:`cubic-bezier(.3,${Math.min(1,k*.3).toFixed(3)},.6,1)`}}
+    return{ms:Math.round(Math.min(420,Math.max(260,D*1.4))),ease:'cubic-bezier(.32,.3,.2,1)'}};
   const pre={};   // 有空時先準備好的隔壁兩頁（藏起來）
   const make=(d,cs,i)=>{const to=i+d;if(to<0||to>=cs.length)return null;
     const keep=S.cat;S.cat=cs[to];let html='';try{html=listHTML(filtered())}finally{S.cat=keep}
@@ -471,9 +476,9 @@ function glassDrag(a,b,p,dx){if(!a)return;const g=glassEl();g.classList.add('hol
   const end=()=>{if(!active)return;active=false;if(locked!=='h')return;
     const d=dx<0?1:-1,to=idx+d,nb=pages[d];
     const go=!!nb&&(Math.abs(dx)>W*.25||(Math.abs(vx)>.35&&Math.abs(dx)>20&&Math.sign(vx)===Math.sign(dx)));
-    if(!go){const ms=240;mv(list(),0,ms);for(const k of [-1,1])if(pages[k])mv(pages[k],k*W,ms);paintGlass();setTimeout(()=>cleanup(true),ms+20);return}
-    const ms=Math.round(Math.max(160,Math.min(300,(W-Math.abs(dx))/Math.max(Math.abs(vx),1))));
-    mv(list(),-d*W,ms);mv(nb,0,ms);glassTo(chipEls[to]);
+    if(!go){const {ms,ease}=fling(Math.abs(dx),-Math.sign(dx)*vx);mv(list(),0,ms,ease);for(const k of [-1,1])if(pages[k])mv(pages[k],k*W,ms,ease);paintGlass();setTimeout(()=>cleanup(true),ms+20);return}
+    const {ms,ease}=fling(W-Math.abs(dx),Math.sign(dx)*vx);
+    mv(list(),-d*W,ms,ease);mv(nb,0,ms,ease);glassTo(chipEls[to]);
     setTimeout(()=>{const top=nb.scrollTop;S.cat=cats[to];listReuse=nb;for(const k of [-1,1])if(pre[k]){pre[k].remove();delete pre[k]}cleanup();renderList();const l=list();l.scrollTop=top;showChip()},ms+20)};
   document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
 })();
