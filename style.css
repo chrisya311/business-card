@@ -449,3 +449,6 @@ body.peek .wrap{overflow:hidden}
 :root,:root[data-theme=dark]{--danger-bg:#C93A30}
 :root[data-theme=light]{--danger-bg:#B4372B}
 .btn.pri.danger{background:var(--danger-bg);color:#fff;box-shadow:0 10px 24px rgba(201,58,48,.3),inset 0 1px 0 rgba(255,255,255,.25)}
+/* 首頁左右滑切換類別：滑動時把超出的部分剪掉，畫面不會被撐寬 */
+body.catswipe .side{overflow:hidden}
+body.catswipe .list{will-change:transform,opacity}

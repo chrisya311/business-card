@@ -125,8 +125,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.09-5';
+const APP_VERSION='2026.11.09-6';
 const CHANGELOG=[
+  {v:'2026.11.09-6',items:['首頁可以左右滑切換類別：往左滑換到下一個，往右滑回上一個，上方的類別按鈕會跟著移動']},
   {v:'2026.11.09-5',items:['確認刪除的按鈕改成紅底白字，比較清楚']},
   {v:'2026.11.09-4',items:['修正：在編輯選項的畫面點選項時，會跳出 iPhone 的「檔案」App','選項可以長按拖曳調整順序（或按住右邊的 ≡ 直接拖）；點一下名字就能改名']},
   {v:'2026.11.09-3',items:['選項可以自訂：類別、狀態、加工類型、地區、拜訪類型、工件材質、冷卻方式、試刀結果，旁邊按「＋」就能新增、改名、刪除、調整順序','類別、狀態、試刀結果可以選顏色（灰、綠、藍、橘、紅、紫）','正在使用的選項改名或刪除時會先提醒；舊資料保留原本的名字（表單裡用虛線框顯示），不會被改掉','自訂的選項會跟著 Google 雲端硬碟同步，也會存進完整備份','「私人」類別和「試刀」類型有特別用途，不能改名或刪除']},

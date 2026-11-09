@@ -410,4 +410,30 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
       requestAnimationFrame(()=>{clean(b,m);m.style.visibility=''})}else clean(b,m)},ms+20)};
   document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
 })();
+/* 首頁左右滑切換類別（手機）：清單跟著手指走，放開後換到上一個／下一個類別；到盡頭會輕輕彈回 */
+(()=>{let x0=0,y0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0,cats=[],idx=0;
+  const list=()=>$('#list'),EASE='cubic-bezier(.2,.8,.2,1)';
+  const set=(x,ms,op)=>{const l=list();l.style.transition=ms?`transform ${ms}ms ${EASE},opacity ${ms}ms ${EASE}`:'none';l.style.transform=x?`translate3d(${x}px,0,0)`:'';l.style.opacity=op==null?'':String(op)};
+  const showChip=()=>{const on=$('#catChips .chip.on');if(on){const box=$('#catChips');box.scrollTo({left:on.offsetLeft-(box.clientWidth-on.offsetWidth)/2,behavior:'smooth'})}};
+  document.addEventListener('touchstart',e=>{active=false;if(!isNarrow()||document.body.classList.contains('detail')||$$('.modal.on').length||$('#dlg.on')||e.touches.length!==1)return;
+    if(!e.target.closest('#list'))return;const t=e.touches[0];if(t.clientX<24)return;
+    cats=$$('#catChips [data-cat]').map(b=>b.dataset.cat);idx=cats.indexOf(S.cat);if(cats.length<2||idx<0)return;
+    x0=lastX=t.clientX;y0=t.clientY;lastT=e.timeStamp;dx=0;vx=0;locked=null;W=window.innerWidth;active=true},{passive:true});
+  document.addEventListener('touchmove',e=>{if(!active)return;const t=e.touches[0];const mx=t.clientX-x0,my=t.clientY-y0;
+    if(locked===null&&(Math.abs(mx)>10||Math.abs(my)>10)){locked=Math.abs(mx)>Math.abs(my)*1.2?'h':'v';if(locked==='h')document.body.classList.add('catswipe')}
+    if(locked!=='h')return;e.preventDefault();
+    const dt=e.timeStamp-lastT;if(dt>0)vx=.8*((t.clientX-lastX)/dt)+.2*vx;lastX=t.clientX;lastT=e.timeStamp;
+    const has=mx>0?idx>0:idx<cats.length-1;dx=has?mx:mx*.25;   // 沒有下一個類別時，拉起來比較重（彈性）
+    set(dx,0,has?1-Math.min(Math.abs(dx)/W,1)*.5:1)},{passive:false});
+  const end=()=>{if(!active)return;active=false;if(locked!=='h')return;
+    const dir=dx<0?1:-1,to=idx+dir,has=to>=0&&to<cats.length;
+    const go=has&&(Math.abs(dx)>W*.25||(Math.abs(vx)>.35&&Math.abs(dx)>20&&Math.sign(vx)===Math.sign(dx)));
+    if(!go){set(0,240,1);setTimeout(()=>{set(0,0);document.body.classList.remove('catswipe')},260);return}
+    const ms=Math.round(Math.max(140,Math.min(260,(W-Math.abs(dx))/Math.max(Math.abs(vx),1.2))));
+    set(-dir*W,ms,.3);
+    setTimeout(()=>{S.cat=cats[to];renderList();list().scrollTop=0;showChip();
+      set(dir*W*.35,0,.3);requestAnimationFrame(()=>requestAnimationFrame(()=>{set(0,220,1);
+        setTimeout(()=>{set(0,0);document.body.classList.remove('catswipe')},240)}))},ms)};
+  document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
+})();
 function refresh(){renderList();renderDetail()}
