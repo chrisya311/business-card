@@ -125,8 +125,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.09-9';
+const APP_VERSION='2026.11.09-10';
 const CHANGELOG=[
+  {v:'2026.11.09-10',items:['右滑返回上一頁、右滑關閉全螢幕頁面，放開手指後也改成接著手指的速度慢慢停下，整個 App 的滑動手感一致']},
   {v:'2026.11.09-9',items:['左右滑切換類別：放開手指後，頁面會接著手指的速度慢慢停下，不再突然加速']},
   {v:'2026.11.09-8',items:['左右滑切換類別更順：下一個類別的清單會跟著一起滑進來，不再中間空白、卡一下']},
   {v:'2026.11.09-7',items:['首頁的類別按鈕改成「液態玻璃」效果：選中的類別下面墊一塊半透明玻璃，換類別時會滑過去','在清單上左右滑時，玻璃會跟著手指移動']},

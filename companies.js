@@ -373,6 +373,11 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
   if(st&&!contacts.some(c=>c.id===st)){if(S.sel)closeDetail();return}
   if(st&&st!==S.sel){navDepth=Math.max(0,navDepth-1);const back=navStack[navDepth];trimNav();S.sel=st;renderList();renderDetail();$('#main').scrollTop=back&&back.id===st?back.top:0;if(afterPop){const f=afterPop;afterPop=null;f()}return}
   if(S.sel&&!st)closeDetail()});
+/* 放開手指後的動畫（左右滑換類別、右滑返回、右滑關閉全螢幕頁面共用）：
+   起步速度接上手指放開時的速度，之後只慢慢減速，不會突然加速。D＝還要移動的距離，v＝手指往那個方向的速度（像素／毫秒） */
+function fling(D,v){D=Math.max(D,1);
+  if(v>.15){const ms=Math.round(Math.min(520,Math.max(170,2*D/v)));const k=v*ms/D;return{ms,ease:`cubic-bezier(.3,${Math.min(1,k*.3).toFixed(3)},.6,1)`}}
+  return{ms:Math.round(Math.min(420,Math.max(260,D*1.4))),ease:'cubic-bezier(.32,.3,.2,1)'}}
 /* swipe right to go back (phone) — iOS 式互動轉場：詳細頁跟著手指走，清單從左邊稍微滑入並變亮 */
 (()=>{let x0=0,y0=0,t0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0;
   let under=null;
@@ -391,8 +396,8 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
     const dt=e.timeStamp-lastT;if(dt>0)vx=.8*((t.clientX-lastX)/dt)+.2*vx;lastX=t.clientX;lastT=e.timeStamp;
     dx=Math.max(0,mx);paint(dx)},{passive:true});
   const end=()=>{if(!active)return;active=false;if(locked!=='h')return;
-    const done=dx>W*.4||(vx>.35&&dx>20);const ms=Math.round(Math.max(160,Math.min(320,(done?W-dx:dx)/Math.max(Math.abs(vx),.9))));
-    for(const el of [main(),side()])el.style.transition=`transform ${ms}ms ${EASE},opacity ${ms}ms ${EASE}`;
+    const done=dx>W*.4||(vx>.35&&dx>20);const {ms,ease}=fling(done?W-dx:dx,done?vx:-vx);
+    for(const el of [main(),side()])el.style.transition=`transform ${ms}ms ${ease},opacity ${ms}ms ${ease}`;
     requestAnimationFrame(()=>paint(done?W:0));
     setTimeout(()=>{if(done){if(navDepth>0&&history.state&&history.state.detail){afterPop=clean;history.back();setTimeout(()=>{if(afterPop){afterPop=null;clean()}},600)}else{closeDetail();clean();if(history.state&&history.state.detail)history.back()}}else clean()},ms+20)};
   document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
@@ -412,8 +417,8 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
     if(locked!=='h')return;const dt=e.timeStamp-lastT;if(dt>0)vx=.8*((t.clientX-lastX)/dt)+.2*vx;lastX=t.clientX;lastT=e.timeStamp;
     dx=Math.max(0,mx);paint(dx)},{passive:true});
   const end=()=>{const b=box,m=modal;box=null;if(!b||locked!=='h')return;
-    const done=dx>W*.4||(vx>.35&&dx>20);const ms=Math.round(Math.max(160,Math.min(320,(done?W-dx:dx)/Math.max(Math.abs(vx),.9))));
-    b.style.transition=`transform ${ms}ms ${EASE}`;m.style.transition=`background ${ms}ms ${EASE}`;box=b;modal=m;requestAnimationFrame(()=>{paint(done?W:0);box=null});
+    const done=dx>W*.4||(vx>.35&&dx>20);const {ms,ease}=fling(done?W-dx:dx,done?vx:-vx);
+    b.style.transition=`transform ${ms}ms ${ease}`;m.style.transition=`background ${ms}ms ${ease}`;box=b;modal=m;requestAnimationFrame(()=>{paint(done?W:0);box=null});
     setTimeout(()=>{if(done){const c=m.querySelector('[data-close]');m.style.visibility='hidden';if(c)c.click();else closeModal(m);
       requestAnimationFrame(()=>{clean(b,m);m.style.visibility=''})}else clean(b,m)},ms+20)};
   document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
@@ -440,11 +445,6 @@ function glassDrag(a,b,p,dx){if(!a)return;const g=glassEl();g.classList.add('hol
   const pages={};   // -1：左邊（上一個類別）、1：右邊（下一個類別）
   const list=()=>$('#list'),EASE='cubic-bezier(.22,.8,.24,1)';
   const mv=(el,x,ms,ease)=>{el.style.transition=ms?`transform ${ms}ms ${ease||EASE}`:'none';el.style.transform=`translate3d(${x}px,0,0)`};
-  /* 放開後的動畫：起步速度接上手指放開時的速度，之後只慢慢減速，不會突然加速。
-     D＝還要移動的距離，v＝手指往那個方向的速度（像素／毫秒） */
-  const fling=(D,v)=>{D=Math.max(D,1);
-    if(v>.15){const ms=Math.round(Math.min(520,Math.max(220,2*D/v)));const k=v*ms/D;return{ms,ease:`cubic-bezier(.3,${Math.min(1,k*.3).toFixed(3)},.6,1)`}}
-    return{ms:Math.round(Math.min(420,Math.max(260,D*1.4))),ease:'cubic-bezier(.32,.3,.2,1)'}};
   const pre={};   // 有空時先準備好的隔壁兩頁（藏起來）
   const make=(d,cs,i)=>{const to=i+d;if(to<0||to>=cs.length)return null;
     const keep=S.cat;S.cat=cs[to];let html='';try{html=listHTML(filtered())}finally{S.cat=keep}
