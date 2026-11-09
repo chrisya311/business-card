@@ -464,7 +464,7 @@ body.catswipe .list .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
   background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.05));
   -webkit-backdrop-filter:blur(8px) saturate(180%);backdrop-filter:blur(8px) saturate(180%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 1px rgba(255,255,255,.1),inset 0 0 0 1px rgba(255,255,255,.14),0 6px 16px rgba(0,0,0,.35);
-  transition:left .5s cubic-bezier(.3,1.4,.5,1),width .5s cubic-bezier(.3,1.4,.5,1),transform .28s cubic-bezier(.3,1.4,.5,1)}
+  transition:left .38s cubic-bezier(.3,1.3,.5,1),width .38s cubic-bezier(.3,1.3,.5,1),transform .22s cubic-bezier(.3,1.3,.5,1)}
 .chipglass::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(120% 90% at 28% 0%,rgba(255,255,255,.38),transparent 55%);opacity:.75}
 .chipglass.move{transform:scale(1.04,.86)}
 .chipglass.hold{transform:scale(1.03,.9)}

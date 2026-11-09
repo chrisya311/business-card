@@ -376,8 +376,8 @@ addEventListener('popstate',()=>{if(skipPop){skipPop--;return}
 /* 放開手指後的動畫（左右滑換類別、右滑返回、右滑關閉全螢幕頁面共用）：
    起步速度接上手指放開時的速度，之後只慢慢減速，不會突然加速。D＝還要移動的距離，v＝手指往那個方向的速度（像素／毫秒） */
 function fling(D,v){D=Math.max(D,1);
-  if(v>.15){const ms=Math.round(Math.min(520,Math.max(170,2*D/v)));const k=v*ms/D;return{ms,ease:`cubic-bezier(.3,${Math.min(1,k*.3).toFixed(3)},.6,1)`}}
-  return{ms:Math.round(Math.min(420,Math.max(260,D*1.4))),ease:'cubic-bezier(.32,.3,.2,1)'}}
+  if(v>.15){const ms=Math.round(Math.min(320,Math.max(150,1.6*D/v)));const k=v*ms/D;return{ms,ease:`cubic-bezier(.3,${Math.min(1,k*.3).toFixed(3)},.6,1)`}}
+  return{ms:Math.round(Math.min(280,Math.max(180,D))),ease:'cubic-bezier(.3,.3,.25,1)'}}
 /* swipe right to go back (phone) — iOS 式互動轉場：詳細頁跟著手指走，清單從左邊稍微滑入並變亮 */
 (()=>{let x0=0,y0=0,t0=0,dx=0,lastX=0,lastT=0,vx=0,active=false,locked=null,W=0;
   let under=null;
@@ -432,8 +432,8 @@ function glassPos(x,w,anim){const g=glassEl();if(!anim)g.style.transition='none'
 function paintGlass(){const on=$('#catChips .chip.on');if(!on||!on.offsetWidth)return;const g=glassEl();const x=on.offsetLeft,w=on.offsetWidth;
   g.classList.remove('hold');if(Glass.x===x&&Glass.w===w)return;
   if(Glass.x==null){glassPos(x,w,false);return}
-  requestAnimationFrame(()=>{g.classList.add('move');glassPos(x,w,true);clearTimeout(Glass.t);Glass.t=setTimeout(()=>g.classList.remove('move'),280)})}
-function glassTo(el){if(!el)return;const g=glassEl();g.classList.remove('hold');g.classList.add('move');glassPos(el.offsetLeft,el.offsetWidth,true);clearTimeout(Glass.t);Glass.t=setTimeout(()=>g.classList.remove('move'),280)}
+  requestAnimationFrame(()=>{g.classList.add('move');glassPos(x,w,true);clearTimeout(Glass.t);Glass.t=setTimeout(()=>g.classList.remove('move'),220)})}
+function glassTo(el){if(!el)return;const g=glassEl();g.classList.remove('hold');g.classList.add('move');glassPos(el.offsetLeft,el.offsetWidth,true);clearTimeout(Glass.t);Glass.t=setTimeout(()=>g.classList.remove('move'),220)}
 /* 手指拖到一半：玻璃在兩個按鈕之間，中途被拉長；沒有下一個類別時只稍微被拉一下 */
 function glassDrag(a,b,p,dx){if(!a)return;const g=glassEl();g.classList.add('hold');
   if(!b){const s=Math.min(Math.abs(dx)*.12,14);glassPos(dx<0?a.offsetLeft:a.offsetLeft-s,a.offsetWidth+s,false);return}
