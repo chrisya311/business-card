@@ -26,7 +26,7 @@ function trialLines(t){if(!t)return [];const L=[];
   const a=[t.mat,t.proc].filter(Boolean).join(' · ')+(t.ref?`（對照 ${t.ref}${t.refLife?`，壽命 ${t.refLife}`:''}）`:(t.refLife?`（對照壽命 ${t.refLife}）`:''));if(a)L.push(a);
   (t.runs||[]).forEach((r,i)=>L.push(runLine(r,i,t.runs.length>1)));
   if(t.surf)L.push(t.surf);return L}
-const resultCls=r=>({成功:'cat-客戶',持平:'wk',失敗:'od'})[r]||'';
+const resultCls=r=>r?optCls('result',r):'';
 const COMPOUND=['張簡','范姜','張廖','歐陽','司馬','諸葛','上官','東方','皇甫','慕容','令狐','周黃','江謝','陳黃','簡李','司徒','夏侯','尉遲','公孫'];
 const ROLES=['決策者','採購','技術／工程','現場','其他'];
 const CO_FIELDS=['company','taxId','phone','fax','address','region','website','brands','nextFollow','notes'];
@@ -35,6 +35,9 @@ const FIELDS=['name','nameEn','company','taxId','title','dept','mobile','phone',
 /* ---------- utils ---------- */
 /* ---------- line icons (森霧 Forest Mist：線條圖示，不用 emoji) ---------- */
 const IC={
+up:'<path d="M6 15l6-6 6 6"/>',
+down:'<path d="M6 9l6 6 6-6"/>',
+lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
 cam:'<path d="M14.5 4h-5L7.5 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z"/><circle cx="12" cy="13" r="3.5"/>',
 gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
 imp:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
@@ -121,8 +124,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.09-2';
+const APP_VERSION='2026.11.09-3';
 const CHANGELOG=[
+  {v:'2026.11.09-3',items:['選項可以自訂：類別、狀態、加工類型、地區、拜訪類型、工件材質、冷卻方式、試刀結果，旁邊按「＋」就能新增、改名、刪除、調整順序','類別、狀態、試刀結果可以選顏色（灰、綠、藍、橘、紅、紫）','正在使用的選項改名或刪除時會先提醒；舊資料保留原本的名字（表單裡用虛線框顯示），不會被改掉','自訂的選項會跟著 Google 雲端硬碟同步，也會存進完整備份','「私人」類別和「試刀」類型有特別用途，不能改名或刪除']},
   {v:'2026.11.09-2',items:['右滑返回時，上方的按鈕列固定不動','修正：從公司點進聯絡人，再右滑返回時，會先閃到首頁才回到公司頁；現在會直接回到公司頁，也會回到原本捲動的位置']},
   {v:'2026.11.09-1',items:['程式整理：拆成幾個小檔案，之後比較好維護。功能和外觀都沒有改變']},
   {v:'2026.11.07-18',items:['Logo 去背，不再有白色底；深色 logo 在暗色模式會加一圈淡淡的白邊，才看得清楚','修正：用 Gemini 時找不到 logo（Gemini 回報位置的方式不一樣），之前沒找到的公司會再找一次']},

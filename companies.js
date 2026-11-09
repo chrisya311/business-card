@@ -147,10 +147,10 @@ function renderList(){
   $('#nOd').textContent=od;$('#nWk').textContent=wk;$('#nAll').textContent=rows.length;
   $$('.banner button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.follow&&S.follow!=='all'));
   const used=new Set(contacts.map(c=>c.category).filter(Boolean));
-  $('#catChips').innerHTML=['',...CATS.filter(c=>used.has(c)||c===S.cat)].map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c||'全部類別'}</button>`).join('');
-  const usedR=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort((a,b)=>REGIONS.indexOf(a)-REGIONS.indexOf(b));
+  $('#catChips').innerHTML=['',...optWith('cat',[...used]).filter(c=>used.has(c)||c===S.cat)].map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c?esc(c):'全部類別'}</button>`).join('');
+  const usedR=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort((a,b)=>{const o=optWith('region',[a,b]);return o.indexOf(a)-o.indexOf(b)});
   $('#fRegion').innerHTML='<option value="">所有地區</option>'+usedR.map(r=>`<option ${S.region===r?'selected':''}>${esc(r)}</option>`).join('');
-  const usedP=PROCS.filter(p=>contacts.some(c=>c.processes.includes(p)));
+  const usedP=optWith('proc',contacts.flatMap(c=>c.processes)).filter(p=>contacts.some(c=>c.processes.includes(p)));
   $('#fProc').innerHTML='<option value="">所有加工</option>'+usedP.map(p=>`<option ${S.proc===p?'selected':''}>${esc(p)}</option>`).join('');
   $('#dlCompany').innerHTML=[...new Set(contacts.filter(c=>isCo(c)||!c.companyId).map(c=>c.company).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
   const arr=filtered();
@@ -165,14 +165,14 @@ function renderList(){
       ${logoHTML(c,'thumb logo')}
       <div class="t"><div class="n">${esc(c.company)}</div>
         <div class="ppl">${ppl.length?ppl.slice(0,2).map(p=>esc(p.name)).join('・')+(ppl.length>2?` +${ppl.length-2}`:''):'（還沒有聯絡人）'}${c.region?' · '+esc(c.region):''}</div></div>
-      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge cat-${esc(c.category)}">${esc(c.category)}</span>`:''}</div>
+      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}
     return `<div class="item ${S.sel===c.id?'sel':''}" data-id="${c.id}">
       <div class="thumb" style="${c.thumb?`background-image:url('${c.thumb}')`:''}">${c.thumb?'':esc((c.name||'?').trim().charAt(0))}</div>
       <div class="t"><div class="n">${esc(c.name)}${c.title?` <small>${esc(c.title)}</small>`:''}</div>
         <div class="c">${esc(c.company||'—')}${c.region?' · '+esc(c.region):''}</div></div>
-      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge cat-${esc(c.category)}">${esc(c.category)}</span>`:''}</div>
+      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}).join('')+'</div>';
   wireLogos($('#list'));
@@ -256,7 +256,7 @@ function followBox(c){const fs=followState(c);return `<div class="follow ${fs}">
       ${c.nextFollow?`<button class="btn sm" id="fDone">${ic('check')}已跟進</button>`:''}
       <button class="btn sm" data-snooze="7">+1 週</button><button class="btn sm" data-snooze="30">+1 月</button>
     </div>`}
-const tagsHTML=(c,extra)=>{const t=[c.category?`<span class="badge cat-${esc(c.category)}">${esc(c.category)}</span>`:'',c.status?`<span class="badge st-${esc(c.status)}">${esc(c.status)}</span>`:'',extra||''].join('');return t?`<div class="tags">${t}</div>`:''};
+const tagsHTML=(c,extra)=>{const t=[c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:'',c.status?`<span class="badge ${optCls('status',c.status)}">${esc(c.status)}</span>`:'',extra||''].join('');return t?`<div class="tags">${t}</div>`:''};
 const visitsBlock=(n,items,empty)=>`<div class="gh"><span>拜訪／聯絡紀錄・${n} 筆</span><span class="sp"></span><button class="btn sm pri" id="vNew">${ic('plus')}新增紀錄</button></div>
   <div class="dgrp glass vwrap">${items.length?visitsHTML(items):`<div style="color:var(--sub);font-size:14px">${empty}</div>`}</div>`;
 function afterDetail(c){document.body.classList.add('detail');const tok=++detailToken;
