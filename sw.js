@@ -1,5 +1,5 @@
 // 名片管家 service worker：讓 App 沒有網路也能打開
-const VERSION = 'mpgj-2026.11.10-3';   // 每次更新 App 都要改這個版本號
+const VERSION = 'mpgj-2026.11.10-4';   // 每次更新 App 都要改這個版本號
 const SHELL = ['./', './index.html', './help.html', './manifest.webmanifest', './xlsx.full.min.js',
   './style.css', './core.js', './options.js', './cardcrop.js', './calendar.js', './companies.js', './forms.js', './ai-scan.js', './export.js', './drive-sync.js', './app.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png'];

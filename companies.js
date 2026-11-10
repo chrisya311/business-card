@@ -61,6 +61,8 @@ function logoBg(co){const n=normCo(co.company)||co.company||'?';let h=0;for(cons
 const logoIni=co=>{const n=String(co.company||'').replace(/^(台灣|臺灣|中華|財團法人)/,'').trim();return esc([...n][0]||'?')};
 function logoHTML(co,cls){return `<div class="${cls}" style="${logoBg(co)}"></div>`}
 function wireLogos(){}
+/* 首頁公司那一列：用這家公司聯絡人的名片縮圖（照接觸次數、職稱排第一個有名片照片的人）；都沒有照片才用色塊 */
+function coThumb(co,ppl){const p=(ppl||sortPeople(co)).find(x=>x.thumb);return p?`<div class="thumb" style="background-image:url('${p.thumb}')"></div>`:logoHTML(co,'thumb logo')}
 function fillGaps(co,p){
   for(const k of ['taxId','fax','address','region','brands','status','category'])if(!co[k]&&p[k])co[k]=p[k];
   if(!co.phone&&p.phone)co.phone=coPhone(p.phone);
@@ -167,7 +169,7 @@ function listHTML(arr){
   return '<div class="grp glass">'+arr.map(c=>{const fs=followState(c);
     if(isCo(c)){const ppl=sortPeople(c);const sel=S.sel===c.id||ppl.some(p=>p.id===S.sel);
       return `<div class="item co ${sel?'sel':''}" data-id="${c.id}">
-      ${logoHTML(c,'thumb logo')}
+      ${coThumb(c,ppl)}
       <div class="t"><div class="n">${esc(c.company)}</div>
         <div class="ppl">${ppl.length?ppl.slice(0,2).map(p=>esc(p.name)).join('・')+(ppl.length>2?` +${ppl.length-2}`:''):'（還沒有聯絡人）'}${c.region?' · '+esc(c.region):''}</div></div>
       <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
