@@ -11,8 +11,8 @@ document.addEventListener('click',async e=>{
   const it=t.closest('.item');if(it){if(it.dataset.id)select(it.dataset.id);return}
   const go=t.closest('[data-go]');if(go){select(go.dataset.go);return}
   if(t.closest('[data-scan]')){openScan();return}
-  const chip=t.closest('[data-cat]');if(chip){S.cat=chip.dataset.cat;renderList();return}
-  const insb=t.closest('[data-ins]');if(insb&&insb.closest('#insRow')){S.ins=S.ins===insb.dataset.ins?'':insb.dataset.ins;renderList();return}
+  const chip=t.closest('[data-cat]');if(chip){if(chipDragged)return;S.cat=chip.dataset.cat;renderList();centerChip($('#catChips'));return}
+  const insb=t.closest('[data-ins]');if(insb&&insb.closest('#insRow')){if(chipDragged)return;S.ins=S.ins===insb.dataset.ins?'':insb.dataset.ins;renderList();centerChip($('#insRow'));return}
   const bn=t.closest('.banner button[data-f]');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;renderList();return}
   const zi=t.closest('[data-zoom]');if(zi&&zi.src){$('#zoom img').src=zi.src;$('#zoom').classList.add('on');return}
   if(t.closest('#zoom')){$('#zoom').classList.remove('on');return}
@@ -61,6 +61,15 @@ document.addEventListener('click',async e=>{
   const im=e.target.closest('[data-i]');if(im){const inp=$('#importInput');inp.dataset.kind=im.dataset.i;inp.accept=im.dataset.i==='json'?'.json,application/json':'.csv,text/csv';inp.value='';inp.click()}
 });
 $('#bScan').onclick=()=>openScan();
+/* 類別那一排（電腦）：點了之後捲到中間；滑鼠滾輪改成左右捲；也可以按住左右拖 */
+function centerChip(box){const on=box&&box.querySelector('.chip.on');if(on)box.scrollTo({left:on.offsetLeft-(box.clientWidth-on.offsetWidth)/2,behavior:'smooth'})}
+let chipDragged=false;
+for(const box of [$('#catChips'),$('#insRow')]){
+  box.addEventListener('wheel',e=>{if(box.scrollWidth<=box.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();box.scrollLeft+=e.deltaY},{passive:false});
+  let x0=0,s0=0,down=false;
+  box.addEventListener('mousedown',e=>{if(e.button!==0)return;down=true;chipDragged=false;x0=e.clientX;s0=box.scrollLeft});
+  addEventListener('mousemove',e=>{if(!down)return;const dx=e.clientX-x0;if(Math.abs(dx)>5){chipDragged=true;box.classList.add('dragging')}if(chipDragged)box.scrollLeft=s0-dx});
+  addEventListener('mouseup',()=>{if(!down)return;down=false;box.classList.remove('dragging');setTimeout(()=>{chipDragged=false},0)})}
 $('#bCal').onclick=()=>openCal();
 $('#eMerge').onclick=()=>openMerge();
 $('#mgList').addEventListener('click',async e=>{const b=e.target.closest('[data-mg]');if(!b)return;const to=contacts.find(x=>x.id===b.dataset.mg);const from=contacts.find(x=>x.id===editing.id);if(!to||!from)return;

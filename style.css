@@ -562,3 +562,5 @@ div.f[data-ins],div.f[data-k=birthday]{display:flex;flex-direction:column;gap:6p
 /* 在公司上班、也有保險往來的人：名字旁邊的小車子 */
 .insic{display:inline-flex;vertical-align:-2px;margin-left:6px;color:var(--pur)}
 .insic svg.i{width:16px;height:16px}
+#catChips.dragging,#insRow.dragging{cursor:grabbing;-webkit-user-select:none;user-select:none}
+#catChips.dragging .chip,#insRow.dragging .chip{pointer-events:none}
