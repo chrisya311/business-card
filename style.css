@@ -546,3 +546,7 @@ body.catswipe .list .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 .cnone{color:var(--sub);font-size:14px;padding:6px 0 4px}
 @media (max-width:380px){header{gap:4px}}
 div.f[data-ins],div.f[data-k=birthday]{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--sub)}
+/* 清單縮圖：橫式名片的形狀（公司的色塊放在同樣寬度的中間，文字才會對齊） */
+.item .thumb{width:64px;height:40px;border-radius:7px;background-size:cover}
+.item .thumb[style*="url("]{box-shadow:0 1px 4px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.12)}
+.item .thumb.logo:not(.has){width:32px;height:32px;margin:0 16px;border-radius:10px}

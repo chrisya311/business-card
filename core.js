@@ -140,8 +140,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.10-2';
+const APP_VERSION='2026.11.10-3';
 const CHANGELOG=[
+  {v:'2026.11.10-3',items:['名片自動裁切變準了：改成找名片的四條直邊，深色名片放在深色桌面、有反光也找得到；找不到可信的邊就不亂切','以前存的名片照片也會自動裁切、拉正（原始照片留在這台手機，按「編輯 → 裁切」可以重新調整）','首頁的名片縮圖改成完整的橫式名片，直式名片會轉成橫的，每一列都一樣整齊','「保險」類別不再顯示加工類型、刀具品牌']},
   {v:'2026.11.10-2',items:['拿掉「分享」功能（分享連結的內容藏在網址裡，傳出去就收不回來）。要給別人資料，可以用搜尋找到那一筆，再用「匯出 → 只匯出目前清單」']},
   {v:'2026.11.10-1',items:['首頁右上角新增「日曆」：一個月一格，上下滑動看其他月份，標出聯絡人的生日、保險到期日和跟進日期；上面的按鈕可以隱藏或顯示某一種，點日期就能看是誰、直接點進去','聯絡人新增「生日」欄位，年份可以不填（民國年也可以）','「私人」類別改名成「保險」（原本私人的人會自動變成保險），保險類別可以填好幾台車的車牌和保險到期日，車牌打小寫會自動變大寫','選「保險」類別時，可以篩選已過期、30／60／90 天內到期的人，清單上也會標出快到期的；按「已續保 +1 年」就能更新到期日','拍名片改成自動找出照片裡的名片，裁掉桌面並把名片拉正；不滿意可以按「裁切」自己拖四個角。不再從名片剪 logo','類別、狀態、試刀結果的顏色可以按「其他顏色」從調色盤挑任何顏色','用全形打的英文和數字（例如 Ａｐｐｌｉｔｅｃ）會自動變成一般寬度，不會字距很開']},
   {v:'2026.11.09-11',items:['滑動放開後停得更乾脆：左右滑換類別、右滑返回、右滑關閉頁面都更快到位，類別的玻璃也一起加快']},
@@ -199,8 +200,11 @@ const LDB={db:null,
 };
 const Store={
   async put(c){await LDB.put('contacts',JSON.parse(JSON.stringify(c)))},
-  async del(c){const t=(await Meta.get('deleted'))||{};t[c.id]=new Date().toISOString();await Meta.set('deleted',t);Sync.dirty();await LDB.del('contacts',c.id);for(const v of c.visits||[])for(const ph of v.photos||[])await VP.del(ph.id);for(const s of ['front','back']){await LDB.del('photos',c.id+':'+s).catch(()=>{});photoCache.delete(c.id+':'+s)}},
+  async del(c){const t=(await Meta.get('deleted'))||{};t[c.id]=new Date().toISOString();await Meta.set('deleted',t);Sync.dirty();await LDB.del('contacts',c.id);for(const v of c.visits||[])for(const ph of v.photos||[])await VP.del(ph.id);for(const s of ['front','back']){await LDB.del('photos',c.id+':'+s).catch(()=>{});await LDB.del('photos',c.id+':'+s+':orig').catch(()=>{});photoCache.delete(c.id+':'+s)}},
   async putPhoto(id,side,data){const k=id+':'+side;if(data)await LDB.put('photos',data,k);else await LDB.del('photos',k);photoCache.set(k,data||'')},
+  /* 裁切前的原始照片（只存在這台手機，不上傳雲端），給「裁切」重新調整用 */
+  async putOrig(id,side,o){const k=id+':'+side+':orig';try{if(o&&o.d)await LDB.put('photos',o,k);else await LDB.del('photos',k)}catch(_){}},
+  async getOrig(id,side){try{return (await LDB.get('photos',id+':'+side+':orig'))||null}catch(_){return null}},
   async getPhoto(id,side){const k=id+':'+side;if(photoCache.has(k))return photoCache.get(k);try{const v=(await LDB.get('photos',k))||'';photoCache.set(k,v);return v}catch(_){return ''}}
 };
 const VP={key:id=>'vp:'+id,
@@ -216,7 +220,7 @@ const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join(
 const mapLink=a=>`<a class="btn sm" style="margin-left:6px;vertical-align:middle" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">${ic('map')}地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',birthday:'',cars:[],thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',birthday:'',cars:[],cropV:0,thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
@@ -248,7 +252,11 @@ async function fileToPhoto(file){
     while(d.length>230000&&(q>.45||max>700)){if(q>.5)q-=.1;else max-=200;d=await shrinkTo(url,max,q)} // stays under the 256 KiB per-document limit
     return d}finally{URL.revokeObjectURL(url)}
 }
-const makeThumb=d=>d?shrinkTo(d,180,.6):Promise.resolve('');
+/* 清單上的名片縮圖：橫的長方形；直式名片轉 90 度放進去，每一列才會一樣整齊 */
+async function makeThumb(d){if(!d)return '';const img=await loadImg(d);const W=img.width,H=img.height,rot=H>W*1.05;
+  const s=Math.min(1,220/Math.max(W,H)),cw=Math.round((rot?H:W)*s),ch=Math.round((rot?W:H)*s);
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;const g=cv.getContext('2d');
+  if(rot){g.translate(cw,0);g.rotate(Math.PI/2)}g.drawImage(img,0,0,W*s,H*s);return cv.toDataURL('image/jpeg',.72)}
 function dataUrlToBlob(d){const [h,b]=d.split(',');const bin=atob(b);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:h.match(/:(.*?);/)[1]})}
 
 /* ---------- photo slot widgets ---------- */

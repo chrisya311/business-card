@@ -158,6 +158,8 @@ function paintEditMode(){const f=$('#eForm');const co=EM==='co';
   {const cat=(f.querySelector('[name=category]:checked')||{}).value||'';const show=!co&&cat===INS_CAT;$$('#eForm [data-ins]').forEach(el=>el.hidden=!show);
     if(show&&!$$('#eCars .car-row').length)addCarRow()}
   $$('#eForm [data-m=c]').forEach(el=>el.hidden=hideC);
+  // 保險類別用不到加工類型、刀具品牌
+  if(!co&&((f.querySelector('[name=category]:checked')||{}).value||'')===INS_CAT)$$('#eForm [data-noins]').forEach(el=>el.hidden=true);
   const h=$('#eHint');h.hidden=!hint;h.innerHTML=hint}
 $('#eForm').addEventListener('click',e=>{const l=e.target.closest('.checks label');if(!l)return;const i=l.querySelector('input[type=radio]');if(!i)return;
   e.preventDefault();i.checked=!i.checked;paintChecks();i.dispatchEvent(new Event('change',{bubbles:true}))});
@@ -204,7 +206,8 @@ async function openEdit(c,opt={}){
   if(opt.fromScan){note.hidden=false;note.innerHTML=`Claude 已經讀好名片，請<b>對照照片看一下</b>再儲存。${unc.size?'黃色欄位是比較不確定的地方。':''}<br>順便選一下類別、加工類型，填個跟進日期。`}else note.hidden=true;
   if(opt.photos){slotState.edit={...opt.photos};slotOrig.edit={...slotOrig.scan};editPhotosOrig={front:'',back:''}}
   else{slotState.edit={front:'',back:''};slotOrig.edit={front:null,back:null};editPhotosOrig={front:'',back:''};
-    if(!isNew){for(const s of ['front','back'])if(editing['has'+(s==='front'?'Front':'Back')]){const d=await Store.getPhoto(editing.id,s);slotState.edit[s]=d;editPhotosOrig[s]=d}}}
+    if(!isNew){for(const s of ['front','back'])if(editing['has'+(s==='front'?'Front':'Back')]){const d=await Store.getPhoto(editing.id,s);slotState.edit[s]=d;editPhotosOrig[s]=d;
+      const o=await Store.getOrig(editing.id,s);if(o&&o.d)slotOrig.edit[s]={src:o.d,quad:o.q||null}}}}
   paintSlots('edit');
   openModal('#mEdit');
   $('#mEdit .mbox').scrollIntoView({block:'start'});
@@ -249,10 +252,12 @@ async function saveEdit(){
   try{
     for(const s of ['front','back']){
       const v=slotState.edit[s]||'';
-      if(v!==editPhotosOrig[s])await setPhoto(editing,s,v);
+      if(v!==editPhotosOrig[s]){await setPhoto(editing,s,v);const o=v&&slotOrig.edit[s];await Store.putOrig(editing.id,s,o&&o.src?{d:o.src,q:o.quad}:null)}
+      else if(v&&slotOrig.edit[s]&&slotOrig.edit[s].src){const o=await Store.getOrig(editing.id,s);if(!o)await Store.putOrig(editing.id,s,{d:slotOrig.edit[s].src,q:slotOrig.edit[s].quad})}
       editing['has'+(s==='front'?'Front':'Back')]=!!v;
     }
     if(slotState.edit.front!==editPhotosOrig.front||!editing.thumb!==!slotState.edit.front)editing.thumb=await makeThumb(slotState.edit.front);
+    if(['front','back'].every(s=>!slotState.edit[s]||slotOrig.edit[s]))editing.cropV=CROP_V;
     attaching++;let r;try{await save(editing);r=await attach(contacts.find(x=>x.id===editing.id)||editing)}finally{attaching--}
     closeModal($('#mEdit'));S.sel=editing.id;if(isNarrow()){if(history.state&&history.state.modal)history.replaceState({detail:S.sel},'');else if(!(history.state&&history.state.detail))history.pushState({detail:S.sel},'')}refresh();toast(r.co?(r.moved?`已改到「${r.co.company}」，舊公司的紀錄會保留並標示已離職`:r.isNew?`已儲存，並建立「${r.co.company}」公司`:`已儲存，加入「${r.co.company}」`):'已儲存',3000);
   }catch(e){toast('儲存失敗：'+(e&&e.code==='quota_exceeded'?'雲端空間已滿':(e&&e.message)||'請檢查網路'),4000)}

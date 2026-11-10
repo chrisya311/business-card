@@ -159,6 +159,7 @@ refresh();
   try{contacts=(await LDB.all()).map(normalize)}catch(_){contacts=[]}
   refresh();checkBackup();
   try{await maybeMigrate()}catch(_){}
+  setTimeout(()=>fixOldPhotos().catch(()=>{}),2500);
   const rd=Sync.takeRedirect();
   if(rd&&rd.ok){toast('已連結 Google 雲端硬碟，開始同步…',3000);Sync.run()}
   else if(rd&&rd.error){toast(rd.error==='access_denied'?'已取消 Google 登入':'Google 登入沒有成功，請再試一次',4000)}

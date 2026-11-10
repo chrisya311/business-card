@@ -1,40 +1,119 @@
 /* 名片管家：名片自動裁切＋轉正（在手機上直接算，不用網路、不花 AI 額度）
-   做法像「用油漆桶把桌面塗掉」：從照片四邊開始，把跟桌面顏色接近、連在一起的地方標成背景，
-   剩下最大的一塊就是名片；找出它的四個角，再把名片拉成正正方方的長方形。
-   找不到（例如名片佔滿整張照片、或跟桌面顏色太像）就保留原本的照片，可以按「裁切」自己拖四個角。 */
+   找名片像「拿尺去比」：先找出照片裡又長又直的線，再挑出最像名片外框的四條——
+   框裡面和框外面顏色差很多、而且整條邊都連貫的那一組。另外也用「油漆桶」（把跟桌面顏色接近的地方塗掉）
+   找一個候選，兩種一起比分數，挑最可信的。
+   分數太低（找不到可信的四條邊）就保留原本的照片，可以按「裁切」自己拖四個角。 */
 'use strict';
 const slotOrig={scan:{front:null,back:null},edit:{front:null,back:null}};   // 每個照片框的原始照片和四個角，給「裁切」微調用
 const CARD_RATIO=90/54;   // 台灣名片 9 × 5.4 公分
+const CROP_MIN=12;        // 分數低於這個就當作沒找到
+const CROP_V=1;           // 照片整理過的版本：舊名片照片自動裁切一次後記上這個號碼，就不會重複整理
 
 function imgToCanvas(img,max){const s=Math.min(1,max/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
   const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round((img.naturalWidth||img.width)*s));cv.height=Math.max(1,Math.round((img.naturalHeight||img.height)*s));
   cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);return cv}
 
-/* ---------- 找名片的四個角（回傳原圖座標 [左上,右上,右下,左下]，找不到回傳 null） ---------- */
-function detectCard(img){
-  const cv=imgToCanvas(img,320),w=cv.width,h=cv.height,N=w*h;if(w<40||h<40)return null;
+/* ---------- 找名片的四個角 ----------
+   回傳 {quad:[左上,右上,右下,左下]（原圖座標）, score:可信度, area:佔照片的比例}，完全找不到回傳 null */
+function findCard(img){
+  const cv=imgToCanvas(img,420),w=cv.width,h=cv.height,N=w*h;if(w<40||h<40)return null;
   const src=cv.getContext('2d').getImageData(0,0,w,h).data;
-  // 1. 模糊一點，名片上的字和桌面的紋路比較不會干擾
   let R=new Float32Array(N),G=new Float32Array(N),B=new Float32Array(N);
   for(let i=0;i<N;i++){R[i]=src[i*4];G[i]=src[i*4+1];B[i]=src[i*4+2]}
-  const blur=a=>{const t=new Float32Array(N),o=new Float32Array(N);
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,n=0;for(let k=-2;k<=2;k++){const xx=x+k;if(xx>=0&&xx<w){s+=a[y*w+xx];n++}}t[y*w+x]=s/n}
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,n=0;for(let k=-2;k<=2;k++){const yy=y+k;if(yy>=0&&yy<h){s+=t[yy*w+x];n++}}o[y*w+x]=s/n}return o};
-  R=blur(R);G=blur(G);B=blur(B);
-  // 2. 桌面的顏色：照片最外圈的中位數，順便看桌面花不花
+  // 1. 模糊一點，名片上的灰塵、桌面的木紋比較不會干擾
+  const blur=(a,r=2)=>{const t=new Float32Array(N),o=new Float32Array(N);
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,n=0;for(let k=-r;k<=r;k++){const xx=x+k;if(xx>=0&&xx<w){s+=a[y*w+xx];n++}}t[y*w+x]=s/n}
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,n=0;for(let k=-r;k<=r;k++){const yy=y+k;if(yy>=0&&yy<h){s+=t[yy*w+x];n++}}o[y*w+x]=s/n}return o};
+  // 找直線用輕微模糊（名片邊緣常常只是一條細細的亮邊），打分數和油漆桶用比較模糊的
+  const R1=blur(R,1),G1=blur(G,1),B1=blur(B,1);R=blur(R);G=blur(G);B=blur(B);
+  const cands=[];
+  try{for(const q of houghQuads(w,h,R1,G1,B1))cands.push(q)}catch(_){}
+  try{const q=floodQuad(w,h,R,G,B);if(q)cands.push(q)}catch(_){}
+  // 2. 每個候選打分數：沿著四條邊，比較框內、框外的顏色差
+  // 先用少少的點粗算，留下前 60 名再仔細算
+  let list=[];
+  for(const q0 of cands){const q=orderQuad(q0);if(!convex(q))continue;const a=polyArea(q)/N;if(a<.05||a>.985)continue;list.push({q,area:a,c:quadScore(q,w,h,R,G,B,10)})}
+  const cTop=Math.max(0,...list.map(x=>x.c));list=list.filter(x=>x.c>=Math.max(6,cTop*.3)).sort((x,y)=>y.c-x.c).slice(0,1500);
+  for(const x of list)x.score=quadScore(x.q,w,h,R,G,B,40);
+  if(!list.length)return null;
+  // 分數夠高的裡面，挑「最外圈」的：名片的外框一定把名片上的色塊、logo 都包在裡面
+  // 另外框裡面和框外面「整體」的顏色要差夠多（框外應該是桌面）；已經裁好的名片照片，框內框外都是名片紙，就不要再切
+  const top=Math.max(...list.map(x=>x.score));
+  const ok=list.filter(x=>x.score>=Math.max(CROP_MIN,top*.45)).sort((x,y)=>y.area-x.area||y.score-x.score);
+  let best=null;for(const x of ok){if(best&&x.area<best.area*.98)break;if(regionDiff(x.q,w,h,R,G,B)<16)continue;if(!best||x.score>best.score)best=x}
+  if(!best)return null;
+  // 照片本身已經是名片的比例（之前裁過了），又只找到裡面一小塊：多半是名片上的圖案，不要切
+  const ir=w/h;if((Math.abs(ir/CARD_RATIO-1)<.06||Math.abs(ir*CARD_RATIO-1)<.06)&&best.area<.6)return null;
+  const k=(img.naturalWidth||img.width)/w,q=best.q;
+  // 往內收一點點：寧可切掉名片最邊邊，也不要留一條桌面
+  const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4,f=.01;
+  return{quad:q.map(([x,y])=>[(x+(cx-x)*f)*k,(y+(cy-y)*f)*k]),score:best.score,area:best.area}}
+function detectCard(img,min=CROP_MIN){const r=findCard(img);return r&&r.score>=min?r.quad:null}
+
+function regionDiff(q,w,h,R,G,B){const inn=[[],[],[]],out=[[],[],[]];
+  const inside=(x,y)=>{let s=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];const c=Math.sign((b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0]));if(!c)continue;if(!s)s=c;else if(c!==s)return false}return true};
+  for(let gy=0;gy<28;gy++)for(let gx=0;gx<28;gx++){const x=(gx+.5)*w/28,y=(gy+.5)*h/28,i=Math.floor(y)*w+Math.floor(x);const t=inside(x,y)?inn:out;t[0].push(R[i]);t[1].push(G[i]);t[2].push(B[i])}
+  if(inn[0].length<8||out[0].length<8)return 0;const md=a=>{a.sort((p,r)=>p-r);return a[a.length>>1]};
+  return Math.hypot(md(inn[0])-md(out[0]),md(inn[1])-md(out[1]),md(inn[2])-md(out[2]))}
+function convex(q){let sg=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4];const cr=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(cr)<1e-6)return false;const s=Math.sign(cr);if(!sg)sg=s;else if(s!==sg)return false}return true}
+/* 一條邊的分數：沿著邊取 40 個點，每個點比較往內 3 格、往外 3 格的顏色差；取偏低的那一段（要整條邊大部分都有差，才算真的邊） */
+function quadScore(q,w,h,R,G,B,n=40){const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4;
+  const at=(x,y)=>{if(x<0||y<0||x>w-1||y>h-1)return null;const i=(Math.round(y)*w+Math.round(x));return[R[i],G[i],B[i]]};
+  const sides=[];
+  for(let s=0;s<4;s++){const a=q[s],b=q[(s+1)%4];const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;let nx=-dy/L,ny=dx/L;
+    const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;if(nx*(cx-mx)+ny*(cy-my)<0){nx=-nx;ny=-ny}
+    const v=[];for(let k=0;k<n;k++){const t=.08+.84*k/(n-1),x=a[0]+dx*t,y=a[1]+dy*t;const pi=at(x+nx*3,y+ny*3),po=at(x-nx*3,y-ny*3);
+      v.push(pi&&po?Math.hypot(pi[0]-po[0],pi[1]-po[1],pi[2]-po[2]):0)}
+    v.sort((p,r)=>p-r);sides.push(v[Math.floor(v.length*.35)])}
+  const mn=Math.min(...sides),mean=sides.reduce((s,x)=>s+x,0)/4;return .7*mn+.3*mean}
+
+/* 找直線（霍夫轉換）：每個邊緣點替「可能經過它的直線」投票，票多的就是又長又直的線；
+   再把差不多平行的兩條配成一對，兩對差不多垂直的組成一個四邊形 */
+function houghQuads(w,h,R,G,B){const N=w*h;
+  const mag=new Float32Array(N),ang=new Float32Array(N);const ms=[];
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;let bm=0,bx=0,by=0;
+    for(const C of [R,G,B]){const gx=(C[i-w+1]+2*C[i+1]+C[i+w+1])-(C[i-w-1]+2*C[i-1]+C[i+w-1]),gy=(C[i+w-1]+2*C[i+w]+C[i+w+1])-(C[i-w-1]+2*C[i-w]+C[i-w+1]);
+      const m=gx*gx+gy*gy;if(m>bm){bm=m;bx=gx;by=gy}}
+    mag[i]=Math.sqrt(bm)/4;ang[i]=Math.atan2(by,bx);if((x+y)%3===0)ms.push(mag[i])}
+  ms.sort((a,b)=>a-b);const th=Math.max(4,ms[Math.floor(ms.length*.72)]),cap=th*2;
+  const T=180,D=Math.ceil(Math.hypot(w,h)),RW=2*D+1,acc=new Float32Array(T*RW);
+  const cs=new Float32Array(T),sn=new Float32Array(T);for(let t=0;t<T;t++){cs[t]=Math.cos(t*Math.PI/180);sn[t]=Math.sin(t*Math.PI/180)}
+  for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x,m=mag[i];if(m<th)continue;const wt=Math.min(m,cap);
+    let ti=Math.round(((ang[i]%Math.PI)+Math.PI)%Math.PI*180/Math.PI);
+    for(let d=-4;d<=4;d++){const t=(ti+d+T)%T;acc[t*RW+Math.round(x*cs[t]+y*sn[t])+D]+=wt}}
+  // 找票數最高的線（附近的不重複算）
+  let mx=0;for(let i=0;i<acc.length;i++)if(acc[i]>mx)mx=acc[i];if(!mx)return[];
+  const pk=[];for(let i=0;i<acc.length;i++)if(acc[i]>mx*.07)pk.push(i);pk.sort((a,b)=>acc[b]-acc[a]);
+  const lines=[];const near=(a,b)=>{let dt=Math.abs(a.t-b.t),r2=b.r;if(dt>90){dt=180-dt;r2=-b.r}return dt<=6&&Math.abs(a.r-r2)<=10};
+  for(const i of pk){const l={t:Math.floor(i/RW),r:i%RW-D,v:acc[i]};if(lines.some(o=>near(o,l)))continue;lines.push(l);if(lines.length>=50)break}
+  // 平行的配成一對
+  const mn=Math.min(w,h),pairs=[];
+  for(let i=0;i<lines.length;i++)for(let j=i+1;j<lines.length;j++){const a=lines[i],b=lines[j];let dt=Math.abs(a.t-b.t),rb=b.r;if(dt>90){dt=180-dt;rb=-b.r}
+    if(dt<=12&&Math.abs(a.r-rb)>mn*.12)pairs.push([a,b,a.t])}
+  const X=(a,b)=>{const ta=a.t*Math.PI/180,tb=b.t*Math.PI/180;const d=Math.cos(ta)*Math.sin(tb)-Math.sin(ta)*Math.cos(tb);if(Math.abs(d)<1e-6)return null;
+    return[(a.r*Math.sin(tb)-b.r*Math.sin(ta))/d,(b.r*Math.cos(ta)-a.r*Math.cos(tb))/d]};
+  const out=[],mg=.04;
+  for(let i=0;i<pairs.length;i++)for(let j=i+1;j<pairs.length;j++){const P=pairs[i],Q=pairs[j];let dt=Math.abs(P[2]-Q[2]);if(dt>90)dt=180-dt;if(dt<55)continue;
+    const c=[X(P[0],Q[0]),X(P[0],Q[1]),X(P[1],Q[1]),X(P[1],Q[0])];
+    if(c.some(p=>!p||p[0]<-w*mg||p[1]<-h*mg||p[0]>w*(1+mg)||p[1]>h*(1+mg)))continue;
+    const a=polyArea(c);if(a<N*.05||a>N*.985)continue;
+    const L=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1]),s1=(L(c[0],c[1])+L(c[2],c[3]))/2,s2=(L(c[1],c[2])+L(c[3],c[0]))/2,ar=Math.max(s1,s2)/Math.min(s1,s2);
+    if(ar>2.6)continue;out.push(c)}
+  return out}
+
+/* 油漆桶：從照片四邊開始，把跟桌面顏色接近、連在一起的地方塗掉，剩下最大的一塊的外框 */
+function floodQuad(w,h,R,G,B){const N=w*h;
   const ring=[];for(let x=0;x<w;x++){ring.push(x,(h-1)*w+x)}for(let y=1;y<h-1;y++){ring.push(y*w,y*w+w-1)}
   const med=a=>{const v=ring.map(i=>a[i]).sort((p,q)=>p-q);return v[v.length>>1]};
   const br=med(R),bg=med(G),bb=med(B);
   const dBg=i=>Math.hypot(R[i]-br,G[i]-bg,B[i]-bb);
   const ds=ring.map(dBg).sort((p,q)=>p-q);const spread=ds[Math.floor(ds.length*.8)];
   const TG=Math.max(30,Math.min(95,spread*2.2+18)),TL=22;
-  // 3. 從四邊開始「塗油漆」：顏色跟桌面接近、而且跟旁邊沒有突然變色的，都算背景
   const bgM=new Uint8Array(N),st=[];
   for(const i of ring)if(!bgM[i]&&dBg(i)<TG){bgM[i]=1;st.push(i)}
   while(st.length){const i=st.pop(),x=i%w,y=(i-x)/w;
     const go=j=>{if(bgM[j])return;if(dBg(j)<TG&&Math.hypot(R[j]-R[i],G[j]-G[i],B[j]-B[i])<TL){bgM[j]=1;st.push(j)}};
     if(x>0)go(i-1);if(x<w-1)go(i+1);if(y>0)go(i-w);if(y<h-1)go(i+w)}
-  // 4. 剩下的地方先縮一圈再放回來（去掉細細的雜點和連到名片的細線），留下最大的一塊
   const morph=(m,grow)=>{const o=new Uint8Array(N);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;let v=m[i];
       if(grow){if(!v)v=(x>0&&m[i-1])||(x<w-1&&m[i+1])||(y>0&&m[i-w])||(y<h-1&&m[i+w])?1:0}
       else if(v)v=(x>0&&m[i-1])&&(x<w-1&&m[i+1])&&(y>0&&m[i-w])&&(y<h-1&&m[i+w])?1:0;o[i]=v}return o};
@@ -45,17 +124,13 @@ function detectCard(img){
     while(q.length){const i=q.pop();n++;const x=i%w;
       for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,i-w,i+w])if(j>=0&&j<N&&fg[j]&&!lab[j]){lab[j]=cur;q.push(j)}}
     if(n>bestN){bestN=n;best=cur}}
-  if(bestN<N*.1||bestN>N*.97)return null;
-  // 5. 這一塊的外框（凸包），再找面積最大的四邊形 = 名片的四個角
+  if(bestN<N*.05||bestN>N*.97)return null;
   const pts=[];for(let y=0;y<h;y++){let a=-1,b=-1;for(let x=0;x<w;x++)if(lab[y*w+x]===best){if(a<0)a=x;b=x}if(a>=0){pts.push([a,y]);if(b!==a)pts.push([b+1,y])}}
   let hull=convexHull(pts);if(hull.length<4)return null;
   for(let eps=1;hull.length>40;eps+=.5)hull=simplifyLoop(hull,eps);
   const quad=maxQuad(hull);if(!quad)return null;
-  const qa=polyArea(quad);if(qa<N*.1||bestN/qa<.75)return null;   // 形狀不像長方形（例如連手一起）就不要亂切
-  const k=(img.naturalWidth||img.width)/w;
-  // 往內收一點點：模糊和陰影會讓邊界往外擴，寧可切掉名片最邊邊，也不要留一條桌面
-  const cx=quad.reduce((s,p)=>s+p[0],0)/4,cy=quad.reduce((s,p)=>s+p[1],0)/4,f=.015;
-  return orderQuad(quad.map(([x,y])=>[(x+(cx-x)*f)*k,(y+(cy-y)*f)*k]))}
+  if(bestN/polyArea(quad)<.75)return null;   // 形狀不像長方形（例如連手一起）
+  return quad}
 
 function convexHull(p){p=[...p].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
   const lo=[],up=[];for(const q of p){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}
@@ -150,3 +225,20 @@ $('#cropOk').onclick=async()=>{const q=orderQuad(CR.quad);if(polyArea(q)<CR.img.
     slotState[CR.target][CR.side]=d;slotOrig[CR.target][CR.side].quad=q;paintSlots(CR.target);closeModal($('#mCrop'));
     if(CR.target==='scan')$('#scanStatus').hidden=true}
   catch(_){toast('裁切失敗，請再試一次')}finally{btn.disabled=false}};
+
+/* ---------- 以前存的名片照片：自動裁切、轉正一次 ----------
+   原始照片留在這台手機（按「編輯 → 裁切」可以重新調整）；比較沒把握的就不切，只把縮圖換成橫式 */
+let fixRun=false;
+async function fixOldPhotos(){if(fixRun)return;fixRun=true;let n=0,done=0;
+  try{const todo=contacts.filter(c=>!isCo(c)&&(c.hasFront||c.hasBack)&&(c.cropV||0)<CROP_V);
+    for(const c0 of todo){const c=contacts.find(x=>x.id===c0.id);if(!c||(c.cropV||0)>=CROP_V)continue;
+      const nc={...c};let changed=false;
+      for(const s of ['front','back']){if(!nc['has'+(s==='front'?'Front':'Back')])continue;const ph=await Store.getPhoto(nc.id,s);if(!ph)continue;
+        try{const img=await loadImg(ph);const r=findCard(img);
+          if(r&&r.score>=CROP_MIN+3&&r.area<.92){const w=warpCard(img,orderQuad(r.quad));if(w){const d=await compressPhoto(w);
+            if(!await Store.getOrig(nc.id,s))await Store.putOrig(nc.id,s,{d:ph,q:orderQuad(r.quad)});await setPhoto(nc,s,d);changed=true;if(s==='front')n++}}}catch(_){}
+        await new Promise(r=>setTimeout(r,30))}   // 讓畫面有空喘口氣，不會卡住
+      const front=nc.hasFront?await Store.getPhoto(nc.id,'front'):'';if(front)nc.thumb=await makeThumb(front);
+      nc.cropV=CROP_V;const cur=contacts.find(x=>x.id===nc.id);if(!cur||cur.updated!==c.updated)continue;   // 整理途中被修改過就下次再說
+      await save(nc);done++;if(done%5===0)renderList()}
+  }finally{fixRun=false;if(done){refresh();if(n)toast(`已自動裁切 ${n} 張舊名片照片，不滿意可以到「編輯 → 裁切」調整`,4000)}}}

@@ -146,7 +146,7 @@ async function addBatchFiles(files){
   for(const f of imgs.slice(0,Math.max(0,room))){
     const row={id:uid(),file:f,photo:'',state:'wait',err:'',pre:null,unc:[],on:true,dupe:null};
     B.rows.push(row);
-    try{row.photo=(await cardPhoto(f)).d}catch(_){row.state='err';row.err='無法讀取這張圖片';row.on=false}
+    try{const r=await cardPhoto(f);row.photo=r.d;row.orig={d:r.orig,q:r.quad}}catch(_){row.state='err';row.err='無法讀取這張圖片';row.on=false}
   }
   renderBatch();runBatch();
 }
@@ -215,7 +215,7 @@ async function saveBatch(){
       const c=normalize({...r.pre,category:cat,metAt:met});
       if(!c.name){r.state='err';r.err='沒有姓名';r.on=false;fail++;continue}
       c.taxId=(c.taxId||'').replace(/\D/g,'');
-      await setPhoto(c,'front',r.photo);c.thumb=await makeThumb(r.photo);
+      await setPhoto(c,'front',r.photo);c.thumb=await makeThumb(r.photo);c.cropV=CROP_V;if(r.orig)await Store.putOrig(c.id,'front',r.orig);
       await save(c);r.state='saved';r.on=false;
     }catch(e){r.state='err';r.err=e&&e.code==='quota_exceeded'?'雲端空間已滿':'儲存失敗';r.on=false;fail++}
   }
