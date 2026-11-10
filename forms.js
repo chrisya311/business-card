@@ -59,9 +59,9 @@ function saveDraft(){clearTimeout(draftT);const key=VS.key,vid=VS.vid;draftT=set
   const empty=!vid&&!d.content.trim()&&!d.next.trim()&&!cleanTrial(d.trial)&&!vPend.length;
   if(empty){try{localStorage.removeItem(key)}catch(_){}draftPhotos.delete(key);showDraftBar(null);return}
   try{localStorage.setItem(key,JSON.stringify(d))}catch(_){}draftPhotos.set(key,{pend:[...vPend],removed:[...VS.removed]});showDraftBar(d.at)},400)}
-function openVisit(c,vid,opt={}){VS.preWho=opt.who||[];
+function openVisit(c,vid,opt={}){VS.preWho=opt.who||[];const v0=vid&&c.visits.find(x=>x.id===vid);VS.ins=v0?!!v0.ins:(!!opt.ins||insOnly(c));
   VS.cid=c.id;VS.vid=vid||null;VS.key=draftKey(c.id,vid);const v=vid&&c.visits.find(x=>x.id===vid);VS.photos=v?[...(v.photos||[])]:[];
-  $('#vTitle').textContent=v?'修改紀錄':'新增紀錄';
+  $('#vTitle').textContent=(v?'修改':'新增')+(VS.ins&&!insOnly(c)?'保險紀錄':'紀錄');
   let d=null;try{d=JSON.parse(localStorage.getItem(VS.key)||'null')}catch(_){}
   const mem=draftPhotos.get(VS.key);vPend=mem?[...mem.pend]:[];VS.removed=mem?[...mem.removed]:[];
   fillVisitForm(d||visitBase(c,vid,VS.preWho));showDraftBar(d&&d.at);paintPend();openModal('#mVisit');
@@ -74,7 +74,7 @@ async function saveVisit(){const c=contacts.find(x=>x.id===VS.cid);if(!c)return;
   const btn=$('#vSave');btn.disabled=true;
   try{const added=await storePend();
     const isC=isCo(c);const who=isC?f.who:[];const whoN=who.map(id=>{const p=contacts.find(x=>x.id===id);if(p)return p.name;const o=c.visits.find(x=>x.who.includes(id));return o?o.whoN[o.who.indexOf(id)]||'':''});
-    const v={id:VS.vid||uid(),date:f.date||today(),type:f.type,content:half(f.content.trim()),next:half(f.next.trim()),updated:new Date().toISOString(),trial,who,whoN,other:isC?f.other.trim():'',photos:[...keep,...added]};
+    const v={id:VS.vid||uid(),date:f.date||today(),type:f.type,content:half(f.content.trim()),next:half(f.next.trim()),updated:new Date().toISOString(),trial,who,whoN,other:isC?f.other.trim():'',ins:!!VS.ins,photos:[...keep,...added]};
     for(const pid of VS.removed)await VP.del(pid,c.id);
     const nc={...c,visits:VS.vid?c.visits.map(x=>x.id===VS.vid?v:x):[...c.visits,v],deletedPhotos:[...(c.deletedPhotos||[]),...VS.removed]};
     if(f.follow)nc.nextFollow=f.follow;
@@ -150,21 +150,22 @@ function paintEditMode(){const f=$('#eForm');const co=EM==='co';
   $('#eCoLbl').textContent=co?'公司名稱 *':'公司';$('#ePhLbl').textContent=co?'公司電話（總機）':'公司電話（含分機）';
   $('#eFollowSec').textContent=co?'跟進與備註':'認識情境與跟進';
   let hint='',hideC=false;
-  if(!co){const cat=(f.querySelector('[name=category]:checked')||{}).value||'';const name=f.querySelector('[name=company]').value.trim();
-    if(name&&cat!==INS_CAT){const cur=coOf(editing);const ex=cur&&normCo(cur.company)===normCo(name)?cur:findCo(name,f.querySelector('[name=taxId]').value);
+  const rc=readCat();
+  if(!co){const name=f.querySelector('[name=company]').value.trim();
+    if(name&&!rc.insOnly){const cur=coOf(editing);const ex=cur&&normCo(cur.company)===normCo(name)?cur:findCo(name,f.querySelector('[name=taxId]').value);
       if(ex){hideC=true;hint=`狀態、加工類型、刀具品牌、跟進日期和拜訪紀錄都記在「${esc(ex.company)}」的公司頁。`}
       else hint=`儲存後會建立「${esc(name)}」公司（或讓你選要加入哪一家），下面的狀態、加工類型、刀具品牌、跟進日期會記在公司。`}
-    else if(name&&cat===INS_CAT)hint='分類是「保險」，紀錄和跟進日期記在這個人身上，不會建立公司。'}
-  {const cat=(f.querySelector('[name=category]:checked')||{}).value||'';const show=!co&&cat===INS_CAT;$$('#eForm [data-ins]').forEach(el=>el.hidden=!show);
+    else if(name&&rc.insOnly)hint='只選了「保險」：紀錄和跟進日期記在這個人身上，不會建立公司。要接到公司，請再選一個業務類別（例如客戶）。'}
+  {const show=!co&&rc.ins;$$('#eForm [data-ins]').forEach(el=>el.hidden=!show);
     if(show&&!$$('#eCars .car-row').length)addCarRow()}
   $$('#eForm [data-m=c]').forEach(el=>el.hidden=hideC);
   // 保險類別用不到加工類型、刀具品牌
-  if(!co&&((f.querySelector('[name=category]:checked')||{}).value||'')===INS_CAT)$$('#eForm [data-noins]').forEach(el=>el.hidden=true);
+  if(!co&&rc.insOnly)$$('#eForm [data-noins]').forEach(el=>el.hidden=true);
   const h=$('#eHint');h.hidden=!hint;h.innerHTML=hint}
 $('#eForm').addEventListener('click',e=>{const l=e.target.closest('.checks label');if(!l)return;const i=l.querySelector('input[type=radio]');if(!i)return;
   e.preventDefault();i.checked=!i.checked;paintChecks();i.dispatchEvent(new Event('change',{bubbles:true}))});
 $('#eForm').addEventListener('input',e=>{if(e.target.name==='company'||e.target.name==='taxId')paintEditMode()});
-$('#eForm').addEventListener('change',e=>{if(e.target.name==='category')paintEditMode()});
+$('#eForm').addEventListener('change',e=>{if(e.target.name==='category'||e.target.name==='ins')paintEditMode()});
 /* 存好一個人之後：接到對的公司（同統編或同名直接加入；很像的問一下；換工作就換公司，舊紀錄留在舊公司） */
 async function attach(p){
   if(!linkable(p)){if(p.companyId){const np={...p,companyId:''};await save(np);return{p:np}}return{p}}
@@ -183,11 +184,16 @@ function paintChecks(){$$('#eForm .checks label').forEach(l=>l.classList.toggle(
 /* 類別、狀態、加工類型、地區的選項（舊名字也列出來，虛線框，存檔時不會不見） */
 function paintEditOpts(cur){const f=$('#eForm');const chip=(type,name,k,val,on)=>`<label${optOld(k,val)?' class="old" title="這個選項已經改名或刪除，舊資料保留原本的名字"':''}><input type="${type}"${name?` name="${name}"`:''} value="${esc(val)}" ${on?'checked':''}>${esc(val)}</label>`;
   const rg=f.querySelector('[name=region]');rg.innerHTML='<option value="">（未選）</option>'+optWith('region',[cur.region]).map(r=>`<option>${esc(r)}</option>`).join('');rg.value=cur.region||'';
-  $('#eCat').innerHTML=optWith('cat',[cur.category]).map(x=>chip('radio','category','cat',x,cur.category===x)).join('')+optPlus('cat',' data-opt-for="eCat"');
+  const co=EM==='co';
+  $('#eCat').innerHTML=optWith('cat',[cur.category]).filter(x=>!(co&&x===INS_CAT)).map(x=>x===INS_CAT?chip('checkbox','ins','cat',x,cur.category===INS_CAT||!!cur.ins).replace('<label','<label data-insc'):chip('radio','category','cat',x,cur.category===x)).join('')+optPlus('cat',' data-opt-for="eCat"');
+  $('#eCatLbl').textContent=co?'類別':'類別（「保險」可以跟其他類別一起選）';
   $('#eStatus').innerHTML=optWith('status',[cur.status]).map(x=>chip('radio','status','status',x,cur.status===x)).join('')+optPlus('status',' data-opt-for="eStatus"');
   $('#eProc').innerHTML=optWith('proc',cur.processes||[]).map(p=>chip('checkbox','','proc',p,(cur.processes||[]).includes(p))).join('')+optPlus('proc',' data-opt-for="eProc"');
   paintChecks()}
-function readEditOpts(){const f=$('#eForm');return{category:(f.querySelector('[name=category]:checked')||{}).value||'',status:(f.querySelector('[name=status]:checked')||{}).value||'',processes:$$('#eProc input:checked').map(i=>i.value),region:f.querySelector('[name=region]').value}}
+/* 表單上的類別：業務類別（單選）＋「保險」（可以另外加上去）；只勾保險 = 只有保險往來 */
+function readCat(){const f=$('#eForm');const biz=(f.querySelector('[name=category]:checked')||{}).value||'';const ins=!!(f.querySelector('[name=ins]:checked'));
+  return{category:biz||(ins?INS_CAT:''),ins,insOnly:ins&&!biz}}
+function readEditOpts(){const f=$('#eForm');const rc=readCat();return{ins:rc.ins,category:rc.category||(f.querySelector('[name=category]:checked')||{}).value||'',status:(f.querySelector('[name=status]:checked')||{}).value||'',processes:$$('#eProc input:checked').map(i=>i.value),region:f.querySelector('[name=region]').value}}
 async function openEdit(c,opt={}){
   editing=JSON.parse(JSON.stringify(c||normalize({})));EM=isCo(editing)?'co':'p';
   const isNew=!contacts.some(x=>x.id===editing.id);
@@ -207,7 +213,7 @@ async function openEdit(c,opt={}){
   if(opt.photos){slotState.edit={...opt.photos};slotOrig.edit={...slotOrig.scan};editPhotosOrig={front:'',back:''}}
   else{slotState.edit={front:'',back:''};slotOrig.edit={front:null,back:null};editPhotosOrig={front:'',back:''};
     if(!isNew){for(const s of ['front','back'])if(editing['has'+(s==='front'?'Front':'Back')]){const d=await Store.getPhoto(editing.id,s);slotState.edit[s]=d;editPhotosOrig[s]=d;
-      const o=await Store.getOrig(editing.id,s);if(o&&o.d)slotOrig.edit[s]={src:o.d,quad:o.q||null}}}}
+      const o=await Store.getOrig(editing.id,s);if(o&&o.d)slotOrig.edit[s]={src:o.d,quad:o.q||null,rot:o.r||0}}}}
   paintSlots('edit');
   openModal('#mEdit');
   $('#mEdit .mbox').scrollIntoView({block:'start'});
@@ -240,7 +246,7 @@ async function saveEdit(){
   if(!editing.name){toast('請填寫姓名');f.querySelector('[name=name]').focus();return}
   editing.taxId=editing.taxId.replace(/\D/g,'');
   if(editing.taxId&&!validTaxId(editing.taxId)&&!await confirmBox(`統一編號「${editing.taxId}」的檢查碼對不起來，可能有一個數字看錯了。\n\n還是要儲存嗎？`,{ok:'仍要儲存',cancel:'回去修改'}))return;
-  editing.category=(f.querySelector('[name=category]:checked')||{}).value||'';
+  {const rc=readCat();editing.category=rc.category;editing.ins=rc.ins}
   editing.status=(f.querySelector('[name=status]:checked')||{}).value||'';
   editing.processes=$$('#eProc input:checked').map(i=>i.value);
   editing.addresses=$$('#eAddrs .addr-row').map(r=>({label:half(r.querySelector('[data-al]').value.trim()),address:half(r.querySelector('[data-aa]').value.trim())})).filter(a=>a.address);
@@ -252,8 +258,8 @@ async function saveEdit(){
   try{
     for(const s of ['front','back']){
       const v=slotState.edit[s]||'';
-      if(v!==editPhotosOrig[s]){await setPhoto(editing,s,v);const o=v&&slotOrig.edit[s];await Store.putOrig(editing.id,s,o&&o.src?{d:o.src,q:o.quad}:null)}
-      else if(v&&slotOrig.edit[s]&&slotOrig.edit[s].src){const o=await Store.getOrig(editing.id,s);if(!o)await Store.putOrig(editing.id,s,{d:slotOrig.edit[s].src,q:slotOrig.edit[s].quad})}
+      if(v!==editPhotosOrig[s]){await setPhoto(editing,s,v);const o=v&&slotOrig.edit[s];await Store.putOrig(editing.id,s,o&&o.src?{d:o.src,q:o.quad,r:o.rot||0}:null)}
+      else if(v&&slotOrig.edit[s]&&slotOrig.edit[s].src){const o=await Store.getOrig(editing.id,s);if(!o)await Store.putOrig(editing.id,s,{d:slotOrig.edit[s].src,q:slotOrig.edit[s].quad,r:slotOrig.edit[s].rot||0})}
       editing['has'+(s==='front'?'Front':'Back')]=!!v;
     }
     if(slotState.edit.front!==editPhotosOrig.front||!editing.thumb!==!slotState.edit.front)editing.thumb=await makeThumb(slotState.edit.front);

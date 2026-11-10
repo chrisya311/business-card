@@ -80,11 +80,12 @@ function newCoFor(p){const t=(p.taxId||'').replace(/\D/g,'');
 async function linkTo(p,co,noFill){
   co={...co,visits:[...co.visits],addresses:[...co.addresses],processes:[...co.processes]};
   if(!noFill)fillGaps(co,p);
-  const moved=p.visits.map(v=>({...v,who:v.who.length?v.who:[p.id],whoN:v.whoN.length?v.whoN:[p.name],photos:(v.photos||[]).map(ph=>ph.o?ph:{...ph,o:p.id})}));
+  const keepIns=hasIns(p);const mv=p.visits.filter(v=>!v.ins),stay=p.visits.filter(v=>v.ins);
+  const moved=mv.map(v=>({...v,who:v.who.length?v.who:[p.id],whoN:v.whoN.length?v.whoN:[p.name],photos:(v.photos||[]).map(ph=>ph.o?ph:{...ph,o:p.id})}));
   const ids=new Set(co.visits.map(v=>v.id));co.visits.push(...moved.filter(v=>!ids.has(v.id)));
   co.deletedVisits=(co.deletedVisits||[]).filter(id=>!moved.some(v=>v.id===id));
   await save(co);
-  const np={...p,companyId:co.id,company:co.company,visits:[],nextFollow:'',deletedVisits:[...new Set([...(p.deletedVisits||[]),...p.visits.map(v=>v.id)])]};
+  const np={...p,companyId:co.id,company:co.company,visits:stay,nextFollow:keepIns?p.nextFollow:'',deletedVisits:[...new Set([...(p.deletedVisits||[]),...mv.map(v=>v.id)])]};
   await save(np);return [np,co]}
 let linking=null,attaching=0;
 function linkAll(){if(attaching)return Promise.resolve(0);if(linking)return linking;linking=(async()=>{let n=0;const made=new Map();
@@ -92,13 +93,13 @@ function linkAll(){if(attaching)return Promise.resolve(0);if(linking)return link
   for(const p0 of contacts.filter(x=>!isCo(x))){const p=contacts.find(x=>x.id===p0.id)||p0;
     const cur=fresh(coOf(p)||(p.companyId&&made.get(p.companyId)));
     try{
-      if(cur){if(p.visits.length||p.nextFollow){const [,co]=await linkTo(p,cur);made.set(co.id,co);n++}continue}
+      if(cur){if(p.visits.some(v=>!v.ins)||(p.nextFollow&&!hasIns(p))){const [,co]=await linkTo(p,cur);made.set(co.id,co);n++}continue}
       if(!linkable(p))continue;
       let co=fresh(findCo(p.company,p.taxId));
       if(!co){const nc=newCoFor(p);co=made.get(nc.id)||[...made.values()].find(x=>normCo(x.company)===normCo(p.company))||nc}
       const [,saved]=await linkTo(p,co);made.set(saved.id,saved);n++}catch(_){}}
   return n})().finally(()=>{linking=null});return linking}
-const needsLink=()=>contacts.some(p=>!isCo(p)&&(coOf(p)?p.visits.length>0:linkable(p)));
+const needsLink=()=>contacts.some(p=>!isCo(p)&&(coOf(p)?p.visits.some(v=>!v.ins):linkable(p)));
 async function maybeMigrate(){
   if(!needsLink())return;
   let asked=false;try{asked=!!localStorage.getItem('mpgj.coMigrated')}catch(_){}
@@ -115,7 +116,7 @@ function followText(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c.
 const lastVisit=c=>[...c.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
 
 /* ---------- 保險到期 ---------- */
-const isIns=c=>!isCo(c)&&c.category===INS_CAT;
+const isIns=c=>!isCo(c)&&hasIns(c);
 /* 這個人最快到期的那台車（已過期的也算），沒有就回傳 null */
 function insNext(c){if(!isIns(c))return null;let best=null;for(const x of c.cars||[])if(x.exp&&(!best||x.exp<best.exp))best=x;return best}
 /* 符合目前「保險到期」篩選的那台車（好幾台都符合時取最早的） */
@@ -132,13 +133,19 @@ function bdText(c){const b=bdParts(c.birthday);if(!b)return '';const t=new Date(
   return `${b.y?b.y+' 年 ':''}${b.m} 月 ${b.d} 日${b.y?`（${y-b.y} 歲${dd?'生日':''}）`:''}・${dd===0?'就是今天':`還有 ${dd} 天`}`}
 
 /* ---------- filtering ---------- */
+/* 清單有哪些列：一般是公司＋沒公司的人；點「保險」時是所有有保險往來的人（在公司上班的也單獨列出來）；
+   看逾期、7 天內時，在公司上班、有保險跟進日期的人也列出來 */
+const insFollowP=c=>!isCo(c)&&!isRow(c)&&hasIns(c)&&!!c.nextFollow;
+function listBase(){if(S.cat===INS_CAT)return contacts.filter(c=>!isCo(c)&&hasIns(c));
+  return contacts.filter(c=>isRow(c)||(S.follow!=='all'&&insFollowP(c)))}
 const S={q:'',cat:'',region:'',proc:'',sort:'follow',follow:'all',sel:null,ins:''};
 const haystack1=c=>[c.name,c.nameEn,c.company,...(c.aka||[]),c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...(c.cars||[]).map(x=>x.plate+' '+x.plate.replace(/-/g,'')),...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
 const haystack=c=>isCo(c)?[haystack1(c),...peopleOf(c).map(haystack1)].join(' '):haystack1(c);
 function filtered(){
   const q=S.q.trim().toLowerCase(),qd=q.replace(/[-\s]/g,'');
-  const arr=contacts.filter(isRow).filter(c=>{
-    if(S.cat&&c.category!==S.cat)return false;
+  const insView=S.cat===INS_CAT;
+  const arr=listBase().filter(c=>{
+    if(S.cat&&!insView&&c.category!==S.cat)return false;
     if(S.region&&c.region!==S.region)return false;
     if(S.proc&&!c.processes.includes(S.proc))return false;
     if(S.ins&&S.cat===INS_CAT&&!insMatch(c))return false;
@@ -177,17 +184,17 @@ function listHTML(arr){
     </div>`}
     return `<div class="item ${S.sel===c.id?'sel':''}" data-id="${c.id}">
       <div class="thumb" style="${c.thumb?`background-image:url('${c.thumb}')`:''}">${c.thumb?'':esc((c.name||'?').trim().charAt(0))}</div>
-      <div class="t"><div class="n">${esc(c.name)}${c.title?` <small>${esc(c.title)}</small>`:''}</div>
+      <div class="t"><div class="n">${esc(c.name)}${c.title?` <small>${esc(c.title)}</small>`:''}${hasIns(c)&&!insOnly(c)?`<span class="insic" title="也有保險往來">${ic('car')}</span>`:''}</div>
         <div class="c">${esc(c.company||'—')}${c.region?' · '+esc(c.region):''}</div></div>
       <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${insBadge(c)}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}).join('')+'</div>';
 }
 function renderList(){
-  const rows=contacts.filter(isRow);let od=0,wk=0;rows.forEach(c=>{const f=followState(c);if(f==='od')od++;else if(f==='wk')wk++});
+  const rows=contacts.filter(isRow);let od=0,wk=0;[...rows,...contacts.filter(insFollowP)].forEach(c=>{const f=followState(c);if(f==='od')od++;else if(f==='wk')wk++});
   $('#nOd').textContent=od;$('#nWk').textContent=wk;$('#nAll').textContent=rows.length;
   $$('.banner button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.follow&&S.follow!=='all'));
-  const used=new Set(contacts.map(c=>c.category).filter(Boolean));
+  const used=new Set(contacts.map(c=>c.category).filter(Boolean));if(contacts.some(hasIns))used.add(INS_CAT);
   {const cs=['',...optWith('cat',[...used]).filter(c=>used.has(c)||c===S.cat)],box=$('#catChips'),key=cs.join('\u0001');
     if(box.dataset.k===key)box.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('on',b.dataset.cat===S.cat));
     else{box.innerHTML=cs.map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c?esc(c):'全部類別'}</button>`).join('');box.dataset.k=key}
@@ -219,21 +226,21 @@ const yNow0=()=>today().slice(0,4);
 function vDateHTML(d){if(!d)return '<b>—</b>';const [y,m,dd]=d.split('-');return `<b>${+dd}</b><small>${+m} 月</small>${y!==yNow0()?`<small>${y}</small>`:''}`}
 function visitsHTML(items){
   return `<div class="tl">${items.map(({v,o,co,tag})=>`<div class="v"><div class="vd">${vDateHTML(v.date)}</div><div class="vt" data-vedit="${v.id}" data-o="${o.id}">
-      <div class="ty"><span class="badge">${esc(v.type)}</span>${trialResult(v.trial)?`<span class="badge ${resultCls(trialResult(v.trial))}">${esc(trialResult(v.trial))}</span>`:''}${tag?`<span class="badge vco">${esc(tag)}</span>`:''}<span class="sp"></span><button class="x" data-vedit-btn="${v.id}" title="修改這筆" aria-label="修改這筆紀錄">${ic('edit')}</button><button class="x" data-vdel="${v.id}" title="刪除這筆" aria-label="刪除這筆紀錄">${ic('trash')}</button></div>
+      <div class="ty"><span class="badge">${esc(v.type)}</span>${v.ins?`<span class="badge c-purple">保險</span>`:''}${trialResult(v.trial)?`<span class="badge ${resultCls(trialResult(v.trial))}">${esc(trialResult(v.trial))}</span>`:''}${tag?`<span class="badge vco">${esc(tag)}</span>`:''}<span class="sp"></span><button class="x" data-vedit-btn="${v.id}" title="修改這筆" aria-label="修改這筆紀錄">${ic('edit')}</button><button class="x" data-vdel="${v.id}" title="刪除這筆" aria-label="刪除這筆紀錄">${ic('trash')}</button></div>
       ${co?whoHTML(v,co):''}
       ${v.trial?`<div class="tsum">${trialLines(v.trial).map(l=>`<div class="${l.startsWith('★')?'tb':''}">${esc(l)}</div>`).join('')}</div>`:''}
       ${v.content?`<div class="ct">${esc(v.content)}</div>`:''}${v.next?`<div class="nx">→ ${esc(v.next)}</div>`:''}
       <div class="vph">${(v.photos||[]).map(ph=>`<div class="th"><img data-vp="${ph.id}" data-zoom alt="拜訪照片"><button data-vpdel="${ph.id}" data-v="${v.id}" title="刪除這張照片" aria-label="刪除這張照片">${ic('x')}</button></div>`).join('')}<button class="add" data-vpadd="${v.id}" title="加照片">${ic('cam')}加照片</button></div></div></div>`).join('')}</div>`}
 const kvRow=(icn,label,val)=>`<div class="kv"><span class="k">${ic(icn)}</span><div style="flex:1;min-width:0"><div class="kl">${label}</div><div class="kvv">${val}</div></div></div>`;
 const webLink=w=>/^https?:|^www\./i.test(w)?`<a target="_blank" rel="noopener" href="${esc(/^www\./i.test(w)?'https://'+w:w)}">${esc(w)}</a>`:esc(w);
-function followBox(c){const fs=followState(c);return `<div class="follow ${fs}">
+function followBox(c,label){const fs=followState(c);return `<div class="follow ${fs}">
       <span class="fi">${ic('clock')}</span>
-      <div class="lbl">${c.nextFollow?`下次跟進 <b>${fmtD(c.nextFollow)}</b>・${followText(c)}`:'還沒設定下次跟進日期'}</div>
+      <div class="lbl">${c.nextFollow?`${label||'下次跟進'} <b>${fmtD(c.nextFollow)}</b>・${followText(c)}`:'還沒設定下次跟進日期'}</div>
       ${c.nextFollow?`<button class="btn sm" id="fDone">${ic('check')}已跟進</button>`:''}
       <button class="btn sm" data-snooze="7">+1 週</button><button class="btn sm" data-snooze="30">+1 月</button>
     </div>`}
 const tagsHTML=(c,extra)=>{const t=[c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:'',c.status?`<span class="badge ${optCls('status',c.status)}">${esc(c.status)}</span>`:'',extra||''].join('');return t?`<div class="tags">${t}</div>`:''};
-const visitsBlock=(n,items,empty)=>`<div class="gh"><span>拜訪／聯絡紀錄・${n} 筆</span><span class="sp"></span><button class="btn sm pri" id="vNew">${ic('plus')}新增紀錄</button></div>
+const visitsBlock=(n,items,empty,insBtn)=>`<div class="gh"><span>${insBtn?"紀錄":"拜訪／聯絡紀錄"}・${n} 筆</span><span class="sp"></span>${insBtn?`<button class="btn sm" id="vNewIns">${ic('car')}保險紀錄</button>`:''}<button class="btn sm pri" id="vNew">${ic('plus')}新增紀錄</button></div>
   <div class="dgrp glass vwrap">${items.length?visitsHTML(items):`<div style="color:var(--sub);font-size:14px">${empty}</div>`}</div>`;
 function afterDetail(c){document.body.classList.add('detail');const tok=++detailToken;
   $$('#dPhotos img').forEach(async img=>{const src=await Store.getPhoto(c.id,img.dataset.side);if(tok===detailToken&&src)img.src=src});
@@ -248,7 +255,7 @@ function renderDetail(){
 function renderCompany(co){
   const ppl=sortPeople(co),former=formerOf(co);
   const pRow=p=>{const n=visitN(p,co);return `<div class="item pp" data-id="${p.id}"><div class="thumb" style="${p.thumb?`background-image:url('${p.thumb}')`:''}">${p.thumb?'':esc((p.name||'?').trim().charAt(0))}</div>
-    <div class="t"><div class="n">${esc(p.name)}${p.title?` <small>${esc(p.title)}</small>`:''}</div><div class="c">${esc(p.mobile||p.phone||p.email||'')}</div></div>
+    <div class="t"><div class="n">${esc(p.name)}${p.title?` <small>${esc(p.title)}</small>`:''}${hasIns(p)?`<span class="insic" title="也有保險往來">${ic('car')}</span>`:''}</div><div class="c">${esc(p.mobile||p.phone||p.email||'')}</div></div>
     <div class="r">${n?`<span class="vc">接觸 ${n} 次</span>`:''}</div><span class="chev">${ic('chev')}</span></div>`};
   const gRow=f=>`<div class="item pp gone" ${f.p?`data-id="${f.p.id}"`:''}><div class="thumb">${esc((f.name||'?').charAt(0))}</div>
     <div class="t"><div class="n">${esc(f.name)}<span class="lft">已離職</span></div><div class="c">${f.p&&f.p.company?'現在：'+esc(f.p.company):''}</div></div>
@@ -311,11 +318,11 @@ function renderPerson(c){
       <div class="who">
         <h2>${esc(c.name)}${c.nameEn?`<span class="en">${esc(c.nameEn)}</span>`:''}</h2>
         <div class="co">${co?`<button class="colink" data-go="${co.id}" title="打開公司頁">${ic('building')}<span>${esc(co.company)}</span>${ic('chev')}</button>`:esc(c.company||'')}${c.title?' · '+esc(c.title):''}</div>
-        ${tagsHTML(co?{}:c)}
+        ${tagsHTML(co?{}:c,hasIns(c)&&!insOnly(c)?`<span class="badge ${optCls('cat',INS_CAT)}">${esc(INS_CAT)}</span>`:'')}
       </div>
       <div class="photos" id="dPhotos">${['front','back'].filter(s=>c['has'+(s==='front'?'Front':'Back')]).map(s=>`<img data-zoom data-side="${s}" alt="名片${s==='front'?'正面':'背面'}" ${s==='front'&&c.thumb?`src="${c.thumb}"`:''}>`).join('')}</div>
     </div>
-    ${co?'':followBox(c)}
+    ${co&&!hasIns(c)?'':followBox(c,co?'保險跟進':'')}
   </div>
   <div class="acts">
     <button class="ab p" id="dEdit"><span>${ic('edit')}</span>編輯</button>
@@ -324,7 +331,7 @@ function renderPerson(c){
   </div>
   ${carsBlock(c)}
   ${rows.length?`<div class="gh">詳細資料</div><div class="dgrp glass">${rows.map(r=>kvRow(r[0],r[1],r[2])).join('')}</div>`:''}
-  ${visitsBlock(items.length,items,co?`還沒有跟${esc(c.name)}有關的紀錄。新增的紀錄會記在「${esc(co.company)}」，窗口選${esc(c.name)}。`:'還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。')}
+  ${visitsBlock(items.length,items,co?`還沒有跟${esc(c.name)}有關的紀錄。「新增紀錄」會記在「${esc(co.company)}」，窗口選${esc(c.name)}${hasIns(c)?'；「保險紀錄」記在這個人身上，不會出現在公司頁':''}。`:'還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。',!!co&&hasIns(c))}
   <div class="dfoot"><span>建立 ${fmtD((c.created||'').slice(0,10))}・最後更新 ${fmtD((c.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這張名片</button></div>`;
   afterDetail(c);
 }

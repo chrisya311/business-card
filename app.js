@@ -20,6 +20,7 @@ document.addEventListener('click',async e=>{
   // photo slots
   const pick=t.closest('[data-pick]');if(pick){const slot=pick.closest('.pslot');pickCtx={target:slot.closest('#scanSlots')?'scan':'edit',side:slot.dataset.side};const inp=$('#photoInput');inp.value='';inp.click();return}
   const clr=t.closest('[data-clear]');if(clr){const slot=clr.closest('.pslot');const target=slot.closest('#scanSlots')?'scan':'edit';slotState[target][slot.dataset.side]='';slotOrig[target][slot.dataset.side]=null;paintSlots(target);return}
+  const rtb=t.closest('[data-rot]');if(rtb){const slot=rtb.closest('.pslot');rtb.disabled=true;rotateSlot(slot.closest('#scanSlots')?'scan':'edit',slot.dataset.side,1).finally(()=>{rtb.disabled=false});return}
   const crp=t.closest('[data-crop]');if(crp){const slot=crp.closest('.pslot');openCrop(slot.closest('#scanSlots')?'scan':'edit',slot.dataset.side);return}
 
   const c=contacts.find(x=>x.id===S.sel);
@@ -34,12 +35,13 @@ document.addEventListener('click',async e=>{
     const txt=`幫我做拜訪前準備，請上網查這家公司，整理成一頁重點（公司做什麼產品、規模、主要客戶產業、可能用到哪些刀具或加工、最近新聞，以及我拜訪時可以聊的切入點）：\n\n公司：${C0.company||'（未填）'}\n地址：${C0.address||c.address||'（未填）'}\n網站：${C0.website||'（未填）'}\n對象：${isCo(c)?sortPeople(c).map(p=>p.name+(p.title?'（'+p.title+'）':'')).join('、')||'（未填）':c.name+(c.title?'（'+c.title+'）':'')}\n已知加工類型：${C0.processes.join('、')||'不清楚'}\n目前使用的刀具品牌：${C0.brands||'不清楚'}\n備註：${C0.notes||(P0&&P0.notes)||'無'}${lv?`\n上次聯絡（${fmtD(lv.date)}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`:''}`;
     try{await navigator.clipboard.writeText(txt);toast('已複製，貼給 Claude 就可以')}catch(_){await infoBox('請長按下面的文字全選後複製，再貼給 Claude：',{text:txt,ok:'關閉'})}
     return}
-  if(t.closest('#fDone')){c.nextFollow='';await save(c).catch(()=>toast('儲存失敗'));refresh();toast('已清除跟進日期，記得記一筆紀錄');openVisit(c);return}
+  if(t.closest('#fDone')){c.nextFollow='';await save(c).catch(()=>toast('儲存失敗'));refresh();toast('已清除跟進日期，記得記一筆紀錄');openVisit(c,null,{ins:!isCo(c)&&!!coOf(c)});return}
   const rn=t.closest('[data-renew]');if(rn){const i=+rn.dataset.renew;const x=(c.cars||[])[i];if(!x||!x.exp)return;
     const d=new Date(x.exp+'T00:00:00');d.setFullYear(d.getFullYear()+1);const exp=ymd(d);
     if(!await confirmBox(`${x.plate||'這台車'} 已經續保了嗎？\n\n保險到期日會從 ${fmtD(x.exp)} 改成 ${fmtD(exp)}。`,{ok:'已續保'}))return;
     const nc={...c,cars:c.cars.map((y,j)=>j===i?{...y,exp}:y)};await save(nc).catch(()=>toast('儲存失敗'));refresh();toast(`保險到期日改為 ${fmtD(exp)}`);return}
   const sn=t.closest('[data-snooze]');if(sn){const base=c.nextFollow&&c.nextFollow>today()?c.nextFollow:today();c.nextFollow=addDays(base,+sn.dataset.snooze);await save(c).catch(()=>toast('儲存失敗'));refresh();toast('跟進日期改為 '+fmtD(c.nextFollow));return}
+  if(t.closest('#vNewIns')){openVisit(c,null,{ins:true});return}
   if(t.closest('#vNew')){const co=coOf(c);if(!isCo(c)&&co)openVisit(co,null,{who:[c.id]});else openVisit(c);return}
   const own=el=>{const o=el.closest('[data-o]');return (o&&contacts.find(x=>x.id===o.dataset.o))||c};
   const veb=t.closest('[data-vedit-btn]');if(veb){openVisit(own(veb),veb.dataset.veditBtn);return}

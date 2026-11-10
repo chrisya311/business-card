@@ -2,7 +2,10 @@
 'use strict';
 /* ---------- constants ---------- */
 const CATS=['客戶','潛在客戶','經銷商','供應商','同業','保險'];
-const INS_CAT='保險';   // 這個類別的人不接到公司，而且有車牌、保險到期日欄位（舊版叫「私人」）
+const INS_CAT='保險';   // 「保險」可以單獨選（只有保險往來：不接到公司），也可以加在業務類別上（業務＋保險：照樣接到公司）。舊版叫「私人」
+/* 有沒有保險往來：只有保險（category 是保險）或業務＋保險（ins 打勾） */
+const hasIns=c=>!!c&&c.kind!=='co'&&(c.category===INS_CAT||!!c.ins);
+const insOnly=c=>!!c&&c.kind!=='co'&&c.category===INS_CAT;
 const STATUSES=['開發中','報價中','已成交','暫停'];
 const PROCS=['車削','銑削','鑽孔','切槽／切斷','螺紋','搪孔','其他'];
 const REGIONS=['基隆市','台北市','新北市','桃園市','新竹市','新竹縣','苗栗縣','台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市','高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣','海外'];
@@ -85,6 +88,7 @@ refresh:'<path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5
 cal:'<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
 gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13"/><path d="M12 8c-1.5-3-5-4-5.5-2S9 8 12 8zM12 8c1.5-3 5-4 5.5-2S15 8 12 8z"/>',
 car:'<path d="M5 17h14M3 17v-4l2-5.5A2 2 0 0 1 6.9 6h10.2a2 2 0 0 1 1.9 1.5L21 13v4"/><path d="M3 13h18"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+rot:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>',
 crop:'<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
 google:'<path d="M21 12.2c0-.7-.1-1.4-.2-2H12v3.8h5a4.3 4.3 0 0 1-1.9 2.8v2.3h3A9 9 0 0 0 21 12.2z"/><path d="M12 21a8.8 8.8 0 0 0 6.1-2.2l-3-2.3a5.5 5.5 0 0 1-8.2-2.9H3.8v2.4A9 9 0 0 0 12 21z"/><path d="M6.9 13.6a5.4 5.4 0 0 1 0-3.4V7.8H3.8a9 9 0 0 0 0 8.2z"/><path d="M12 6.6a4.9 4.9 0 0 1 3.5 1.4l2.6-2.6A8.8 8.8 0 0 0 3.8 7.8l3.1 2.4A5.4 5.4 0 0 1 12 6.6z"/>',
 };
@@ -140,8 +144,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.10-5';
+const APP_VERSION='2026.11.10-6';
 const CHANGELOG=[
+  {v:'2026.11.10-6',items:['「保險」可以跟業務類別一起選：例如本來是「客戶」，後來也談保險，就再點「保險」，這個人照樣在公司底下，下面多出車牌和保險到期日可以填','只選「保險」的人（只有保險往來），編輯時不再顯示狀態、加工類型、刀具品牌','在公司上班、也有保險往來的人：公司頁和清單上名字旁邊有小車子圖示；首頁點「保險」也會列出他','這種人可以按「保險紀錄」記保險的聯絡，記在這個人身上，不會出現在公司頁；保險的跟進日期也記在個人','拍名片 AI 辨識時會順便判斷名片的方向，上下顛倒、側躺的照片會自動轉正','照片框多了「旋轉」按鈕，按一下順時針轉 90 度；「裁切」畫面的黃色邊是名片上緣，可以按「轉向」換方向']},
   {v:'2026.11.10-5',items:['名片自動裁切更準：桌面上有反光、或木紋很明顯時，不會再把桌面框進去','日曆按鈕移到首頁「逾期跟進、7 天內、全部」那一排的最右邊','沒有名片照片的公司，色塊也改成名片的形狀，清單更整齊']},
   {v:'2026.11.10-4',items:['首頁公司那一列改成顯示這家公司聯絡人的名片縮圖（沒有名片照片的公司才顯示色塊）']},
   {v:'2026.11.10-3',items:['名片自動裁切變準了：改成找名片的四條直邊，深色名片放在深色桌面、有反光也找得到；找不到可信的邊就不亂切','以前存的名片照片也會自動裁切、拉正（原始照片留在這台手機，按「編輯 → 裁切」可以重新調整）','首頁的名片縮圖改成完整的橫式名片，直式名片會轉成橫的，每一列都一樣整齊','「保險」類別不再顯示加工類型、刀具品牌']},
@@ -222,7 +227,7 @@ const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join(
 const mapLink=a=>`<a class="btn sm" style="margin-left:6px;vertical-align:middle" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">${ic('map')}地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',birthday:'',cars:[],cropV:0,thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',birthday:'',cars:[],cropV:0,ins:false,thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
@@ -230,12 +235,13 @@ function normalize(c){
   o.addresses=(Array.isArray(o.addresses)?o.addresses:[]).map(a=>({label:String(a&&a.label||'').trim(),address:String(a&&a.address||'').trim()})).filter(a=>a.address);
   if(!o.photoHash||typeof o.photoHash!=='object')o.photoHash={};
   if(!Array.isArray(o.deletedVisits))o.deletedVisits=[];
-  o.visits=(Array.isArray(o.visits)?o.visits:[]).map(v=>({id:v.id||uid(),date:v.date||'',type:v.type||'拜訪',content:v.content||'',next:v.next||'',updated:v.updated||'',trial:cleanTrial(v.trial),who:Array.isArray(v.who)?v.who.filter(Boolean):[],whoN:Array.isArray(v.whoN)?v.whoN:[],other:v.other||'',photos:(Array.isArray(v.photos)?v.photos:[]).filter(x=>x&&x.id).map(x=>{const p={id:x.id,h:x.h||''};if(x.o)p.o=x.o;if(x.d)p.d=x.d;return p})}));
+  o.visits=(Array.isArray(o.visits)?o.visits:[]).map(v=>({id:v.id||uid(),date:v.date||'',type:v.type||'拜訪',content:v.content||'',next:v.next||'',updated:v.updated||'',trial:cleanTrial(v.trial),who:Array.isArray(v.who)?v.who.filter(Boolean):[],whoN:Array.isArray(v.whoN)?v.whoN:[],other:v.other||'',ins:!!v.ins,photos:(Array.isArray(v.photos)?v.photos:[]).filter(x=>x&&x.id).map(x=>{const p={id:x.id,h:x.h||''};if(x.o)p.o=x.o;if(x.d)p.d=x.d;return p})}));
   if(!Array.isArray(o.deletedPhotos))o.deletedPhotos=[];
   if(!o.created)o.created=new Date().toISOString();
   if(!o.updated)o.updated=o.created;
   if(!o.region)o.region=findRegion(o.address)||'';
   if(o.category==='私人')o.category=INS_CAT;
+  o.ins=o.kind!=='co'&&(o.category===INS_CAT||!!o.ins);
   for(const k in o)if(typeof o[k]==='string'&&k!=='thumb'&&k!=='logo')o[k]=half(o[k]);
   o.addresses.forEach(a=>{a.label=half(a.label);a.address=half(a.address)});
   {const b=bdParts(o.birthday);o.birthday=b?(b.y?b.y+'-':'')+pad(b.m)+'-'+pad(b.d):''}
@@ -268,7 +274,7 @@ function paintSlots(target){
   const root=target==='scan'?$('#scanSlots'):$('#editSlots');
   root.querySelectorAll('.pslot').forEach(s=>{const src=slotState[target][s.dataset.side];const pv=s.querySelector('.pv');
     pv.style.backgroundImage=src?`url('${src}')`:'';[...pv.children].forEach(ch=>ch.style.visibility=src?'hidden':'visible');pv.style.color=src?'transparent':'';
-    s.querySelector('[data-clear]').style.visibility=src?'visible':'hidden';const cb=s.querySelector('[data-crop]');if(cb)cb.style.visibility=src?'visible':'hidden'});
+    s.querySelector('[data-clear]').style.visibility=src?'visible':'hidden';for(const b of s.querySelectorAll('[data-crop],[data-rot]'))b.style.visibility=src?'visible':'hidden'});
   if(target==='scan')$('#scanGo').disabled=!slotState.scan.front||!canScan();
 }
 

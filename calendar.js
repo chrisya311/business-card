@@ -12,7 +12,7 @@ function calBuild(y0,y1){const ev=new Map();const add=(d,e)=>{if(!ev.has(d))ev.s
       if(b)for(let y=y0;y<=y1;y++){if(b.y&&y<b.y)continue;const dd=b.m===2&&b.d===29&&new Date(y,1,29).getMonth()!==1?28:b.d;
         add(`${y}-${pad(b.m)}-${pad(dd)}`,{t:'bd',id:c.id,title:c.name,sub:b.y&&y>b.y?`${y-b.y} 歲生日`:'生日'})}
       for(const x of c.cars||[])if(x.exp)add(x.exp,{t:'ins',id:c.id,title:c.name,sub:`${x.plate||'車'} 保險到期`})}
-    if(isRow(c)&&c.nextFollow)add(c.nextFollow,{t:'fu',id:c.id,title:rowTitle(c),sub:followState(c)==='od'?`跟進（${followText(c)}）`:'跟進'})}
+    if((isRow(c)||insFollowP(c))&&c.nextFollow){const lb=insFollowP(c)?'保險跟進':'跟進';add(c.nextFollow,{t:'fu',id:c.id,title:rowTitle(c),sub:followState(c)==='od'?`${lb}（${followText(c)}）`:lb})}}
   for(const l of ev.values())l.sort((a,b)=>CAL_TYPES.findIndex(t=>t[0]===a.t)-CAL_TYPES.findIndex(t=>t[0]===b.t));
   Cal.ev=ev;Cal.evFrom=y0;Cal.evTo=y1}
 const calShown=d=>(Cal.ev.get(d)||[]).filter(e=>Cal.on[e.t]);

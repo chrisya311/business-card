@@ -198,6 +198,17 @@ function warpCard(img,quad,maxOut=1400){
       for(let k=0;k<3;k++)D[o+k]=(S[a+k]*(1-fx)+S[b+k]*fx)*(1-fy)+(S[c+k]*(1-fx)+S[d+k]*fx)*fy;D[o+3]=255}}
   g.putImageData(od,0,0);return out.toDataURL('image/jpeg',.92)}
 
+/* ---------- 轉向 ----------
+   k = 順時針轉幾個 90 度。四邊形換一個「哪個角當左上」，拉正出來的名片就會跟著轉 */
+const rotQuad=(q,k)=>[0,1,2,3].map(i=>q[(i-k%4+8)%4]);
+async function rotatePhoto(d,k){k=((k%4)+4)%4;if(!k||!d)return d;const img=await loadImg(d);const W=img.width,H=img.height,sw=k%2===1;
+  const cv=document.createElement('canvas');cv.width=sw?H:W;cv.height=sw?W:H;const g=cv.getContext('2d');
+  g.translate(cv.width/2,cv.height/2);g.rotate(k*Math.PI/2);g.drawImage(img,-W/2,-H/2);return compressPhoto(cv.toDataURL('image/jpeg',.92))}
+/* 照片框的照片轉 k 個 90 度（原始照片不動，記下轉了幾次，之後「裁切」也會照這個方向） */
+async function rotateSlot(target,side,k){const d=slotState[target][side];if(!d)return;
+  let o=slotOrig[target][side];if(!o)o=slotOrig[target][side]={src:d,quad:null,rot:0};
+  o.rot=(((o.rot||0)+k)%4+4)%4;slotState[target][side]=await rotatePhoto(d,k);paintSlots(target)}
+
 /* 壓到 230KB 以下（雲端同步每筆的大小限制），跟原本存照片的規則一樣 */
 async function compressPhoto(src){let q=.8,max=1400,d=await shrinkTo(src,max,q);
   while(d.length>230000&&(q>.45||max>700)){if(q>.5)q-=.1;else max-=200;d=await shrinkTo(src,max,q)}return d}
@@ -211,20 +222,24 @@ async function cardPhoto(file){
     return{d,orig,quad}}
   finally{if(typeof file!=='string')URL.revokeObjectURL(url)}}
 /* 放進照片框，順便告訴使用者有沒有裁到 */
-async function putCardPhoto(target,side,file){const r=await cardPhoto(file);slotState[target][side]=r.d;slotOrig[target][side]={src:r.orig,quad:r.quad};paintSlots(target);
+async function putCardPhoto(target,side,file){const r=await cardPhoto(file);slotState[target][side]=r.d;slotOrig[target][side]={src:r.orig,quad:r.quad,rot:0};paintSlots(target);
   toast(r.quad?'已自動裁切、轉正名片，不滿意可以按「裁切」調整':'沒找到名片的邊，先保留整張照片，可以按「裁切」自己拉四個角',3200);return r}
 
 /* ---------- 手動調整：拖四個角 ---------- */
-const CR={target:null,side:null,img:null,quad:null,drag:-1};
+const CR={target:null,side:null,img:null,quad:null,drag:-1,rot:0};
 async function openCrop(target,side){const o=slotOrig[target][side];const src=o&&o.src||slotState[target][side];if(!src)return;
   CR.target=target;CR.side=side;CR.img=await loadImg(src);const W=CR.img.naturalWidth,H=CR.img.naturalHeight;
-  CR.quad=o&&o.quad?o.quad.map(p=>[...p]):fullQuad();
-  if(!o)slotOrig[target][side]={src,quad:null};
+  CR.quad=o&&o.quad?o.quad.map(p=>[...p]):fullQuad();CR.rot=o&&o.rot||0;
+  if(!o)slotOrig[target][side]={src,quad:null,rot:0};
   $('#cropImg').src=src;$('#cropSvg').setAttribute('viewBox',`0 0 ${W} ${H}`);paintCrop();openModal('#mCrop')}
 const fullQuad=()=>{const W=CR.img.naturalWidth,H=CR.img.naturalHeight,m=Math.min(W,H)*.04;return [[m,m],[W-m,m],[W-m,H-m],[m,H-m]]};
 function paintCrop(){const W=CR.img.naturalWidth,H=CR.img.naturalHeight,q=CR.quad;
   const pts=q.map(p=>p.join(',')).join(' L');
-  $('#cropSvg').innerHTML=`<path d="M0,0 H${W} V${H} H0 Z M${pts} Z" fill="rgba(0,0,0,.5)" fill-rule="evenodd"/><path d="M${pts} Z" fill="none" stroke="#8FD3B0" stroke-width="${Math.max(W,H)/220}"/>`;
+  // 「上」標在拉正後會變成名片上緣的那條邊
+  const rq=rotQuad(orderQuad(q),CR.rot),cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4;
+  const mx=(rq[0][0]+rq[1][0])/2,my=(rq[0][1]+rq[1][1])/2,fs=Math.max(W,H)/26,lx=mx+(cx-mx)*.18,ly=my+(cy-my)*.18;
+  $('#cropSvg').innerHTML=`<path d="M0,0 H${W} V${H} H0 Z M${pts} Z" fill="rgba(0,0,0,.5)" fill-rule="evenodd"/><path d="M${pts} Z" fill="none" stroke="#8FD3B0" stroke-width="${Math.max(W,H)/220}"/>`+
+    `<path d="M${rq[0].join(',')} L${rq[1].join(',')}" stroke="#F2C46D" stroke-width="${Math.max(W,H)/110}"/><circle cx="${lx}" cy="${ly}" r="${fs*.9}" fill="#F2C46D"/><text x="${lx}" y="${ly}" font-size="${fs}" text-anchor="middle" dominant-baseline="central" fill="#1b1b1b" font-weight="700">上</text>`;
   $$('#cropBox .ch').forEach((el,i)=>{el.style.left=(q[i][0]/W*100)+'%';el.style.top=(q[i][1]/H*100)+'%'})}
 (()=>{const box=$('#cropBox'),lp=$('#cropLoupe');
   const at=(e)=>{const r=$('#cropImg').getBoundingClientRect(),W=CR.img.naturalWidth,H=CR.img.naturalHeight;
@@ -242,11 +257,12 @@ function paintCrop(){const W=CR.img.naturalWidth,H=CR.img.naturalHeight,q=CR.qua
   box.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
 })();
 $('#cropFull').onclick=()=>{CR.quad=fullQuad();paintCrop()};
+$('#cropRot').onclick=()=>{CR.rot=(CR.rot+1)%4;paintCrop()};
 $('#cropAuto').onclick=()=>{const q=detectCard(CR.img);if(q){CR.quad=q;paintCrop();toast('找到名片了')}else toast('找不到名片的邊，請自己拖四個角')};
 $('#cropOk').onclick=async()=>{const q=orderQuad(CR.quad);if(polyArea(q)<CR.img.naturalWidth*CR.img.naturalHeight*.02){toast('範圍太小了');return}
   const btn=$('#cropOk');btn.disabled=true;
-  try{const w=warpCard(CR.img,q);if(!w){toast('範圍太小了');return}const d=await compressPhoto(w);
-    slotState[CR.target][CR.side]=d;slotOrig[CR.target][CR.side].quad=q;paintSlots(CR.target);closeModal($('#mCrop'));
+  try{const w=warpCard(CR.img,rotQuad(q,CR.rot));if(!w){toast('範圍太小了');return}const d=await compressPhoto(w);
+    slotState[CR.target][CR.side]=d;slotOrig[CR.target][CR.side].quad=q;slotOrig[CR.target][CR.side].rot=CR.rot;paintSlots(CR.target);closeModal($('#mCrop'));
     if(CR.target==='scan')$('#scanStatus').hidden=true}
   catch(_){toast('裁切失敗，請再試一次')}finally{btn.disabled=false}};
 

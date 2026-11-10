@@ -66,8 +66,8 @@
     <div class="mhead"><h2>拍名片</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
     <div class="mbody">
       <div class="pbox" id="scanSlots">
-        <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面<br><small>點這裡拍照</small></div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
-        <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）<br><small>有英文或其他資料再拍</small></div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+        <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面<br><small>點這裡拍照</small></div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm" data-rot aria-label="順時針轉 90 度" title="順時針轉 90 度"><i data-ic="rot"></i></button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+        <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）<br><small>有英文或其他資料再拍</small></div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm" data-rot aria-label="順時針轉 90 度" title="順時針轉 90 度"><i data-ic="rot"></i></button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
       </div>
       <div class="note" id="scanTip">拍照小技巧：名片放在深色桌面、拍正一點、避開反光，字會辨識得更準。</div>
       <div class="status" id="scanStatus" hidden><div class="spin"></div><div style="flex:1" id="scanStatusTx">Claude 正在讀名片…</div><button class="btn sm" id="scanStop">停止</button></div>
@@ -138,9 +138,9 @@
     <div class="mbody">
       <div class="cropwrap"><div class="cropbox" id="cropBox"><img id="cropImg" alt="名片原始照片" draggable="false"><svg id="cropSvg" preserveAspectRatio="none"></svg>
         <span class="ch" data-i="0"></span><span class="ch" data-i="1"></span><span class="ch" data-i="2"></span><span class="ch" data-i="3"></span><div class="loupe" id="cropLoupe" hidden></div></div></div>
-      <div class="note">把四個圓點拖到名片的四個角，按「完成」就會裁掉名片以外的部分，並把名片拉正。</div>
+      <div class="note">把四個圓點拖到名片的四個角，按「完成」就會裁掉名片以外的部分，並把名片拉正。黃色的邊（標「上」）是名片的上緣，方向不對就按「轉向」。</div>
     </div>
-    <div class="mfoot"><button class="btn" id="cropFull">整張照片</button><button class="btn" id="cropAuto"><i data-ic="spark"></i>自動找</button><span style="flex:1"></span><button class="btn pri" id="cropOk"><i data-ic="check"></i>完成</button></div>
+    <div class="mfoot"><button class="btn" id="cropFull">整張</button><button class="btn" id="cropRot" aria-label="換方向" title="換方向：黃色的邊是名片的上緣"><i data-ic="rot"></i>轉向</button><button class="btn" id="cropAuto"><i data-ic="spark"></i>自動找</button><span style="flex:1"></span><button class="btn pri" id="cropOk"><i data-ic="check"></i>完成</button></div>
   </div>
 </div>
 
@@ -199,8 +199,8 @@
         <div class="aiNote" id="aiNote" hidden></div>
         <div class="sec" data-m="p">名片照片</div>
         <div class="full pbox" id="editSlots" data-m="p">
-          <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面</div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
-          <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）</div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+          <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面</div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm" data-rot aria-label="順時針轉 90 度" title="順時針轉 90 度"><i data-ic="rot"></i></button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+          <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）</div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm" data-rot aria-label="順時針轉 90 度" title="順時針轉 90 度"><i data-ic="rot"></i></button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
         </div>
 
         <div class="sec" id="eBasic">基本資料</div>
@@ -224,8 +224,8 @@
 
         <div class="sec">分類</div>
         <div class="full ehint" id="eHint" hidden></div>
-        <div class="f full"><label class="f"><span>類別</span></label><div class="checks" id="eCat"></div></div>
-        <div class="f full" data-m="c"><label class="f"><span>狀態</span></label><div class="checks" id="eStatus"></div></div>
+        <div class="f full"><label class="f"><span id="eCatLbl">類別</span></label><div class="checks" id="eCat"></div></div>
+        <div class="f full" data-m="c" data-noins><label class="f"><span>狀態</span></label><div class="checks" id="eStatus"></div></div>
         <div class="f full" data-m="c" data-noins><label class="f"><span>加工類型（可複選）</span></label><div class="checks" id="eProc"></div></div>
         <div class="sec" data-ins hidden>車輛與保險</div>
         <div class="f full" data-ins hidden><div class="cars" id="eCars"></div><button type="button" class="btn sm" id="eAddCar" style="margin-top:4px;align-self:flex-start"><i data-ic="plus"></i>新增一台車</button><small style="color:var(--sub);font-size:12.5px">車牌打小寫會自動變大寫；填了保險到期日，就能在清單篩選快到期的人，日曆上也看得到。</small></div>

@@ -69,7 +69,7 @@ function openScan(){
 const PROMPT=`你會看到一張台灣商務名片的照片（第一張是正面，如果有第二張是背面）。請讀出名片上的資料，只回覆一個 JSON 物件，不要其他文字。
 
 欄位（沒有的填空字串 ""，不要猜）：
-{"name":"中文姓名（沒有中文名就填英文名）","nameEn":"英文名","company":"公司全名（優先中文）","taxId":"統一編號（8 位數字，名片上常寫「統編」或「統一編號」；沒有就填空字串）","title":"職稱","dept":"部門","mobile":"手機（09 開頭）","phone":"公司電話，分機用 # 表示，例：04-2359-1234 #101","fax":"傳真","email":"","address":"主要地址（優先中文；有總公司就放總公司）","otherAddresses":[{"label":"這個地址在名片上的名稱，例如 工廠、二廠、台中廠","address":"其他地址"}],"website":"網址或 LINE ID","region":"從這個清單選一個：${REGIONS.join('、')}；看不出來填空字串","uncertain":["看不清楚或不確定的欄位名稱，例如 \\"phone\\""]}
+{"name":"中文姓名（沒有中文名就填英文名）","nameEn":"英文名","company":"公司全名（優先中文）","taxId":"統一編號（8 位數字，名片上常寫「統編」或「統一編號」；沒有就填空字串）","title":"職稱","dept":"部門","mobile":"手機（09 開頭）","phone":"公司電話，分機用 # 表示，例：04-2359-1234 #101","fax":"傳真","email":"","address":"主要地址（優先中文；有總公司就放總公司）","otherAddresses":[{"label":"這個地址在名片上的名稱，例如 工廠、二廠、台中廠","address":"其他地址"}],"website":"網址或 LINE ID","region":"從這個清單選一個：${REGIONS.join('、')}；看不出來填空字串","rotate":"第一張照片要「順時針」轉幾度，名片上的字才會是正的（不是倒的、不是側躺）：0、90、180 或 270","rotateBack":"第二張照片（背面）同上；沒有背面就填 0","uncertain":["看不清楚或不確定的欄位名稱，例如 \\"phone\\""]}
 
 規則：
 - 電話保留原本的分隔格式（例：0912-345-678）。若有多支電話，09 開頭的放 mobile，其他第一支放 phone。
@@ -85,6 +85,8 @@ async function recognize(blobs,signal){
   if(pre.region&&!REGIONS.includes(pre.region))pre.region=findRegion(pre.region)||'';
   if(!pre.region)pre.region=findRegion(pre.address)||'';
   const unc=(Array.isArray(r.uncertain)?r.uncertain:[]).map(String);
+  const rk=v=>{const n=Math.round(Number(v)/90);return Number.isFinite(n)?((n%4)+4)%4:0};
+  pre.rot={front:rk(r.rotate),back:rk(r.rotateBack)};
   pre.taxId=pre.taxId.replace(/\D/g,'');
   if(pre.taxId&&!validTaxId(pre.taxId))unc.push('taxId');
   if(!pre.name&&pre.nameEn)pre.name=pre.nameEn;
@@ -100,6 +102,8 @@ async function runScan(){
   const imgs=[slotState.scan.front,slotState.scan.back].filter(Boolean).map(dataUrlToBlob);
   try{
     const {pre,unc}=await recognize(imgs,scanCtl.signal);
+    // AI 說名片是倒的或側躺：自動轉正
+    for(const sd of ['front','back'])if(pre.rot[sd]&&slotState.scan[sd])await rotateSlot('scan',sd,pre.rot[sd]);delete pre.rot;
     closeModal($('#mScan'));
     openEdit(normalize({...pre,metAt:today().slice(0,7).replace('-','/')+' '}),{photos:{...slotState.scan},uncertain:unc,fromScan:true});
   }catch(e){
@@ -185,6 +189,7 @@ async function runBatch(){
       r.state='run';renderBatch();
       try{
         const {pre,unc}=await recognize([dataUrlToBlob(r.photo)],B.ctl.signal);
+        if(pre.rot.front){r.photo=await rotatePhoto(r.photo,pre.rot.front);if(r.orig)r.orig.r=pre.rot.front}delete pre.rot;
         r.pre=pre;r.unc=unc;r.state='ok';r.dupe=batchDupe(pre,r);r.on=!r.dupe;
       }catch(e){
         const code=e&&e.code;
