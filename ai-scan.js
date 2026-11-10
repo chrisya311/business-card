@@ -1,4 +1,4 @@
-/* 名片管家：AI 設定、拍名片辨識、logo 剪裁、批次辨識 */
+/* 名片管家：AI 設定、拍名片辨識、批次辨識 */
 'use strict';
 /* ---------- AI settings ---------- */
 const PROVIDERS={
@@ -61,71 +61,24 @@ function parseJSONText(t){
 const canScan=()=>!!AI.get().key;
 let scanCtl=null;
 function openScan(){
-  slotState.scan={front:'',back:''};paintSlots('scan');$('#scanStatus').hidden=true;
+  slotState.scan={front:'',back:''};slotOrig.scan={front:null,back:null};paintSlots('scan');$('#scanStatus').hidden=true;
   $('#scanGo').hidden=!canScan();
   $('#scanTip').textContent=canScan()?'拍照小技巧：名片放在深色桌面、拍正一點、避開反光，字會辨識得更準。':'還沒設定 AI 金鑰，所以不能自動辨識。拍好照片後按「自己填」，或先到「設定」貼上金鑰。';
   openModal('#mScan');
 }
-const LOGO_SPEC='"logo":"公司 logo 在第一張照片裡的位置 [左,上,右,下]，四個 0 到 1 之間的數字（相對整張照片的寬和高）；logo 指商標圖案或設計過的公司標誌字，不是一般文字；沒有 logo 就填 null"';
-const LOGO_SPEC_GEM='"logo":"公司 logo 在第一張照片裡的框 [ymin,xmin,ymax,xmax]，0 到 1000 的整數；logo 指商標圖案或設計過的公司標誌字，不是一般文字；沒有 logo 就填 null"';
 const PROMPT=`你會看到一張台灣商務名片的照片（第一張是正面，如果有第二張是背面）。請讀出名片上的資料，只回覆一個 JSON 物件，不要其他文字。
 
 欄位（沒有的填空字串 ""，不要猜）：
-{"name":"中文姓名（沒有中文名就填英文名）","nameEn":"英文名","company":"公司全名（優先中文）","taxId":"統一編號（8 位數字，名片上常寫「統編」或「統一編號」；沒有就填空字串）","title":"職稱","dept":"部門","mobile":"手機（09 開頭）","phone":"公司電話，分機用 # 表示，例：04-2359-1234 #101","fax":"傳真","email":"","address":"主要地址（優先中文；有總公司就放總公司）","otherAddresses":[{"label":"這個地址在名片上的名稱，例如 工廠、二廠、台中廠","address":"其他地址"}],"website":"網址或 LINE ID","region":"從這個清單選一個：${REGIONS.join('、')}；看不出來填空字串",${LOGO_SPEC},"uncertain":["看不清楚或不確定的欄位名稱，例如 \\"phone\\""]}
+{"name":"中文姓名（沒有中文名就填英文名）","nameEn":"英文名","company":"公司全名（優先中文）","taxId":"統一編號（8 位數字，名片上常寫「統編」或「統一編號」；沒有就填空字串）","title":"職稱","dept":"部門","mobile":"手機（09 開頭）","phone":"公司電話，分機用 # 表示，例：04-2359-1234 #101","fax":"傳真","email":"","address":"主要地址（優先中文；有總公司就放總公司）","otherAddresses":[{"label":"這個地址在名片上的名稱，例如 工廠、二廠、台中廠","address":"其他地址"}],"website":"網址或 LINE ID","region":"從這個清單選一個：${REGIONS.join('、')}；看不出來填空字串","uncertain":["看不清楚或不確定的欄位名稱，例如 \\"phone\\""]}
 
 規則：
 - 電話保留原本的分隔格式（例：0912-345-678）。若有多支電話，09 開頭的放 mobile，其他第一支放 phone。
 - 名片上有中英文兩種公司名稱或地址時，用中文。
 - 使用繁體中文，不要轉成簡體。
 - 只抄名片上看得到的字，不要補資料。`;
-/* ---------- 公司 logo：從名片照片剪下來 ---------- */
-const isGem=()=>typeof CLOUD==='undefined'&&AI.get().provider==='gemini';
-function logoBox(b,gem){if(b&&!Array.isArray(b)&&typeof b==='object')b=b.box_2d||b.box||null;if(!Array.isArray(b)||b.length!==4)return null;let [x1,y1,x2,y2]=b.map(Number);if(![x1,y1,x2,y2].every(Number.isFinite))return null;
-  if(gem){[y1,x1,y2,x2]=[x1,y1,x2,y2];x1/=1000;x2/=1000;y1/=1000;y2/=1000}
-  else if(Math.max(x1,y1,x2,y2)>1.5){if(Math.max(x1,y1,x2,y2)>1000)return null;x1/=1000;y1/=1000;x2/=1000;y2/=1000}
-  x1=Math.max(0,Math.min(1,x1));x2=Math.max(0,Math.min(1,x2));y1=Math.max(0,Math.min(1,y1));y2=Math.max(0,Math.min(1,y2));
-  if(x2<=x1||y2<=y1)return null;const a=(x2-x1)*(y2-y1);if(a<.001||a>.6)return null;return[x1,y1,x2,y2]}
-async function cropLogo(src,box){if(!src||!box)return '';try{const img=await loadImg(src);const W=img.width,H=img.height;
-  let [x1,y1,x2,y2]=box;const px=(x2-x1)*.06,py=(y2-y1)*.06;x1=Math.max(0,x1-px);y1=Math.max(0,y1-py);x2=Math.min(1,x2+px);y2=Math.min(1,y2+py);
-  const sw=(x2-x1)*W,sh=(y2-y1)*H;if(sw<8||sh<8)return '';const k=Math.min(1,320/Math.max(sw,sh));
-  const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(sw*k));cv.height=Math.max(1,Math.round(sh*k));const g=cv.getContext('2d');
-  g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);g.drawImage(img,x1*W,y1*H,sw,sh,0,0,cv.width,cv.height);return cv.toDataURL('image/jpeg',.92)}catch(_){return ''}}
-/* 去背：從四邊開始，把跟邊框顏色接近、連在一起的底色變透明（logo 裡面的白字不會被挖掉），再把四周空白裁掉 */
-async function cutBg(src){try{const img=await loadImg(src);let w=img.width,h=img.height;const k=Math.min(1,240/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));
-  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');g.drawImage(img,0,0,w,h);
-  const id=g.getImageData(0,0,w,h),a=id.data;let r=0,gr=0,b=0,n=0;
-  const add=(x,y)=>{const i=(y*w+x)*4;r+=a[i];gr+=a[i+1];b+=a[i+2];n++};for(let x=0;x<w;x++){add(x,0);add(x,h-1)}for(let y=0;y<h;y++){add(0,y);add(w-1,y)}
-  r/=n;gr/=n;b/=n;const dist=i=>Math.sqrt((a[i]-r)**2+(a[i+1]-gr)**2+(a[i+2]-b)**2);const T1=42,T2=90;
-  const seen=new Uint8Array(w*h),st=[];const push=(x,y)=>{if(x<0||y<0||x>=w||y>=h)return;const q=y*w+x;if(!seen[q]){seen[q]=1;st.push(q)}};
-  for(let x=0;x<w;x++){push(x,0);push(x,h-1)}for(let y=0;y<h;y++){push(0,y);push(w-1,y)}
-  while(st.length){const q=st.pop(),i=q*4,d=dist(i);if(d>=T2)continue;a[i+3]=d<=T1?0:Math.min(a[i+3],Math.round(255*(d-T1)/(T2-T1)));
-    if(d<T1){const x=q%w,y=(q-x)/w;push(x+1,y);push(x-1,y);push(x,y+1);push(x,y-1)}}
-  let x0=w,y0=h,x1=-1,y1=-1,lum=0,cnt=0;
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;if(a[i+3]>40){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;if(a[i+3]>160){lum+=(.2126*a[i]+.7152*a[i+1]+.0722*a[i+2])/255;cnt++}}}
-  if(cnt<w*h*.02||x1<0)return null;
-  g.putImageData(id,0,0);const pad=2,cw=x1-x0+1+pad*2,ch=y1-y0+1+pad*2;const out=document.createElement('canvas');out.width=cw;out.height=ch;
-  out.getContext('2d').drawImage(cv,x0,y0,x1-x0+1,y1-y0+1,pad,pad,x1-x0+1,y1-y0+1);
-  const L=lum/cnt;return{d:out.toDataURL('image/png'),tone:L<.32?'dark':L>.82?'light':''}}catch(_){return null}}
-async function makeLogo(src,box){const c=await cropLogo(src,box);if(!c)return{d:'',tone:''};const x=await cutBg(c);return x||{d:c,tone:''}}
-const LOGO_PROMPT_GEM='這是一張名片正面的照片。請找出公司 logo 的位置（商標圖案或設計過的公司標誌字，不是一般文字）。只回覆 JSON：{"logo":[ymin,xmin,ymax,xmax]}，0 到 1000 的整數；找不到 logo 就回覆 {"logo":null}。';
-const LOGO_PROMPT='這是一張名片正面的照片。請找出公司 logo 的位置（商標圖案或設計過的公司標誌字，不是一般文字）。只回覆 JSON：{"logo":[左,上,右,下]}，四個 0 到 1 之間的數字，是相對整張照片寬和高的比例；找不到 logo 就回覆 {"logo":null}。';
-/* 已經存好的名片：沒有 logo 的公司，自動拿一張名片正面請 AI 找一次（每家公司只找一次） */
-let logoRun=false;
-async function logoBackfill(){if(logoRun)return;logoRun=true;let n=0;
-  try{for(const co0 of contacts.filter(c=>isCo(c)&&c.logo&&!c.logo.startsWith('data:image/png'))){const x=await cutBg(co0.logo);if(!x)continue;
-      const co=contacts.find(y=>y.id===co0.id);if(co&&co.logo===co0.logo){await save({...co,logo:x.d,logoTone:x.tone});n++}}
-    if(!canScan())return;
-    for(const co0 of contacts.filter(c=>isCo(c)&&!c.logo&&!c.logoOff&&!String(c.logoTry||'').startsWith('v2'))){
-      const ppl=sortPeople(co0).filter(p=>p.hasFront);if(!ppl.length)continue;
-      let logo='',tone='';for(const p of ppl.slice(0,2)){const ph=await Store.getPhoto(p.id,'front');if(!ph)continue;
-        try{const gem=isGem();const r=parseJSONText(await callAI(gem?LOGO_PROMPT_GEM:LOGO_PROMPT,[dataUrlToBlob(ph)]));const L=await makeLogo(ph,logoBox(r&&r.logo,gem));logo=L.d;tone=L.tone}catch(e){if(e&&['no_key','auth','offline','network','rate_limited','not_granted','sampling_disabled'].includes(e.code))return}
-        if(logo)break}
-      const co=contacts.find(x=>x.id===co0.id);if(!co||co.logo||co.logoOff)continue;
-      await save({...co,logo,logoTone:tone,logoTry:'v2:'+today()});if(logo)n++}
-  }finally{logoRun=false;if(n){renderList();if(S.sel&&isCo(contacts.find(x=>x.id===S.sel)))renderDetail()}}}
 const OCR_KEYS=['name','nameEn','company','taxId','title','dept','mobile','phone','fax','email','address','website','region'];
 async function recognize(blobs,signal){
-  const gem=isGem();const r=parseJSONText(await callAI(gem?PROMPT.replace(LOGO_SPEC,LOGO_SPEC_GEM):PROMPT,blobs,signal));
+  const r=parseJSONText(await callAI(PROMPT,blobs,signal));
   if(!r||typeof r!=='object'||Array.isArray(r))throw {code:'invalid_json'};
   const pre={};for(const k of OCR_KEYS)pre[k]=typeof r[k]==='string'?r[k].trim():'';
   pre.addresses=(Array.isArray(r.otherAddresses)?r.otherAddresses:[]).map(a=>({label:String(a&&a.label||'').trim(),address:String(a&&a.address||'').trim()})).filter(a=>a.address&&a.address!==pre.address);
@@ -136,7 +89,6 @@ async function recognize(blobs,signal){
   if(pre.taxId&&!validTaxId(pre.taxId))unc.push('taxId');
   if(!pre.name&&pre.nameEn)pre.name=pre.nameEn;
   if(!pre.name)unc.push('name');
-  pre.logoBox=logoBox(r.logo,gem);
   return{pre,unc};
 }
 const scanErrMsg=code=>({no_key:'還沒設定 AI 金鑰，請先到「設定」貼上金鑰。',auth:'AI 金鑰錯誤或沒有權限，請到「設定」檢查。',offline:'目前沒有網路，辨識名片需要連網。',network:'連不上 AI 服務，請檢查網路後再試。',bad_model:'AI 找不到這個模型名稱，請到「設定」改回預設模型。',bad_request:'AI 不接受這次的請求，請換一張照片或到「設定」換模型。',invalid_json:'AI 回覆的格式看不懂，請再試一次。',empty_completion:'AI 沒有回覆內容，請再試一次。',
@@ -148,7 +100,6 @@ async function runScan(){
   const imgs=[slotState.scan.front,slotState.scan.back].filter(Boolean).map(dataUrlToBlob);
   try{
     const {pre,unc}=await recognize(imgs,scanCtl.signal);
-    {const L=await makeLogo(slotState.scan.front,pre.logoBox);pre.logo=L.d;pre.logoTone=L.tone}delete pre.logoBox;
     closeModal($('#mScan'));
     openEdit(normalize({...pre,metAt:today().slice(0,7).replace('-','/')+' '}),{photos:{...slotState.scan},uncertain:unc,fromScan:true});
   }catch(e){
@@ -195,7 +146,7 @@ async function addBatchFiles(files){
   for(const f of imgs.slice(0,Math.max(0,room))){
     const row={id:uid(),file:f,photo:'',state:'wait',err:'',pre:null,unc:[],on:true,dupe:null};
     B.rows.push(row);
-    try{row.photo=await fileToPhoto(f)}catch(_){row.state='err';row.err='無法讀取這張圖片';row.on=false}
+    try{row.photo=(await cardPhoto(f)).d}catch(_){row.state='err';row.err='無法讀取這張圖片';row.on=false}
   }
   renderBatch();runBatch();
 }
@@ -234,7 +185,6 @@ async function runBatch(){
       r.state='run';renderBatch();
       try{
         const {pre,unc}=await recognize([dataUrlToBlob(r.photo)],B.ctl.signal);
-        {const L=await makeLogo(r.photo,pre.logoBox);pre.logo=L.d;pre.logoTone=L.tone}delete pre.logoBox;
         r.pre=pre;r.unc=unc;r.state='ok';r.dupe=batchDupe(pre,r);r.on=!r.dupe;
       }catch(e){
         const code=e&&e.code;

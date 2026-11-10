@@ -1,7 +1,8 @@
 /* 名片管家：共用工具（常數、圖示、對話框、日期、資料庫、照片縮圖、統編檢查、版本紀錄） */
 'use strict';
 /* ---------- constants ---------- */
-const CATS=['客戶','潛在客戶','經銷商','供應商','同業','私人'];
+const CATS=['客戶','潛在客戶','經銷商','供應商','同業','保險'];
+const INS_CAT='保險';   // 這個類別的人不接到公司，而且有車牌、保險到期日欄位（舊版叫「私人」）
 const STATUSES=['開發中','報價中','已成交','暫停'];
 const PROCS=['車削','銑削','鑽孔','切槽／切斷','螺紋','搪孔','其他'];
 const REGIONS=['基隆市','台北市','新北市','桃園市','新竹市','新竹縣','苗栗縣','台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市','高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣','海外'];
@@ -81,6 +82,10 @@ list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
 sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
 stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
 refresh:'<path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>',
+cal:'<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13"/><path d="M12 8c-1.5-3-5-4-5.5-2S9 8 12 8zM12 8c1.5-3 5-4 5.5-2S15 8 12 8z"/>',
+car:'<path d="M5 17h14M3 17v-4l2-5.5A2 2 0 0 1 6.9 6h10.2a2 2 0 0 1 1.9 1.5L21 13v4"/><path d="M3 13h18"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+crop:'<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
 google:'<path d="M21 12.2c0-.7-.1-1.4-.2-2H12v3.8h5a4.3 4.3 0 0 1-1.9 2.8v2.3h3A9 9 0 0 0 21 12.2z"/><path d="M12 21a8.8 8.8 0 0 0 6.1-2.2l-3-2.3a5.5 5.5 0 0 1-8.2-2.9H3.8v2.4A9 9 0 0 0 12 21z"/><path d="M6.9 13.6a5.4 5.4 0 0 1 0-3.4V7.8H3.8a9 9 0 0 0 0 8.2z"/><path d="M12 6.6a4.9 4.9 0 0 1 3.5 1.4l2.6-2.6A8.8 8.8 0 0 0 3.8 7.8l3.1 2.4A5.4 5.4 0 0 1 12 6.6z"/>',
 };
 const ic=(n,s)=>`<svg class="i" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"${s?` style="width:${s}px;height:${s}px"`:''}>${IC[n]||''}</svg>`;
@@ -95,6 +100,16 @@ const Theme={get(){return document.documentElement.dataset.theme==='light'?'ligh
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* 全形英文字母、數字（輸入法在全形模式打出來的「Ａｐｐｌｉｔｅｃ」）轉成一般的半形；中文標點不動 */
+const half=v=>typeof v!=='string'?v:v.replace(/[\uFF10-\uFF19\uFF21-\uFF3A\uFF41-\uFF5A]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/([A-Za-z0-9])\u3000(?=[A-Za-z0-9])/g,'$1 ');
+/* 車牌：轉半形、大寫，「ABC1234」自動補成「ABC-1234」 */
+const fmtPlate=v=>{let p=half(String(v||'')).toUpperCase().trim().replace(/[\s_－—–]+/g,'-').replace(/-+/g,'-');
+  const m=p.match(/^([A-Z]{2,3})(\d{2,4})$/)||p.match(/^(\d{2,4})([A-Z]{2,3})$/);return m?m[1]+'-'+m[2]:p};
+/* 生日：存成「1985-03-15」，不知道年份就存「03-15」 */
+const bdParts=s=>{const m=String(s||'').trim().match(/^(?:(\d{4})[-\/.])?(\d{1,2})[-\/.](\d{1,2})$/);if(!m)return null;const r={y:m[1]?+m[1]:0,m:+m[2],d:+m[3]};return r.m>=1&&r.m<=12&&r.d>=1&&r.d<=31?r:null};
+const bdText0=b=>b?(b.y?b.y+'/':'')+pad(b.m)+'/'+pad(b.d):'';
+/* 車牌與保險到期寫成一行文字（Excel 用）：ABC-1234（2027/03/05）、XYZ-5678 */
+const carsText=cars=>(cars||[]).map(x=>(x.plate||'（無車牌）')+(x.exp?`（${fmtD(x.exp)}）`:'')).join('、');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -125,8 +140,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.09-11';
+const APP_VERSION='2026.11.10-1';
 const CHANGELOG=[
+  {v:'2026.11.10-1',items:['首頁右上角新增「日曆」：一個月一格，上下滑動看其他月份，標出聯絡人的生日、保險到期日和跟進日期；上面的按鈕可以隱藏或顯示某一種，點日期就能看是誰、直接點進去','聯絡人新增「生日」欄位，年份可以不填（民國年也可以）','「私人」類別改名成「保險」（原本私人的人會自動變成保險），保險類別可以填好幾台車的車牌和保險到期日，車牌打小寫會自動變大寫','選「保險」類別時，可以篩選已過期、30／60／90 天內到期的人，清單上也會標出快到期的；按「已續保 +1 年」就能更新到期日','拍名片改成自動找出照片裡的名片，裁掉桌面並把名片拉正；不滿意可以按「裁切」自己拖四個角。不再從名片剪 logo','類別、狀態、試刀結果的顏色可以按「其他顏色」從調色盤挑任何顏色','用全形打的英文和數字（例如 Ａｐｐｌｉｔｅｃ）會自動變成一般寬度，不會字距很開']},
   {v:'2026.11.09-11',items:['滑動放開後停得更乾脆：左右滑換類別、右滑返回、右滑關閉頁面都更快到位，類別的玻璃也一起加快']},
   {v:'2026.11.09-10',items:['右滑返回上一頁、右滑關閉全螢幕頁面，放開手指後也改成接著手指的速度慢慢停下，整個 App 的滑動手感一致']},
   {v:'2026.11.09-9',items:['左右滑切換類別：放開手指後，頁面會接著手指的速度慢慢停下，不再突然加速']},
@@ -199,7 +215,7 @@ const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join(
 const mapLink=a=>`<a class="btn sm" style="margin-left:6px;vertical-align:middle" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">${ic('map')}地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',birthday:'',cars:[],thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
@@ -212,6 +228,12 @@ function normalize(c){
   if(!o.created)o.created=new Date().toISOString();
   if(!o.updated)o.updated=o.created;
   if(!o.region)o.region=findRegion(o.address)||'';
+  if(o.category==='私人')o.category=INS_CAT;
+  for(const k in o)if(typeof o[k]==='string'&&k!=='thumb'&&k!=='logo')o[k]=half(o[k]);
+  o.addresses.forEach(a=>{a.label=half(a.label);a.address=half(a.address)});
+  {const b=bdParts(o.birthday);o.birthday=b?(b.y?b.y+'-':'')+pad(b.m)+'-'+pad(b.d):''}
+  if(typeof o.cars==='string')o.cars=o.cars.split(/[、;；\n]/).map(t=>{const m=t.match(/^\s*(.*?)\s*(?:[（(]\s*(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})\s*[)）])?\s*$/);return m?{plate:m[1]==='（無車牌）'?'':m[1],exp:m[2]?`${m[2]}-${pad(m[3])}-${pad(m[4])}`:''}:null}).filter(Boolean);
+  o.cars=(Array.isArray(o.cars)?o.cars:[]).map(x=>({plate:fmtPlate(x&&x.plate),exp:/^\d{4}-\d{2}-\d{2}$/.test(x&&x.exp)?x.exp:''})).filter(x=>x.plate||x.exp);
   return o;
 }
 async function save(c){c.updated=new Date().toISOString();await Store.put(c);const i=contacts.findIndex(x=>x.id===c.id);if(i>=0)contacts[i]=c;else contacts.push(c);Sync.dirty()}
@@ -235,7 +257,7 @@ function paintSlots(target){
   const root=target==='scan'?$('#scanSlots'):$('#editSlots');
   root.querySelectorAll('.pslot').forEach(s=>{const src=slotState[target][s.dataset.side];const pv=s.querySelector('.pv');
     pv.style.backgroundImage=src?`url('${src}')`:'';[...pv.children].forEach(ch=>ch.style.visibility=src?'hidden':'visible');pv.style.color=src?'transparent':'';
-    s.querySelector('[data-clear]').style.visibility=src?'visible':'hidden'});
+    s.querySelector('[data-clear]').style.visibility=src?'visible':'hidden';const cb=s.querySelector('[data-crop]');if(cb)cb.style.visibility=src?'visible':'hidden'});
   if(target==='scan')$('#scanGo').disabled=!slotState.scan.front||!canScan();
 }
 

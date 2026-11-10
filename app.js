@@ -12,13 +12,15 @@ document.addEventListener('click',async e=>{
   const go=t.closest('[data-go]');if(go){select(go.dataset.go);return}
   if(t.closest('[data-scan]')){openScan();return}
   const chip=t.closest('[data-cat]');if(chip){S.cat=chip.dataset.cat;renderList();return}
+  const insb=t.closest('[data-ins]');if(insb&&insb.closest('#insRow')){S.ins=S.ins===insb.dataset.ins?'':insb.dataset.ins;renderList();return}
   const bn=t.closest('.banner button');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;renderList();return}
   const zi=t.closest('[data-zoom]');if(zi&&zi.src){$('#zoom img').src=zi.src;$('#zoom').classList.add('on');return}
   if(t.closest('#zoom')){$('#zoom').classList.remove('on');return}
 
   // photo slots
   const pick=t.closest('[data-pick]');if(pick){const slot=pick.closest('.pslot');pickCtx={target:slot.closest('#scanSlots')?'scan':'edit',side:slot.dataset.side};const inp=$('#photoInput');inp.value='';inp.click();return}
-  const clr=t.closest('[data-clear]');if(clr){const slot=clr.closest('.pslot');const target=slot.closest('#scanSlots')?'scan':'edit';slotState[target][slot.dataset.side]='';paintSlots(target);return}
+  const clr=t.closest('[data-clear]');if(clr){const slot=clr.closest('.pslot');const target=slot.closest('#scanSlots')?'scan':'edit';slotState[target][slot.dataset.side]='';slotOrig[target][slot.dataset.side]=null;paintSlots(target);return}
+  const crp=t.closest('[data-crop]');if(crp){const slot=crp.closest('.pslot');openCrop(slot.closest('#scanSlots')?'scan':'edit',slot.dataset.side);return}
 
   const c=contacts.find(x=>x.id===S.sel);
   if(t.closest('#dBack')){goBack();return}
@@ -34,6 +36,10 @@ document.addEventListener('click',async e=>{
     try{await navigator.clipboard.writeText(txt);toast('已複製，貼給 Claude 就可以')}catch(_){await infoBox('請長按下面的文字全選後複製，再貼給 Claude：',{text:txt,ok:'關閉'})}
     return}
   if(t.closest('#fDone')){c.nextFollow='';await save(c).catch(()=>toast('儲存失敗'));refresh();toast('已清除跟進日期，記得記一筆紀錄');openVisit(c);return}
+  const rn=t.closest('[data-renew]');if(rn){const i=+rn.dataset.renew;const x=(c.cars||[])[i];if(!x||!x.exp)return;
+    const d=new Date(x.exp+'T00:00:00');d.setFullYear(d.getFullYear()+1);const exp=ymd(d);
+    if(!await confirmBox(`${x.plate||'這台車'} 已經續保了嗎？\n\n保險到期日會從 ${fmtD(x.exp)} 改成 ${fmtD(exp)}。`,{ok:'已續保'}))return;
+    const nc={...c,cars:c.cars.map((y,j)=>j===i?{...y,exp}:y)};await save(nc).catch(()=>toast('儲存失敗'));refresh();toast(`保險到期日改為 ${fmtD(exp)}`);return}
   const sn=t.closest('[data-snooze]');if(sn){const base=c.nextFollow&&c.nextFollow>today()?c.nextFollow:today();c.nextFollow=addDays(base,+sn.dataset.snooze);await save(c).catch(()=>toast('儲存失敗'));refresh();toast('跟進日期改為 '+fmtD(c.nextFollow));return}
   if(t.closest('#vNew')){const co=coOf(c);if(!isCo(c)&&co)openVisit(co,null,{who:[c.id]});else openVisit(c);return}
   const own=el=>{const o=el.closest('[data-o]');return (o&&contacts.find(x=>x.id===o.dataset.o))||c};
@@ -54,10 +60,9 @@ document.addEventListener('click',async e=>{
   const im=e.target.closest('[data-i]');if(im){const inp=$('#importInput');inp.dataset.kind=im.dataset.i;inp.accept=im.dataset.i==='json'?'.json,application/json':'.csv,text/csv';inp.value='';inp.click()}
 });
 $('#bScan').onclick=()=>openScan();
+$('#bCal').onclick=()=>openCal();
 $('#shGo').onclick=goShare;
 $('#eMerge').onclick=()=>openMerge();
-function paintLogoEdit(){const has=EM==='co'&&!!editing.logo;$('#eLogoBox').dataset.m=has?'o':'x';$('#eLogoBox').hidden=!has;if(has)$('#eLogoPv').outerHTML=`<div class="dlogo has${editing.logoTone?' lg-'+editing.logoTone:''}" id="eLogoPv"><img alt="" src="${editing.logo}"></div>`}
-$('#eLogoDel').onclick=()=>{editing.logo='';editing.logoTone='';editing.logoOff=true;paintLogoEdit();toast('按「儲存」後就不會再顯示 logo')};
 $('#mgList').addEventListener('click',async e=>{const b=e.target.closest('[data-mg]');if(!b)return;const to=contacts.find(x=>x.id===b.dataset.mg);const from=contacts.find(x=>x.id===editing.id);if(!to||!from)return;
   if(!await confirmBox(`把「${from.company}」合併到「${to.company}」？\n\n${peopleOf(from).length} 位聯絡人和 ${from.visits.length} 筆拜訪紀錄會搬過去，「${from.company}」會變成「${to.company}」的其他名稱。`,{ok:'合併'}))return;
   try{const t=await mergeCo(from,to);closeModal($('#mMerge'),true);closeModal($('#mEdit'),true);
@@ -88,7 +93,7 @@ document.addEventListener('dragleave',e=>{if(!hasFiles(e))return;dragDepth=Math.
 document.addEventListener('drop',async e=>{if(!hasFiles(e))return;e.preventDefault();dragDepth=0;$('#drop').classList.remove('on');
   const files=[...e.dataTransfer.files];if(!files.length)return;
   const slot=e.target.closest&&e.target.closest('.pslot');
-  if(slot&&files.length===1){const target=slot.closest('#scanSlots')?'scan':'edit';try{slotState[target][slot.dataset.side]=await fileToPhoto(files[0]);paintSlots(target)}catch(err){toast(err.message)}return}
+  if(slot&&files.length===1){const target=slot.closest('#scanSlots')?'scan':'edit';try{await putCardPhoto(target,slot.dataset.side,files[0])}catch(err){toast(err.message)}return}
   if($('#mEdit').classList.contains('on')){toast('請把照片拖到「名片照片」的框框裡');return}
   if($('#mScan').classList.contains('on'))closeModal($('#mScan'));
   addBatchFiles(files)});
@@ -100,7 +105,7 @@ $('#eAddrs').addEventListener('click',e=>{const b=e.target.closest('[data-adel]'
 $('#wipe').onclick=async()=>{if(await confirmBox(`確定清空全部 ${contacts.length} 張名片？\n建議先匯出 Excel 留一份。此動作無法復原。${Sync.linked()?'\n\n已開啟同步：其他裝置上的名片也會一起被刪除。':''}`,{ok:'清空',danger:true})&&await confirmBox('真的確定？',{ok:'確定清空',danger:true})){
   closeModal($('#mImport'));for(const c of [...contacts]){await Store.del(c).catch(()=>{})}contacts=[];S.sel=null;refresh();toast('已清空')}};
 $('#photoInput').onchange=async e=>{const f=e.target.files[0];if(!f||!pickCtx)return;
-  try{const d=await fileToPhoto(f);slotState[pickCtx.target][pickCtx.side]=d;paintSlots(pickCtx.target);if(pickCtx.target==='scan')$('#scanStatus').hidden=true}catch(err){toast(err.message)}};
+  const ctx=pickCtx;try{await putCardPhoto(ctx.target,ctx.side,f);if(ctx.target==='scan')$('#scanStatus').hidden=true}catch(err){toast(err.message)}};
 $('#importInput').onchange=e=>{const f=e.target.files[0];if(f)handleImport(f,e.target.dataset.kind)};
 let qt;$('#q').oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value;renderList()},150)};
 $('#fRegion').onchange=e=>{S.region=e.target.value;renderList()};
@@ -156,7 +161,6 @@ refresh();
   try{contacts=(await LDB.all()).map(normalize)}catch(_){contacts=[]}
   refresh();checkBackup();
   try{await maybeMigrate()}catch(_){}
-  setTimeout(()=>logoBackfill().catch(()=>{}),3000);
   const rd=Sync.takeRedirect();
   if(rd&&rd.ok){toast('已連結 Google 雲端硬碟，開始同步…',3000);Sync.run()}
   else if(rd&&rd.error){toast(rd.error==='access_denied'?'已取消 Google 登入':'Google 登入沒有成功，請再試一次',4000)}

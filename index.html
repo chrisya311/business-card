@@ -21,6 +21,7 @@
 <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
 <header>
   <h1><span class="ttl">名片管家</span><span class="sync" id="syncBadge" role="button" tabindex="0" aria-label="同步狀態"><span class="dot"></span><span class="stx">本機</span></span></h1>
+  <button class="hbtn" id="bCal" aria-label="日曆" title="日曆：生日、保險到期、跟進"><i data-ic="cal"></i><span class="tx">日曆</span></button>
   <button class="hbtn" id="bTheme" aria-label="切換成亮色" title="切換成亮色"><i data-ic="sun"></i></button>
   <button class="hbtn" id="bImport" title="匯入" aria-label="匯入"><i data-ic="imp"></i><span class="tx">匯入</span></button>
   <button class="hbtn" id="bExport" title="匯出" aria-label="匯出"><i data-ic="exp"></i><span class="tx">匯出 Excel</span></button>
@@ -41,6 +42,7 @@
     <div class="filters">
       <div class="srow"><input class="search" id="q" type="search" placeholder="搜尋姓名、公司、電話、紀錄" aria-label="搜尋姓名、公司、電話、拜訪內容"><button class="nb fbtn" id="bFilter" aria-label="篩選與排序" aria-expanded="false" title="篩選與排序"><i data-ic="sliders"></i><span class="fdot"></span></button></div>
       <div class="chips" id="catChips"></div>
+      <div class="chips inschips" id="insRow" hidden></div>
       <div class="frow">
         <select id="fRegion"><option value="">所有地區</option></select>
         <select id="fProc"><option value="">所有加工</option></select>
@@ -64,8 +66,8 @@
     <div class="mhead"><h2>拍名片</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
     <div class="mbody">
       <div class="pbox" id="scanSlots">
-        <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面<br><small>點這裡拍照</small></div><div class="pb"><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
-        <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）<br><small>有英文或其他資料再拍</small></div><div class="pb"><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+        <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面<br><small>點這裡拍照</small></div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+        <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）<br><small>有英文或其他資料再拍</small></div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
       </div>
       <div class="note" id="scanTip">拍照小技巧：名片放在深色桌面、拍正一點、避開反光，字會辨識得更準。</div>
       <div class="status" id="scanStatus" hidden><div class="spin"></div><div style="flex:1" id="scanStatusTx">Claude 正在讀名片…</div><button class="btn sm" id="scanStop">停止</button></div>
@@ -129,6 +131,30 @@
   </div>
 </div>
 
+<!-- 調整名片範圍（拖四個角） -->
+<div class="modal" id="mCrop">
+  <div class="mbox" style="max-width:640px">
+    <div class="mhead"><h2>調整名片範圍</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
+    <div class="mbody">
+      <div class="cropwrap"><div class="cropbox" id="cropBox"><img id="cropImg" alt="名片原始照片" draggable="false"><svg id="cropSvg" preserveAspectRatio="none"></svg>
+        <span class="ch" data-i="0"></span><span class="ch" data-i="1"></span><span class="ch" data-i="2"></span><span class="ch" data-i="3"></span><div class="loupe" id="cropLoupe" hidden></div></div></div>
+      <div class="note">把四個圓點拖到名片的四個角，按「完成」就會裁掉名片以外的部分，並把名片拉正。</div>
+    </div>
+    <div class="mfoot"><button class="btn" id="cropFull">整張照片</button><button class="btn" id="cropAuto"><i data-ic="spark"></i>自動找</button><span style="flex:1"></span><button class="btn pri" id="cropOk"><i data-ic="check"></i>完成</button></div>
+  </div>
+</div>
+
+<!-- 日曆：生日、保險到期、跟進 -->
+<div class="modal" id="mCal">
+  <div class="mbox calbox" style="max-width:640px">
+    <div class="mhead"><h2>日曆</h2><button class="btn sm" id="calToday">今天</button><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
+    <div class="caltypes" id="calTypes"></div>
+    <div class="calweek"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="mbody calscroll" id="calScroll"><div id="calMonths"></div></div>
+    <div class="calday" id="calDay"></div>
+  </div>
+</div>
+
 <!-- changelog modal -->
 <div class="modal" id="mLog">
   <div class="mbox" style="max-width:560px">
@@ -173,8 +199,8 @@
         <div class="aiNote" id="aiNote" hidden></div>
         <div class="sec" data-m="p">名片照片</div>
         <div class="full pbox" id="editSlots" data-m="p">
-          <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面</div><div class="pb"><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
-          <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）</div><div class="pb"><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+          <div class="pslot" data-side="front"><div class="pv" data-pick><span class="ic"><i data-ic="cam"></i></span>正面</div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
+          <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）</div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
         </div>
 
         <div class="sec" id="eBasic">基本資料</div>
@@ -184,6 +210,7 @@
         <label class="f" data-k="taxId"><span>統一編號</span><input type="text" name="taxId" inputmode="numeric" maxlength="8" placeholder="8 位數字"></label>
         <label class="f" data-k="title" data-m="p"><span>職稱</span><input type="text" name="title"></label>
         <label class="f" data-k="dept" data-m="p"><span>部門</span><input type="text" name="dept"></label>
+        <div class="f full" data-k="birthday" data-m="p"><span class="fl">生日（年份可以不填）</span><div class="bdrow"><select id="eBdM" aria-label="生日：月"></select><select id="eBdD" aria-label="生日：日"></select><input type="text" id="eBdY" inputmode="numeric" maxlength="4" placeholder="年（可不填）" aria-label="生日：年（可不填，民國年也可以）"></div></div>
 
         <div class="sec">聯絡方式</div>
         <label class="f" data-k="mobile" data-m="p"><span>手機</span><input type="tel" name="mobile"></label>
@@ -200,13 +227,14 @@
         <div class="f full"><label class="f"><span>類別</span></label><div class="checks" id="eCat"></div></div>
         <div class="f full" data-m="c"><label class="f"><span>狀態</span></label><div class="checks" id="eStatus"></div></div>
         <div class="f full" data-m="c"><label class="f"><span>加工類型（可複選）</span></label><div class="checks" id="eProc"></div></div>
+        <div class="sec" data-ins hidden>車輛與保險</div>
+        <div class="f full" data-ins hidden><div class="cars" id="eCars"></div><button type="button" class="btn sm" id="eAddCar" style="margin-top:4px;align-self:flex-start"><i data-ic="plus"></i>新增一台車</button><small style="color:var(--sub);font-size:12.5px">車牌打小寫會自動變大寫；填了保險到期日，就能在清單篩選快到期的人，日曆上也看得到。</small></div>
         <label class="f full" data-m="c"><span>目前使用的刀具品牌</span><input type="text" name="brands" list="dlBrands" placeholder="例：Sandvik、Mitsubishi"></label>
 
         <div class="sec" id="eFollowSec">認識情境與跟進</div>
         <label class="f" data-m="p"><span>在哪裡／怎麼認識</span><input type="text" name="metAt" placeholder="例：2026/10 台中工具機展"></label>
         <label class="f" data-m="c"><span>下次跟進日期</span><input type="date" name="nextFollow"></label>
         <label class="f full" data-m="o"><span>其他名稱（合併來的、舊名、簡稱，用頓號分開）</span><input type="text" name="aka" placeholder="例：永興機械台中廠、永興"></label>
-        <div class="f full" data-m="o" id="eLogoBox"><span class="fl">Logo（從名片剪下來的）</span><div style="display:flex;align-items:center;gap:12px"><div class="dlogo" id="eLogoPv"></div><button type="button" class="btn sm danger" id="eLogoDel">不要這個 logo</button></div></div>
         <div class="f full" data-m="o" id="eMergeBox"><button type="button" class="btn sm" id="eMerge" style="align-self:flex-start">合併到另一家公司…</button><small style="color:var(--sub);font-size:12.5px">發現兩家其實是同一家時用。這家的聯絡人和拜訪紀錄會搬過去，名字會留在「其他名稱」。</small></div>
         <label class="f full"><span>備註</span><textarea name="notes" placeholder="例：主要做鋁件 CNC，在找耐用的銑刀片"></textarea></label>
       </div>
@@ -318,11 +346,13 @@
 
 <script src="core.js"></script>
 <script src="options.js"></script>
+<script src="cardcrop.js"></script>
 <script src="companies.js"></script>
 <script src="forms.js"></script>
 <script src="ai-scan.js"></script>
 <script src="export.js"></script>
 <script src="drive-sync.js"></script>
+<script src="calendar.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

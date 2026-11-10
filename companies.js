@@ -2,11 +2,11 @@
 'use strict';
 /* ---------- 公司與聯絡人 ----------
    公司也是一筆資料（kind:'co'），聯絡人用 companyId 連到公司。
-   拜訪紀錄記在公司上，每筆用 who 記下這次的窗口；私人（或沒有公司）的人，紀錄和跟進記在自己身上。 */
+   拜訪紀錄記在公司上，每筆用 who 記下這次的窗口；保險類別（或沒有公司）的人，紀錄和跟進記在自己身上。 */
 const isCo=c=>!!c&&c.kind==='co';
 const coOf=p=>p&&p.companyId?contacts.find(x=>x.id===p.companyId&&isCo(x))||null:null;
 const peopleOf=co=>contacts.filter(p=>!isCo(p)&&p.companyId===co.id);
-const linkable=p=>!isCo(p)&&!!(p.company||'').trim()&&p.category!=='私人';
+const linkable=p=>!isCo(p)&&!!(p.company||'').trim()&&p.category!==INS_CAT;
 const isRow=c=>isCo(c)||!coOf(c);
 const rowTitle=c=>isCo(c)?c.company:c.name;
 function normCo(s){return String(s||'').toLowerCase().replace(/[（(]股[)）]/g,'').replace(/[\s　()（）．.,，、\-]/g,'').replace(/股份有限公司|有限公司|企業社|工業社|實業社|股份|公司$/g,'').replace(PLANT_RE,'')}
@@ -37,7 +37,6 @@ async function mergeCo(from,to){
   t.processes=[...new Set([...t.processes,...from.processes])];
   if(from.nextFollow&&(!t.nextFollow||from.nextFollow<t.nextFollow))t.nextFollow=from.nextFollow;
   t.aka=[...new Set([...t.aka,...coNames(from)])].filter(x=>x!==t.company);
-  if(!t.logo&&!t.logoOff&&from.logo){t.logo=from.logo;t.logoTone=from.logoTone||''}
   const ids=new Set(t.visits.map(v=>v.id));
   t.visits.push(...from.visits.filter(v=>!ids.has(v.id)).map(v=>({...v,photos:(v.photos||[]).map(ph=>ph.o?ph:{...ph,o:from.id})})));
   await save(t);
@@ -56,15 +55,13 @@ function coDomain(co){const m=String(co.website||'').trim().match(/^(?:https?:\/
   if(m&&!/(^|\.)(line\.me|facebook\.com|fb\.com|instagram\.com)$/i.test(m[1]))return m[1].toLowerCase();
   for(const p of peopleOf(co)){const d=String(p.email||'').split('@')[1];if(d&&/\./.test(d)&&!FREE_MAIL.test(d))return d.trim().toLowerCase()}
   return ''}
-/* logo：用公司網站（或同事 Email 的網域）去找網站圖示；找不到或太小就留白 */
-const logoOK=new Map();
+/* 公司圖示：用公司名稱算出一個固定的彩色漸層（不再從名片剪 logo） */
 const LOGO_GRAD=[['#1F6B4E','#7CCBA4'],['#24587A','#79B4D6'],['#5B4A86','#AE97DA'],['#86562A','#E0AE74'],['#7A3B4B','#D98D9F'],['#2E6964','#93D3C8'],['#4D5E2B','#B5C778'],['#3D4F7A','#9AAEE0']];
 function logoBg(co){const n=normCo(co.company)||co.company||'?';let h=0;for(const ch of n)h=(h*31+ch.codePointAt(0))>>>0;const [a,b]=LOGO_GRAD[h%LOGO_GRAD.length];return `background:linear-gradient(135deg,${a},${b})`}
 const logoIni=co=>{const n=String(co.company||'').replace(/^(台灣|臺灣|中華|財團法人)/,'').trim();return esc([...n][0]||'?')};
-function logoHTML(co,cls){return co.logo?`<div class="${cls} has${co.logoTone?' lg-'+co.logoTone:''}"><img alt="${esc(co.company)} logo" src="${co.logo}"></div>`:`<div class="${cls}" style="${logoBg(co)}"></div>`}
+function logoHTML(co,cls){return `<div class="${cls}" style="${logoBg(co)}"></div>`}
 function wireLogos(){}
 function fillGaps(co,p){
-  if(!co.logo&&!co.logoOff&&p.logo){co.logo=p.logo;co.logoTone=p.logoTone||''}
   for(const k of ['taxId','fax','address','region','brands','status','category'])if(!co[k]&&p[k])co[k]=p[k];
   if(!co.phone&&p.phone)co.phone=coPhone(p.phone);
   if(!co.website&&p.website&&/\./.test(p.website)&&!/line/i.test(p.website))co.website=p.website;
@@ -105,7 +102,7 @@ async function maybeMigrate(){
   let asked=false;try{asked=!!localStorage.getItem('mpgj.coMigrated')}catch(_){}
   if(!asked){try{localStorage.setItem('mpgj.coMigrated','1')}catch(_){}
     const has=contacts.filter(p=>!isCo(p)&&linkable(p)).length;
-    if(has&&await confirmBox(`名片管家改成「以公司為主」了：\n\n• 清單改成一家公司一列，下面小字是這家公司的人\n• 拜訪紀錄和跟進日期記在公司，每筆紀錄可以選這次的窗口\n• 私人（沒有公司）的人照舊記在自己身上\n\n這次會自動把 ${has} 張名片整理到各自的公司。建議先下載一份完整備份再整理。`,{ok:'先下載備份',cancel:'直接整理'})){
+    if(has&&await confirmBox(`名片管家改成「以公司為主」了：\n\n• 清單改成一家公司一列，下面小字是這家公司的人\n• 拜訪紀錄和跟進日期記在公司，每筆紀錄可以選這次的窗口\n• 保險類別（或沒有公司）的人照舊記在自己身上\n\n這次會自動把 ${has} 張名片整理到各自的公司。建議先下載一份完整備份再整理。`,{ok:'先下載備份',cancel:'直接整理'})){
       try{await exportJSON(contacts)}catch(_){}}}
   const n=await linkAll();if(n&&!asked){refresh();toast('已整理成以公司為主',3000)}else if(n)refresh();
 }
@@ -115,9 +112,26 @@ function followState(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c
 function followText(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c.nextFollow);return d<0?`逾期 ${-d} 天`:d===0?'今天跟進':d===1?'明天跟進':`${d} 天後`}
 const lastVisit=c=>[...c.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
 
+/* ---------- 保險到期 ---------- */
+const isIns=c=>!isCo(c)&&c.category===INS_CAT;
+/* 這個人最快到期的那台車（已過期的也算），沒有就回傳 null */
+function insNext(c){if(!isIns(c))return null;let best=null;for(const x of c.cars||[])if(x.exp&&(!best||x.exp<best.exp))best=x;return best}
+/* 符合目前「保險到期」篩選的那台車（好幾台都符合時取最早的） */
+function insMatch(c){if(!isIns(c)||!S.ins)return null;let best=null;
+  for(const x of c.cars||[]){if(!x.exp)continue;const d=daysBetween(today(),x.exp);if(S.ins==='od'?d>=0:(d<0||d>+S.ins))continue;if(!best||x.exp<best.exp)best=x}return best}
+const insDays=x=>x&&x.exp?daysBetween(today(),x.exp):null;
+const insText=d=>d<0?`已過期 ${-d} 天`:d===0?'今天到期':`${d} 天後到期`;
+const insCls=d=>d==null?'':d<0?'od':d<=30?'wk':'';
+const INS_RANGES=[['','全部'],['od','已過期'],['30','30 天內到期'],['60','60 天內到期'],['90','90 天內到期']];
+/* 生日 */
+function bdText(c){const b=bdParts(c.birthday);if(!b)return '';const t=new Date(today()+'T00:00:00');let y=t.getFullYear();
+  const next=yy=>{const d=new Date(yy,b.m-1,b.m===2&&b.d===29&&new Date(yy,1,29).getMonth()!==1?28:b.d);return d};
+  let n=next(y);if(n<t)n=next(++y);const dd=Math.round((n-t)/864e5);
+  return `${b.y?b.y+' 年 ':''}${b.m} 月 ${b.d} 日${b.y?`（${y-b.y} 歲${dd?'生日':''}）`:''}・${dd===0?'就是今天':`還有 ${dd} 天`}`}
+
 /* ---------- filtering ---------- */
-const S={q:'',cat:'',region:'',proc:'',sort:'follow',follow:'all',sel:null};
-const haystack1=c=>[c.name,c.nameEn,c.company,...(c.aka||[]),c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
+const S={q:'',cat:'',region:'',proc:'',sort:'follow',follow:'all',sel:null,ins:''};
+const haystack1=c=>[c.name,c.nameEn,c.company,...(c.aka||[]),c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...(c.cars||[]).map(x=>x.plate+' '+x.plate.replace(/-/g,'')),...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
 const haystack=c=>isCo(c)?[haystack1(c),...peopleOf(c).map(haystack1)].join(' '):haystack1(c);
 function filtered(){
   const q=S.q.trim().toLowerCase(),qd=q.replace(/[-\s]/g,'');
@@ -125,6 +139,7 @@ function filtered(){
     if(S.cat&&c.category!==S.cat)return false;
     if(S.region&&c.region!==S.region)return false;
     if(S.proc&&!c.processes.includes(S.proc))return false;
+    if(S.ins&&S.cat===INS_CAT&&!insMatch(c))return false;
     const fs=followState(c);
     if(S.follow==='overdue'&&fs!=='od')return false;
     if(S.follow==='week'&&fs!=='wk')return false;
@@ -134,6 +149,7 @@ function filtered(){
     return true;
   });
   const cmp=(a,b)=>a.localeCompare(b,'zh-Hant');
+  if(S.ins&&S.cat===INS_CAT)return arr.sort((a,b)=>insMatch(a).exp.localeCompare(insMatch(b).exp));
   return arr.sort((a,b)=>{switch(S.sort){
     case 'updated':return (b.updated||'').localeCompare(a.updated||'');
     case 'company':return cmp(a.company||'~',b.company||'~')||cmp(rowTitle(a),rowTitle(b));
@@ -142,6 +158,8 @@ function filtered(){
 }
 
 /* ---------- render list ---------- */
+/* 清單上：保險 60 天內到期（或已過期）才顯示，篩選保險到期時一定顯示 */
+function insBadge(c){const x=(S.ins&&S.cat===INS_CAT&&insMatch(c))||insNext(c),d=insDays(x);if(d==null||(d>60&&!(S.ins&&S.cat===INS_CAT)))return '';return `<span class="badge ${insCls(d)}" title="${esc(x.plate)}">${ic('car')}${d<0?'保險過期':d===0?'保險今天到期':`保險 ${d} 天`}</span>`}
 let listReuse=null,listVer=0,catPrebuild=null;   // 左右滑換類別時，直接搬用已經準備好的那頁，不用重新產生
 function listHTML(arr){
   if(!contacts.length)return `<div class="empty" style="margin-top:30px"><div class="big">${ic('card')}</div>還沒有名片<br><button class="bigbtn" data-scan>${ic('cam')}拍第一張名片</button></div>`;
@@ -159,7 +177,7 @@ function listHTML(arr){
       <div class="thumb" style="${c.thumb?`background-image:url('${c.thumb}')`:''}">${c.thumb?'':esc((c.name||'?').trim().charAt(0))}</div>
       <div class="t"><div class="n">${esc(c.name)}${c.title?` <small>${esc(c.title)}</small>`:''}</div>
         <div class="c">${esc(c.company||'—')}${c.region?' · '+esc(c.region):''}</div></div>
-      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
+      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${insBadge(c)}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}).join('')+'</div>';
 }
@@ -172,6 +190,8 @@ function renderList(){
     if(box.dataset.k===key)box.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('on',b.dataset.cat===S.cat));
     else{box.innerHTML=cs.map(c=>`<button class="chip ${S.cat===c?'on':''}" data-cat="${esc(c)}">${c?esc(c):'全部類別'}</button>`).join('');box.dataset.k=key}
     paintGlass()}
+  {const box=$('#insRow');const on=S.cat===INS_CAT;box.hidden=!on;
+    if(on)box.innerHTML=`<span class="il">${ic('car')}保險到期</span>`+INS_RANGES.map(([v,t])=>`<button class="chip sm ${S.ins===v?'on':''}" data-ins="${v}">${t}</button>`).join('')}
   const usedR=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort((a,b)=>{const o=optWith('region',[a,b]);return o.indexOf(a)-o.indexOf(b)});
   $('#fRegion').innerHTML='<option value="">所有地區</option>'+usedR.map(r=>`<option ${S.region===r?'selected':''}>${esc(r)}</option>`).join('');
   const usedP=optWith('proc',contacts.flatMap(c=>c.processes)).filter(p=>contacts.some(c=>c.processes.includes(p)));
@@ -317,11 +337,18 @@ function renderCompany(co){
   <div class="dfoot"><span>建立 ${fmtD((co.created||'').slice(0,10))}・最後更新 ${fmtD((co.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這家公司</button></div>`;
   afterDetail(co);
 }
+/* 保險類別：每台車的車牌和保險到期日，可以直接按「已續保」把到期日往後延一年 */
+function carsBlock(c){const cars=c.cars||[];if(!isIns(c)&&!cars.length)return '';
+  const row=(x,i)=>{const d=insDays(x);return `<div class="kv"><span class="k">${ic('car')}</span><div style="flex:1;min-width:0"><div class="kl">車牌</div><div class="kvv"><b class="plate">${esc(x.plate||'（沒填車牌）')}</b></div>
+      <div class="kl" style="margin-top:4px">保險到期</div><div class="kvv">${x.exp?`${fmtD(x.exp)}・<span class="badge ${insCls(d)}">${insText(d)}</span>`:'<span style="color:var(--sub)">還沒填</span>'}</div></div>
+      ${x.exp?`<button class="btn sm" data-renew="${i}" title="到期日往後延一年">${ic('refresh')}已續保 +1 年</button>`:''}</div>`};
+  return `<div class="gh">車輛與保險・${cars.length} 台</div><div class="dgrp glass">${cars.map(row).join('')||`<div style="color:var(--sub);font-size:14px;padding:12px 16px">還沒有車牌和保險日期，按「編輯」新增</div>`}</div>`}
 function renderPerson(c){
   const co=coOf(c);
   const rows=[
     ['mobile','手機',c.mobile&&telLink(c.mobile)],['phone','公司電話',c.phone&&telLink(c.phone)],['fax','傳真',c.fax&&esc(c.fax)],
     ['mail','Email',c.email&&`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`],
+    ['gift','生日',bdText(c)&&esc(bdText(c))],
     ['pin','地址',c.address&&`${esc(c.address)}${mapLink(c.address)}`],
     ...c.addresses.map(a=>['factory',esc(a.label||'其他地址'),`${esc(a.address)}${mapLink(a.address)}`]),
     ['link','網站／LINE',c.website&&webLink(c.website)],
@@ -349,6 +376,7 @@ function renderPerson(c){
     ${co?`<button class="ab" data-go="${co.id}"><span>${ic('building')}</span>公司頁</button>`:`<a class="ab" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(c.company||c.name)}"><span>${ic('globe')}</span>查公司</a>`}
     <button class="ab" id="dAsk"><span>${ic('spark')}</span>拜訪前查詢</button>
   </div>
+  ${carsBlock(c)}
   ${rows.length?`<div class="gh">詳細資料</div><div class="dgrp glass">${rows.map(r=>kvRow(r[0],r[1],r[2])).join('')}</div>`:''}
   ${visitsBlock(items.length,items,co?`還沒有跟${esc(c.name)}有關的紀錄。新增的紀錄會記在「${esc(co.company)}」，窗口選${esc(c.name)}。`:'還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。')}
   <div class="dfoot"><span>建立 ${fmtD((c.created||'').slice(0,10))}・最後更新 ${fmtD((c.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這張名片</button></div>`;
@@ -409,7 +437,7 @@ function fling(D,v){D=Math.max(D,1);
   document.addEventListener('touchstart',e=>{box=null;if(!isNarrow()||e.touches.length!==1||$('#dlg.on'))return;
     const m=[...$$('.modal.on')].pop();if(!m)return;const t=e.touches[0];
     if(t.clientX<24)return; // 最左邊交給 iPhone 系統手勢（會關掉這一頁）
-    if(e.target.closest('input,textarea,select,.btable,.chips,.cut'))return;
+    if(e.target.closest('input,textarea,select,.btable,.chips,.cut,.cropbox,.calgrid'))return;
     x0=lastX=t.clientX;y0=t.clientY;lastT=e.timeStamp;dx=0;vx=0;locked=null;modal=m;box=m.querySelector('.mbox');W=window.innerWidth},{passive:true});
   document.addEventListener('touchmove',e=>{if(!box)return;const t=e.touches[0];const mx=t.clientX-x0,my=t.clientY-y0;
     if(locked===null&&(Math.abs(mx)>10||Math.abs(my)>10)){locked=Math.abs(mx)>Math.abs(my)*1.2&&mx>0?'h':'v';

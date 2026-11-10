@@ -3,7 +3,7 @@
 /* 每一份清單：標題、在 core.js 裡的陣列（直接改陣列內容，其他程式不用改）、能不能選顏色、不能改名刪除的項目
    資料裡存的是選項的「名字」；改名或刪除時，舊資料保留原本的名字，不會被改掉 */
 const OPT_DEF={
-  cat:{t:'類別',a:CATS,color:true,lock:{私人:'「私人」決定這個人要不要接到公司，所以不能改名或刪除（可以換顏色、調整順序）。'}},
+  cat:{t:'類別',a:CATS,color:true,lock:{[INS_CAT]:'「保險」類別的人不會接到公司，而且有車牌、保險到期日欄位，所以不能改名或刪除（可以換顏色、調整順序）。'}},
   status:{t:'狀態',a:STATUSES,color:true},
   proc:{t:'加工類型',a:PROCS},
   region:{t:'地區',a:REGIONS},
@@ -14,12 +14,16 @@ const OPT_DEF={
 };
 for(const k in OPT_DEF)OPT_DEF[k].def=[...OPT_DEF[k].a];
 const OPT_COLORS=[['gray','灰'],['green','綠'],['blue','藍'],['orange','橘'],['red','紅'],['purple','紫']];
-const OPT_DEFCOLOR={cat:{客戶:'green',潛在客戶:'blue',經銷商:'orange',供應商:'orange'},status:{已成交:'green',報價中:'orange'},result:{成功:'green',持平:'orange',失敗:'red'}};
+const isHex=c=>/^#[0-9a-f]{6}$/i.test(c||'');
+const OPT_DEFCOLOR={cat:{客戶:'green',潛在客戶:'blue',經銷商:'orange',供應商:'orange',[INS_CAT]:'purple'},status:{已成交:'green',報價中:'orange'},result:{成功:'green',持平:'orange',失敗:'red'}};
 const Opts={
   data:{updated:'',lists:{},colors:{}},
   load(){try{const d=JSON.parse(localStorage.getItem('mpgj.opts')||'null');if(d&&typeof d==='object')this.apply(d)}catch(_){}},
   apply(d){
     this.data={updated:String(d.updated||''),lists:d.lists&&typeof d.lists==='object'?d.lists:{},colors:d.colors&&typeof d.colors==='object'?d.colors:{}};
+    // 舊版的「私人」改名成「保險」（顏色也一起帶過去）
+    {const L=this.data.lists.cat;if(Array.isArray(L)&&L.includes('私人')){const nl=L.map(x=>x==='私人'?INS_CAT:x);this.data.lists={...this.data.lists,cat:[...new Set(nl)]}}
+     const C=this.data.colors.cat;if(C&&C['私人']&&!C[INS_CAT]){this.data.colors={...this.data.colors,cat:{...C,[INS_CAT]:C['私人']}}}}
     for(const k in OPT_DEF){const L=this.data.lists[k];const D=OPT_DEF[k];
       let v=Array.isArray(L)?[...new Set(L.filter(x=>typeof x==='string').map(x=>x.trim()).filter(Boolean))]:[...D.def];
       for(const l of Object.keys(D.lock||{}))if(!v.includes(l))v.push(l);
@@ -34,7 +38,17 @@ const Opts={
   color(k,n){const c=this.data.colors[k];if(c&&c[n])return c[n];return (OPT_DEFCOLOR[k]||{})[n]||'gray'}
 };
 Opts.load();
-const optCls=(k,n)=>{const c=Opts.color(k,n);return c&&c!=='gray'?'c-'+c:''};
+const optCls=(k,n)=>{const c=Opts.color(k,n);return colorCls(c)};
+/* 自訂顏色（調色盤選的 #RRGGBB）：第一次用到時產生一組樣式，亮色、暗色模式都看得清楚 */
+const hexCss=new Set();
+function colorCls(c){if(!c||c==='gray')return '';if(!isHex(c))return 'c-'+c;const h=c.slice(1).toLowerCase();
+  if(!hexCss.has(h)){hexCss.add(h);let st=document.getElementById('optCss');if(!st){st=document.createElement('style');st.id='optCss';document.head.appendChild(st)}
+    const n=parseInt(h,16),r=n>>16,g=n>>8&255,b=n&255,mix=(t,k)=>'#'+[r,g,b].map(v=>Math.round(v+(t-v)*k).toString(16).padStart(2,'0')).join('');
+    const lum=(.2126*r+.7152*g+.0722*b)/255;
+    st.textContent+=`.badge.c-x${h}{background:rgba(${r},${g},${b},.18);color:${lum<.55?mix(255,.45):c}}`+
+      `:root[data-theme=light] .badge.c-x${h}{background:rgba(${r},${g},${b},.14);color:${lum>.45?mix(0,.45):c}}`+
+      `.odot.c-x${h}::after,.cdot.c-x${h}{background:${c}}`}
+  return 'c-x'+h}
 /* 清單＋資料裡用到、但已經不在清單的舊名字（排在後面），表單和篩選才不會把舊資料弄丟 */
 const optWith=(k,cur)=>{const a=OPT_DEF[k].a;return [...a,...[...new Set((cur||[]).filter(x=>x&&!a.includes(x)))]]};
 const optOld=(k,n)=>!!n&&!OPT_DEF[k].a.includes(n);
@@ -51,17 +65,23 @@ function optUsage(k,n){let c=0;
 
 /* ---------- 編輯視窗 ---------- */
 const OE={k:null,items:[],pick:-1,newColor:'gray',done:null};
+/* 調色盤選好顏色 */
+$('#mOpt').addEventListener('change',e=>{const inp=e.target.closest('[data-ocustom]');if(!inp)return;const c=inp.value.toLowerCase();if(!isHex(c))return;
+  if(inp.dataset.ocustom==='data-onewc')OE.newColor=c;else if(OE.pick>=0){OE.items[OE.pick].c=c;OE.pick=-1}paintOpts()});
 function openOpts(k,done){const D=OPT_DEF[k];
   OE.k=k;OE.done=done||null;OE.pick=-1;OE.newColor='gray';
   OE.items=D.a.map(n=>({n,o:n,c:Opts.color(k,n),cnt:optUsage(k,n)}));
   $('#oTitle').textContent='編輯'+D.t;$('#oNew').value='';$('#oNew').placeholder='新的'+D.t;
-  $('#oNote').innerHTML='點一下名字可以改名；長按一列（或按住右邊的 ≡）上下拖曳，可以調整順序。'+(D.color?'點左邊的圓點可以換顏色。':'')+'<br>正在使用的選項改名或刪除時，舊資料會保留原本的名字。';
+  $('#oNote').innerHTML='點一下名字可以改名；長按一列（或按住右邊的 ≡）上下拖曳，可以調整順序。'+(D.color?'點左邊的圓點可以換顏色，按「其他顏色」可以從調色盤挑任何顏色。':'')+'<br>正在使用的選項改名或刪除時，舊資料會保留原本的名字。';
   paintOpts();openModal('#mOpt')}
-function paintPal(cur,attr){return OPT_COLORS.map(([c,t])=>`<button type="button" ${attr}="${c}" class="${c===cur?'on':''}"><span class="odot c-${c}"></span>${t}</button>`).join('')}
+function paintPal(cur,attr){const used=[...new Set(OE.items.map(x=>x.c).filter(isHex).map(x=>x.toLowerCase()))];if(isHex(cur)&&!used.includes(cur.toLowerCase()))used.push(cur.toLowerCase());
+  return OPT_COLORS.map(([c,t])=>`<button type="button" ${attr}="${c}" class="${c===cur?'on':''}"><span class="odot c-${c}"></span>${t}</button>`).join('')
+    +used.map(c=>`<button type="button" ${attr}="${c}" class="sw${c===String(cur).toLowerCase()?' on':''}" aria-label="自訂顏色 ${c}"><span class="odot ${colorCls(c)}"></span></button>`).join('')
+    +`<label class="ocustom" title="從調色盤選任何顏色"><span class="odot rainbow"></span>其他顏色<input type="color" data-ocustom="${attr}" value="${isHex(cur)?cur:'#3a7bd5'}"></label>`}
 function paintOpts(){const D=OPT_DEF[OE.k];const lock=D.lock||{};const n=OE.items.length;
   const np=$('#oNewPal');np.hidden=!D.color;if(D.color)np.innerHTML=paintPal(OE.newColor,'data-onewc');
   $('#oList').innerHTML=OE.items.map((it,i)=>{const lk=lock[it.o];
-    return `<div class="orow" data-oi="${i}">${D.color?`<button type="button" class="odot c-${it.c}${OE.pick===i?' on':''}" data-ocolor aria-label="換顏色"></button>`:''}
+    return `<div class="orow" data-oi="${i}">${D.color?`<button type="button" class="odot ${colorCls(it.c)}${OE.pick===i?' on':''}" data-ocolor aria-label="換顏色"></button>`:''}
       <input type="text" value="${esc(it.n)}" data-oname aria-label="選項名稱（點一下改名）" readonly>${it.cnt?`<span class="ocnt">${it.cnt} 筆</span>`:''}
       ${lk?`<button type="button" class="olock" data-olock aria-label="不能刪除" title="不能改名或刪除">${ic('lock')}</button>`:`<button type="button" class="rbtn" data-odel aria-label="刪除">${ic('trash')}</button>`}<span class="ogrip" data-ogrip title="按住拖曳排序" aria-hidden="true">${ic('grip')}</span></div>`+
       (OE.pick===i?`<div class="opal">${paintPal(it.c,'data-oc')}</div>`:'')}).join('')||'<div class="orow" style="color:var(--sub);padding:14px">還沒有任何選項</div>'}

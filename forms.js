@@ -74,7 +74,7 @@ async function saveVisit(){const c=contacts.find(x=>x.id===VS.cid);if(!c)return;
   const btn=$('#vSave');btn.disabled=true;
   try{const added=await storePend();
     const isC=isCo(c);const who=isC?f.who:[];const whoN=who.map(id=>{const p=contacts.find(x=>x.id===id);if(p)return p.name;const o=c.visits.find(x=>x.who.includes(id));return o?o.whoN[o.who.indexOf(id)]||'':''});
-    const v={id:VS.vid||uid(),date:f.date||today(),type:f.type,content:f.content.trim(),next:f.next.trim(),updated:new Date().toISOString(),trial,who,whoN,other:isC?f.other.trim():'',photos:[...keep,...added]};
+    const v={id:VS.vid||uid(),date:f.date||today(),type:f.type,content:half(f.content.trim()),next:half(f.next.trim()),updated:new Date().toISOString(),trial,who,whoN,other:isC?f.other.trim():'',photos:[...keep,...added]};
     for(const pid of VS.removed)await VP.del(pid,c.id);
     const nc={...c,visits:VS.vid?c.visits.map(x=>x.id===VS.vid?v:x):[...c.visits,v],deletedPhotos:[...(c.deletedPhotos||[]),...VS.removed]};
     if(f.follow)nc.nextFollow=f.follow;
@@ -122,6 +122,26 @@ vpInput.onchange=async()=>{const files=[...vpInput.files];if(!files.length)retur
 function pickVisitPhotos(target,owner){vPhotoTarget=target;vPhotoOwner=owner||null;vpInput.value='';vpInput.click()}
 async function storePend(){const arr=[];for(const d of vPend){const id=uid();await VP.put(id,d,VS.cid);arr.push({id,h:hashStr(d)})}vPend=[];return arr}
 
+/* ---------- 生日、車輛與保險 ---------- */
+$('#eBdM').innerHTML='<option value="">月</option>'+Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1} 月</option>`).join('');
+function paintBdDays(){const m=+$('#eBdM').value,y=readBdYear()||2000,cur=$('#eBdD').value;const n=m?new Date(y,m,0).getDate():31;
+  $('#eBdD').innerHTML='<option value="">日</option>'+Array.from({length:n},(_,i)=>`<option value="${i+1}">${i+1} 日</option>`).join('');if(cur&&+cur<=n)$('#eBdD').value=cur}
+/* 年份：西元 4 位數；1～3 位數當成民國年 */
+function readBdYear(){const v=half($('#eBdY').value).replace(/\D/g,'');if(!v)return 0;const n=+v;return v.length===4?n:n>0&&n<200?n+1911:0}
+$('#eBdM').onchange=paintBdDays;$('#eBdY').addEventListener('change',paintBdDays);
+function fillBirthday(s){const b=bdParts(s);$('#eBdM').value=b?b.m:'';$('#eBdY').value=b&&b.y?b.y:'';paintBdDays();$('#eBdD').value=b?b.d:''}
+function readBirthday(){const m=+$('#eBdM').value,d=+$('#eBdD').value,y=readBdYear();if(!m||!d)return '';return (y?y+'-':'')+pad(m)+'-'+pad(d)}
+function addCarRow(x={plate:'',exp:''},focus){const d=document.createElement('div');d.className='car-row';
+  d.innerHTML=`<label><small>車牌</small><input type="text" data-cp value="${esc(x.plate)}" placeholder="例：ABC-1234" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"></label><label><small>保險到期日</small><input type="date" data-ce value="${esc(x.exp)}"></label><button type="button" class="btn sm danger" data-cdel title="刪除這台車" aria-label="刪除這台車">${ic('trash')}</button>`;
+  $('#eCars').appendChild(d);if(focus)d.querySelector('[data-cp]').focus()}
+const readCars=()=>$$('#eCars .car-row').map(r=>({plate:fmtPlate(r.querySelector('[data-cp]').value),exp:r.querySelector('[data-ce]').value})).filter(x=>x.plate||x.exp);
+$('#eAddCar').onclick=()=>addCarRow(undefined,true);
+$('#eCars').addEventListener('click',e=>{const b=e.target.closest('[data-cdel]');if(b)b.closest('.car-row').remove()});
+/* 車牌：打字時就轉成大寫（注音輸入法組字中先不動），離開欄位時整理成「ABC-1234」 */
+$('#eCars').addEventListener('input',e=>{const el=e.target;if(!el.matches('[data-cp]')||e.isComposing)return;const v=half(el.value).toUpperCase();if(v!==el.value){const p=el.selectionStart;el.value=v;try{el.setSelectionRange(p,p)}catch(_){}}});
+$('#eCars').addEventListener('compositionend',e=>{const el=e.target;if(el.matches('[data-cp]'))el.value=half(el.value).toUpperCase()});
+$('#eCars').addEventListener('focusout',e=>{const el=e.target;if(el.matches('[data-cp]'))el.value=fmtPlate(el.value)});
+
 /* ---------- edit modal ---------- */
 let editing=null,editPhotosOrig={front:'',back:''},EM='p';
 function paintEditMode(){const f=$('#eForm');const co=EM==='co';
@@ -131,10 +151,12 @@ function paintEditMode(){const f=$('#eForm');const co=EM==='co';
   $('#eFollowSec').textContent=co?'跟進與備註':'認識情境與跟進';
   let hint='',hideC=false;
   if(!co){const cat=(f.querySelector('[name=category]:checked')||{}).value||'';const name=f.querySelector('[name=company]').value.trim();
-    if(name&&cat!=='私人'){const cur=coOf(editing);const ex=cur&&normCo(cur.company)===normCo(name)?cur:findCo(name,f.querySelector('[name=taxId]').value);
+    if(name&&cat!==INS_CAT){const cur=coOf(editing);const ex=cur&&normCo(cur.company)===normCo(name)?cur:findCo(name,f.querySelector('[name=taxId]').value);
       if(ex){hideC=true;hint=`狀態、加工類型、刀具品牌、跟進日期和拜訪紀錄都記在「${esc(ex.company)}」的公司頁。`}
       else hint=`儲存後會建立「${esc(name)}」公司（或讓你選要加入哪一家），下面的狀態、加工類型、刀具品牌、跟進日期會記在公司。`}
-    else if(name&&cat==='私人')hint='分類是「私人」，紀錄和跟進日期記在這個人身上，不會建立公司。'}
+    else if(name&&cat===INS_CAT)hint='分類是「保險」，紀錄和跟進日期記在這個人身上，不會建立公司。'}
+  {const cat=(f.querySelector('[name=category]:checked')||{}).value||'';const show=!co&&cat===INS_CAT;$$('#eForm [data-ins]').forEach(el=>el.hidden=!show);
+    if(show&&!$$('#eCars .car-row').length)addCarRow()}
   $$('#eForm [data-m=c]').forEach(el=>el.hidden=hideC);
   const h=$('#eHint');h.hidden=!hint;h.innerHTML=hint}
 $('#eForm').addEventListener('click',e=>{const l=e.target.closest('.checks label');if(!l)return;const i=l.querySelector('input[type=radio]');if(!i)return;
@@ -172,23 +194,23 @@ async function openEdit(c,opt={}){
   paintEditOpts(editing);
   FIELDS.forEach(k=>{f.querySelector(`[name=${k}]`).value=editing[k]||''});
   $('#eAddrs').innerHTML='';(editing.addresses||[]).forEach(a=>addAddrRow(a));
+  fillBirthday(editing.birthday);$('#eCars').innerHTML='';(editing.cars||[]).forEach(x=>addCarRow(x));
   if(EM==='co')f.querySelector('[name=company]').value=editing.company||'';
   f.querySelector('[name=aka]').value=(editing.aka||[]).join('、');
-  paintLogoEdit();
   paintChecks();paintEditMode();
   const unc=new Set(opt.uncertain||[]);
   $$('#eForm label.f[data-k]').forEach(l=>l.classList.toggle('warn',unc.has(l.dataset.k)));
   const note=$('#aiNote');
   if(opt.fromScan){note.hidden=false;note.innerHTML=`Claude 已經讀好名片，請<b>對照照片看一下</b>再儲存。${unc.size?'黃色欄位是比較不確定的地方。':''}<br>順便選一下類別、加工類型，填個跟進日期。`}else note.hidden=true;
-  if(opt.photos){slotState.edit={...opt.photos};editPhotosOrig={front:'',back:''}}
-  else{slotState.edit={front:'',back:''};editPhotosOrig={front:'',back:''};
+  if(opt.photos){slotState.edit={...opt.photos};slotOrig.edit={...slotOrig.scan};editPhotosOrig={front:'',back:''}}
+  else{slotState.edit={front:'',back:''};slotOrig.edit={front:null,back:null};editPhotosOrig={front:'',back:''};
     if(!isNew){for(const s of ['front','back'])if(editing['has'+(s==='front'?'Front':'Back')]){const d=await Store.getPhoto(editing.id,s);slotState.edit[s]=d;editPhotosOrig[s]=d}}}
   paintSlots('edit');
   openModal('#mEdit');
   $('#mEdit .mbox').scrollIntoView({block:'start'});
 }
 async function saveCoEdit(){const f=$('#eForm');
-  for(const k of CO_FIELDS)editing[k]=f.querySelector(`[name=${k}]`).value.trim();
+  for(const k of CO_FIELDS)editing[k]=half(f.querySelector(`[name=${k}]`).value.trim());
   editing.aka=[...new Set(f.querySelector('[name=aka]').value.split(/[、,，;；\n]/).map(x=>x.trim()).filter(x=>x&&x!==editing.company))];
   if(!editing.company){toast('請填寫公司名稱');f.querySelector('[name=company]').focus();return}
   editing.taxId=editing.taxId.replace(/\D/g,'');
@@ -209,14 +231,16 @@ async function saveCoEdit(){const f=$('#eForm');
 async function saveEdit(){
   if(EM==='co')return saveCoEdit();
   const f=$('#eForm');
-  FIELDS.forEach(k=>{editing[k]=f.querySelector(`[name=${k}]`).value.trim()});
+  FIELDS.forEach(k=>{editing[k]=half(f.querySelector(`[name=${k}]`).value.trim())});
+  if(!!$('#eBdM').value!==!!$('#eBdD').value){toast('生日請把月和日都選好');$('#eBdM').focus();return}
+  editing.birthday=readBirthday();editing.cars=readCars();
   if(!editing.name){toast('請填寫姓名');f.querySelector('[name=name]').focus();return}
   editing.taxId=editing.taxId.replace(/\D/g,'');
   if(editing.taxId&&!validTaxId(editing.taxId)&&!await confirmBox(`統一編號「${editing.taxId}」的檢查碼對不起來，可能有一個數字看錯了。\n\n還是要儲存嗎？`,{ok:'仍要儲存',cancel:'回去修改'}))return;
   editing.category=(f.querySelector('[name=category]:checked')||{}).value||'';
   editing.status=(f.querySelector('[name=status]:checked')||{}).value||'';
   editing.processes=$$('#eProc input:checked').map(i=>i.value);
-  editing.addresses=$$('#eAddrs .addr-row').map(r=>({label:r.querySelector('[data-al]').value.trim(),address:r.querySelector('[data-aa]').value.trim()})).filter(a=>a.address);
+  editing.addresses=$$('#eAddrs .addr-row').map(r=>({label:half(r.querySelector('[data-al]').value.trim()),address:half(r.querySelector('[data-aa]').value.trim())})).filter(a=>a.address);
   if(!editing.region)editing.region=findRegion(editing.address)||'';
   const dig=s=>(s||'').replace(/\D/g,'');
   const dup=contacts.find(x=>!isCo(x)&&x.id!==editing.id&&((editing.email&&x.email&&x.email.toLowerCase()===editing.email.toLowerCase())||(dig(editing.mobile).length>=8&&dig(x.mobile)===dig(editing.mobile))));

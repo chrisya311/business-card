@@ -16,7 +16,7 @@ function expand(list){const out=[],seen=new Set();const add=x=>{if(!seen.has(x.i
   for(const r of list){add(r);if(isCo(r))peopleOf(r).forEach(add)}return out}
 const lastOf=items=>[...items].sort(byDate)[0];
 const whoText=(v,co)=>co?[...v.who.map((id,i)=>{const p=contacts.find(x=>x.id===id);return (p?p.name:v.whoN[i]||'')+(p&&p.companyId!==co.id?'（已離職）':'')}).filter(Boolean),...(v.other?[v.other]:[])].join('、'):'';
-const XCOLS=['姓名','英文名','公司','統一編號','職稱','部門','手機','公司電話','傳真','Email','地址','其他地址','地區','網站','類別','狀態','加工類型','刀具品牌','認識情境','下次跟進','備註','最近拜訪日','最近拜訪內容','拜訪次數','建立日期','ID'];
+const XCOLS=['姓名','英文名','公司','統一編號','職稱','部門','手機','公司電話','傳真','Email','地址','其他地址','地區','網站','類別','狀態','加工類型','刀具品牌','認識情境','下次跟進','備註','生日','車牌與保險到期','最近拜訪日','最近拜訪內容','拜訪次數','建立日期','ID'];
 const toDate=s=>s?new Date(s.slice(0,10)+'T00:00:00'):'';
 function exportXLSX(list){
   if(!window.XLSX){toast('Excel 元件載入失敗，改用 Outlook CSV 或重新整理頁面',4000);return}
@@ -29,8 +29,8 @@ function exportXLSX(list){
     sortPeople(c).map(p=>p.name+(p.title?'（'+p.title+'）':'')).join('、'),c.visits.length,lv?toDate(lv.date):'',lv?`[${lv.type}] ${lv.content}${lv.next?'（下一步：'+lv.next+'）':''}`:'',toDate(c.created),c.id]}),
     CH,[22,11,16,14,32,40,9,20,10,9,16,18,12,36,30,8,12,40,12,14],'公司',wb);
   book(ppl.map(c=>{const co=coOf(c)||{};const g=k=>c[k]||co[k]||'';const its=personVisits(c);const lv=(lastOf(its)||{}).v;
-    return[c.name,c.nameEn,c.company,g('taxId'),c.title,c.dept,c.mobile,c.phone,g('fax'),c.email,g('address'),addrText(c),g('region'),g('website'),co.category||c.category,co.id?co.status:c.status,((co.id?co:c).processes||[]).join('、'),co.id?co.brands:c.brands,c.metAt,toDate(co.id?co.nextFollow:c.nextFollow),c.notes,lv?toDate(lv.date):'',lv?`[${lv.type}] ${lv.content}${lv.next?'（下一步：'+lv.next+'）':''}`:'',its.length,toDate(c.created),c.id]}),
-    XCOLS,[10,14,22,11,12,10,15,20,14,26,32,40,9,20,10,9,16,18,20,12,36,12,40,8,12,14],'聯絡人',wb);
+    return[c.name,c.nameEn,c.company,g('taxId'),c.title,c.dept,c.mobile,c.phone,g('fax'),c.email,g('address'),addrText(c),g('region'),g('website'),co.category||c.category,co.id?co.status:c.status,((co.id?co:c).processes||[]).join('、'),co.id?co.brands:c.brands,c.metAt,toDate(co.id?co.nextFollow:c.nextFollow),c.notes,bdText0(bdParts(c.birthday)),carsText(c.cars),lv?toDate(lv.date):'',lv?`[${lv.type}] ${lv.content}${lv.next?'（下一步：'+lv.next+'）':''}`:'',its.length,toDate(c.created),c.id]}),
+    XCOLS,[10,14,22,11,12,10,15,20,14,26,32,40,9,20,10,9,16,18,20,12,36,11,28,12,40,8,12,14],'聯絡人',wb);
   const vr=[];
   for(const r of list){if(!r.visits.length)continue;const co=isCo(r)?r:null;
     r.visits.forEach(v=>{const t=v.trial;const runs=t&&t.runs&&t.runs.length?t.runs:[null];const w=co?whoText(v,co):r.name;
@@ -43,7 +43,7 @@ function exportXLSX(list){
 }
 const csvCell=v=>{v=String(v??'');return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
 const toCSV=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
-function noteBlock(c0){const co=coOf(c0);const c=co?{...c0,taxId:c0.taxId||co.taxId,status:co.status,processes:co.processes,brands:co.brands,nextFollow:co.nextFollow,visits:personVisits(c0).map(x=>x.v)}:c0;const p=[];if(c.taxId)p.push('統編：'+c.taxId);if(c.addresses.length)p.push('其他地址：\n'+addrText(c));if(c.metAt)p.push('認識：'+c.metAt);if(c.status)p.push('狀態：'+c.status);if(c.processes.length)p.push('加工：'+c.processes.join('、'));if(c.brands)p.push('刀具品牌：'+c.brands);if(c.nextFollow)p.push('下次跟進：'+fmtD(c.nextFollow));if(c.notes)p.push(c.notes);const lv=lastVisit(c);if(lv)p.push(`最近聯絡 ${fmtD(lv.date)}（${lv.type}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`);return p.join('\n')}
+function noteBlock(c0){const co=coOf(c0);const c=co?{...c0,taxId:c0.taxId||co.taxId,status:co.status,processes:co.processes,brands:co.brands,nextFollow:co.nextFollow,visits:personVisits(c0).map(x=>x.v)}:c0;const p=[];if(c.taxId)p.push('統編：'+c.taxId);if(c.addresses.length)p.push('其他地址：\n'+addrText(c));if(c.metAt)p.push('認識：'+c.metAt);if(c.birthday)p.push('生日：'+bdText0(bdParts(c.birthday)));if(c.cars&&c.cars.length)p.push('車牌與保險到期：'+carsText(c.cars));if(c.status)p.push('狀態：'+c.status);if(c.processes.length)p.push('加工：'+c.processes.join('、'));if(c.brands)p.push('刀具品牌：'+c.brands);if(c.nextFollow)p.push('下次跟進：'+fmtD(c.nextFollow));if(c.notes)p.push(c.notes);const lv=lastVisit(c);if(lv)p.push(`最近聯絡 ${fmtD(lv.date)}（${lv.type}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`);return p.join('\n')}
 function exportOutlook(list){
   list=expand(list).filter(c=>!isCo(c));
   const H=['First Name','Last Name','Nickname','Company','Department','Job Title','E-mail Address','Mobile Phone','Business Phone','Business Fax','Business Street','Business City','Business Country/Region','Other Street','Web Page','Notes','Categories'];
@@ -74,7 +74,7 @@ function parseCSV(text){
   if(cell!==''||row.length){row.push(cell);rows.push(row)}
   return rows.filter(r=>r.some(x=>x.trim()!==''));
 }
-const CSVMAP={'ID':'id','姓名':'name','英文名':'nameEn','公司':'company','統一編號':'taxId','統編':'taxId','職稱':'title','部門':'dept','手機':'mobile','公司電話':'phone','電話':'phone','傳真':'fax','Email':'email','E-mail':'email','地址':'address','其他地址':'addresses','地區':'region','網站':'website','類別':'category','狀態':'status','加工類型':'processes','刀具品牌':'brands','認識情境':'metAt','備註':'notes','下次跟進':'nextFollow'};
+const CSVMAP={'ID':'id','姓名':'name','英文名':'nameEn','公司':'company','統一編號':'taxId','統編':'taxId','職稱':'title','部門':'dept','手機':'mobile','公司電話':'phone','電話':'phone','傳真':'fax','Email':'email','E-mail':'email','地址':'address','其他地址':'addresses','地區':'region','網站':'website','類別':'category','狀態':'status','加工類型':'processes','刀具品牌':'brands','認識情境':'metAt','備註':'notes','下次跟進':'nextFollow','生日':'birthday','車牌與保險到期':'cars'};
 const normDate=s=>{const m=String(s||'').trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);return m?`${m[1]}-${pad(m[2])}-${pad(m[3])}`:''};
 function findMatch(c){const dig=s=>(s||'').replace(/\D/g,'');
   return contacts.find(x=>x.id===c.id)||(c.email&&contacts.find(x=>x.email&&x.email.toLowerCase()===c.email.toLowerCase()))||(dig(c.mobile).length>=8&&contacts.find(x=>dig(x.mobile)===dig(c.mobile)))}
@@ -89,6 +89,7 @@ async function mergeIn(list,progress){
     if(!ex){m=inc;add++}else{m={...ex,visits:[...ex.visits]};
       for(const k of [...FIELDS,'category','status'])if(inc[k])m[k]=inc[k];
       if(inc.processes.length)m.processes=inc.processes;
+      if(inc.birthday)m.birthday=inc.birthday;if(inc.cars.length)m.cars=inc.cars;
       if(inc.addresses.length){const have=new Set(m.addresses.map(a=>a.address));m.addresses=[...m.addresses,...inc.addresses.filter(a=>!have.has(a.address))]}
       const seen=new Set(m.visits.map(v=>v.date+'|'+v.content));inc.visits.forEach(v=>{const same=m.visits.find(x=>x.id===v.id);if(same){const have=new Set((same.photos||[]).map(p=>p.id));same.photos=[...(same.photos||[]),...(v.photos||[]).filter(p=>!have.has(p.id))]}else if(!seen.has(v.date+'|'+v.content))m.visits.push(v)});upd++}
     for(const s of ['front','back']){const key='has'+(s==='front'?'Front':'Back');
