@@ -40,7 +40,8 @@ function findCard(img){
   // 另外框裡面和框外面「整體」的顏色要差夠多（框外應該是桌面）；已經裁好的名片照片，框內框外都是名片紙，就不要再切
   const top=Math.max(...list.map(x=>x.score));
   const ok=list.filter(x=>x.score>=Math.max(CROP_MIN,top*.45)).sort((x,y)=>y.area-x.area||y.score-x.score);
-  let best=null;for(const x of ok){if(best&&x.area<best.area*.98)break;if(regionDiff(x.q,w,h,R,G,B)<16)continue;if(!best||x.score>best.score)best=x}
+  let best=null;
+  for(const x of ok){if(best&&x.area<best.area*.98)break;if(regionDiff(x.q,w,h,R,G,B)<16||!sidesBelong(x.q,w,h,R,G,B))continue;if(!best||x.score>best.score)best=x}
   if(!best)return null;
   // 照片本身已經是名片的比例（之前裁過了），又只找到裡面一小塊：多半是名片上的圖案，不要切
   const ir=w/h;if((Math.abs(ir/CARD_RATIO-1)<.06||Math.abs(ir*CARD_RATIO-1)<.06)&&best.area<.6)return null;
@@ -55,6 +56,29 @@ function regionDiff(q,w,h,R,G,B){const inn=[[],[],[]],out=[[],[],[]];
   for(let gy=0;gy<28;gy++)for(let gx=0;gx<28;gx++){const x=(gx+.5)*w/28,y=(gy+.5)*h/28,i=Math.floor(y)*w+Math.floor(x);const t=inside(x,y)?inn:out;t[0].push(R[i]);t[1].push(G[i]);t[2].push(B[i])}
   if(inn[0].length<8||out[0].length<8)return 0;const md=a=>{a.sort((p,r)=>p-r);return a[a.length>>1]};
   return Math.hypot(md(inn[0])-md(out[0]),md(inn[1])-md(out[1]),md(inn[2])-md(out[2]))}
+/* 每條邊：內側（往內 4 格）要跟更裡面（往內 13 格）的名片很像，外側（往外 4 格）要跟名片不像。
+   比的是「附近」，所以名片上有反光也沒關係；桌面上的反光邊界、木紋，兩邊都是桌面，就不會被當成名片的邊 */
+function sidesBelong(q,w,h,R,G,B){const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4;
+  // 色彩（不管亮暗）：反光只會變亮、不會改變顏色，所以用色彩比「內側像不像名片」
+  const chroma=c=>{const t=c[0]+c[1]+c[2]+30;return[c[0]/t,c[1]/t,c[2]/t]};
+  const inside=(x,y)=>{let sg=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];const c=Math.sign((b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0]));if(!c)continue;if(!sg)sg=c;else if(c!==sg)return false}return true};
+  const xs=q.map(p=>p[0]),ys=q.map(p=>p[1]),X0=Math.max(0,Math.min(...xs)),X1=Math.min(w-1,Math.max(...xs)),Y0=Math.max(0,Math.min(...ys)),Y1=Math.min(h-1,Math.max(...ys));
+  const CC=[[],[],[]];for(let gy=0;gy<20;gy++)for(let gx=0;gx<20;gx++){const x=X0+(gx+.5)*(X1-X0)/20,y=Y0+(gy+.5)*(Y1-Y0)/20;if(!inside(x,y))continue;const i=Math.floor(y)*w+Math.floor(x);const c=chroma([R[i],G[i],B[i]]);CC[0].push(c[0]);CC[1].push(c[1]);CC[2].push(c[2])}
+  const md=a=>{a.sort((p,r)=>p-r);return a[a.length>>1]||0};
+  const col=(x,y)=>{const px=Math.round(x),py=Math.round(y);if(px<0||py<0||px>=w||py>=h)return null;const i=py*w+px;return[R[i],G[i],B[i]]};
+  const dist=(p,r)=>Math.hypot(p[0]-r[0],p[1]-r[1],p[2]-r[2]);
+  if(CC[0].length<10)return false;const card=CC.map(md);
+  for(let s=0;s<4;s++){const a=q[s],b=q[(s+1)%4];const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;let nx=-dy/L,ny=dx/L;
+    if(nx*(cx-(a[0]+b[0])/2)+ny*(cy-(a[1]+b[1])/2)<0){nx=-nx;ny=-ny}
+    const dI=[],dO=[],hI=[],hO=[];
+    for(let k=0;k<30;k++){const t=.1+.8*k/29,x=a[0]+dx*t,y=a[1]+dy*t;const ci=col(x+nx*7,y+ny*7),cd=col(x+nx*16,y+ny*16),co=col(x-nx*7,y-ny*7);
+      if(!ci||!cd)continue;dI.push(dist(ci,cd));hI.push(dist(chroma(ci),card));if(co){dO.push(dist(co,cd));hO.push(dist(chroma(co),card))}}
+    if(dI.length<8)return false;if(dO.length<8)continue;   // 這條邊貼著照片邊緣：外面看不到，不檢查
+    const dIn=md(dI),dOut=md(dO);
+
+    if(dOut<10||dIn>dOut*.6)return false;
+    const cIn=md(hI),cOut=md(hO);if(cIn>cOut*.7+.03)return false}
+  return true}
 function convex(q){let sg=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4];const cr=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(cr)<1e-6)return false;const s=Math.sign(cr);if(!sg)sg=s;else if(s!==sg)return false}return true}
 /* 一條邊的分數：沿著邊取 40 個點，每個點比較往內 3 格、往外 3 格的顏色差；取偏低的那一段（要整條邊大部分都有差，才算真的邊） */
 function quadScore(q,w,h,R,G,B,n=40){const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4;

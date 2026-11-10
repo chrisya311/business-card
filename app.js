@@ -13,7 +13,7 @@ document.addEventListener('click',async e=>{
   if(t.closest('[data-scan]')){openScan();return}
   const chip=t.closest('[data-cat]');if(chip){S.cat=chip.dataset.cat;renderList();return}
   const insb=t.closest('[data-ins]');if(insb&&insb.closest('#insRow')){S.ins=S.ins===insb.dataset.ins?'':insb.dataset.ins;renderList();return}
-  const bn=t.closest('.banner button');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;renderList();return}
+  const bn=t.closest('.banner button[data-f]');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;renderList();return}
   const zi=t.closest('[data-zoom]');if(zi&&zi.src){$('#zoom img').src=zi.src;$('#zoom').classList.add('on');return}
   if(t.closest('#zoom')){$('#zoom').classList.remove('on');return}
 

@@ -140,8 +140,9 @@ const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.10-4';
+const APP_VERSION='2026.11.10-5';
 const CHANGELOG=[
+  {v:'2026.11.10-5',items:['名片自動裁切更準：桌面上有反光、或木紋很明顯時，不會再把桌面框進去','日曆按鈕移到首頁「逾期跟進、7 天內、全部」那一排的最右邊','沒有名片照片的公司，色塊也改成名片的形狀，清單更整齊']},
   {v:'2026.11.10-4',items:['首頁公司那一列改成顯示這家公司聯絡人的名片縮圖（沒有名片照片的公司才顯示色塊）']},
   {v:'2026.11.10-3',items:['名片自動裁切變準了：改成找名片的四條直邊，深色名片放在深色桌面、有反光也找得到；找不到可信的邊就不亂切','以前存的名片照片也會自動裁切、拉正（原始照片留在這台手機，按「編輯 → 裁切」可以重新調整）','首頁的名片縮圖改成完整的橫式名片，直式名片會轉成橫的，每一列都一樣整齊','「保險」類別不再顯示加工類型、刀具品牌']},
   {v:'2026.11.10-2',items:['拿掉「分享」功能（分享連結的內容藏在網址裡，傳出去就收不回來）。要給別人資料，可以用搜尋找到那一筆，再用「匯出 → 只匯出目前清單」']},
