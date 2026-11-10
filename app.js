@@ -29,7 +29,6 @@ document.addEventListener('click',async e=>{
   if(t.closest('#pNew')){openEdit(normalize({company:c.company,taxId:c.taxId,companyId:c.id,category:c.category}));return}
   if(t.closest('#dDel')&&isCo(c)){const ppl=peopleOf(c);if(await confirmBox(`確定要刪除「${c.company}」？\n\n會一起刪除 ${c.visits.length} 筆拜訪紀錄${ppl.length?`和 ${ppl.length} 位聯絡人（${ppl.slice(0,3).map(p=>p.name).join('、')}${ppl.length>3?'…':''}）的名片`:''}，無法復原。`,{ok:'全部刪除',danger:true})){try{for(const p of ppl)await Store.del(p);await Store.del(c);const gone=new Set([c.id,...ppl.map(p=>p.id)]);contacts=contacts.filter(x=>!gone.has(x.id));S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('刪除失敗')}}return}
   if(t.closest('#dDel')){if(await confirmBox(coOf(c)?`確定要刪除「${c.name}」的名片？\n（公司的拜訪紀錄會留著）`:`確定要刪除「${c.name}」？\n（包含照片和所有拜訪紀錄，無法復原）`,{ok:'刪除',danger:true})){try{await Store.del(c);contacts=contacts.filter(x=>x.id!==c.id);S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('刪除失敗')}}return}
-  if(t.closest('#dShare')){openShare(c);return}
   if(t.closest('#dAsk')){
     const P0=isCo(c)?sortPeople(c)[0]:c;const C0=isCo(c)?c:(coOf(c)||c);const lv=isCo(C0)?lastVisit(C0):(personVisits(c).sort(byDate)[0]||{}).v;
     const txt=`幫我做拜訪前準備，請上網查這家公司，整理成一頁重點（公司做什麼產品、規模、主要客戶產業、可能用到哪些刀具或加工、最近新聞，以及我拜訪時可以聊的切入點）：\n\n公司：${C0.company||'（未填）'}\n地址：${C0.address||c.address||'（未填）'}\n網站：${C0.website||'（未填）'}\n對象：${isCo(c)?sortPeople(c).map(p=>p.name+(p.title?'（'+p.title+'）':'')).join('、')||'（未填）':c.name+(c.title?'（'+c.title+'）':'')}\n已知加工類型：${C0.processes.join('、')||'不清楚'}\n目前使用的刀具品牌：${C0.brands||'不清楚'}\n備註：${C0.notes||(P0&&P0.notes)||'無'}${lv?`\n上次聯絡（${fmtD(lv.date)}）：${lv.content}${lv.next?'；下一步：'+lv.next:''}`:''}`;
@@ -61,7 +60,6 @@ document.addEventListener('click',async e=>{
 });
 $('#bScan').onclick=()=>openScan();
 $('#bCal').onclick=()=>openCal();
-$('#shGo').onclick=goShare;
 $('#eMerge').onclick=()=>openMerge();
 $('#mgList').addEventListener('click',async e=>{const b=e.target.closest('[data-mg]');if(!b)return;const to=contacts.find(x=>x.id===b.dataset.mg);const from=contacts.find(x=>x.id===editing.id);if(!to||!from)return;
   if(!await confirmBox(`把「${from.company}」合併到「${to.company}」？\n\n${peopleOf(from).length} 位聯絡人和 ${from.visits.length} 筆拜訪紀錄會搬過去，「${from.company}」會變成「${to.company}」的其他名稱。`,{ok:'合併'}))return;

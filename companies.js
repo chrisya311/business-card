@@ -1,4 +1,4 @@
-/* 名片管家：公司與聯絡人、清單、詳細頁、分享、返回手勢 */
+/* 名片管家：公司與聯絡人、清單、詳細頁、返回手勢 */
 'use strict';
 /* ---------- 公司與聯絡人 ----------
    公司也是一筆資料（kind:'co'），聯絡人用 companyId 連到公司。
@@ -209,64 +209,10 @@ function renderList(){
 /* ---------- render detail ---------- */
 function telLink(p){const n=(p||'').split(/[#＃x轉]/)[0].replace(/[^\d+]/g,'');return n?`<a href="tel:${n}">${esc(p)}</a>`:esc(p)}
 let detailToken=0;
-/* ---------- 唯讀分享：名片內容壓縮後放在網址 # 後面（# 後面的內容不會傳到任何伺服器），1 天後失效 ---------- */
-const SHARE_HOURS=24;
-async function packShare(obj){
-  const json=new TextEncoder().encode(JSON.stringify(obj));let bytes,tag='z';
-  if(typeof CompressionStream==='function'){bytes=new Uint8Array(await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer())}
-  else{bytes=json;tag='j'}
-  let bin='';for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));
-  return tag+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-const SH={rec:null};
 function personVisits(p){const co=coOf(p);if(!co&&!p.companyId)return p.visits.map(v=>({v,o:p,co:null}));
   const out=[];for(const r of contacts)if(isCo(r))for(const v of r.visits)if(v.who.includes(p.id))out.push({v,o:r,co:r});
   for(const v of p.visits)out.push({v,o:p,co:null});return out}
 const byDate=(a,b)=>((b.v||b).date||'').localeCompare(((a.v||a).date||''));
-function visitRow(v,co){const r=[v.date||'',v.type||'',v.content||'',v.next||''];const tl=trialLines(v.trial);const w=co?[...v.who.map((id,i)=>{const p=contacts.find(x=>x.id===id);return (p?p.name:v.whoN[i]||'')+(p&&p.companyId!==co.id?'（已離職）':'')}).filter(Boolean),...(v.other?[v.other]:[])].join('、'):'';
-  if(tl.length||w)r.push(tl.join('\n'));if(w)r.push(w);return r}
-function pickVisits(items,mode){items=[...items].sort(byDate);return mode==='none'?[]:mode==='3'?items.slice(0,3):items}
-function personShare(c,o){const co=o.co?coOf(c):null;const g=k=>c[k]||(co&&co[k])||'';
-  const d={n:c.name,ne:c.nameEn,co:c.company,ti:c.title,de:c.dept,mo:c.mobile,ph:c.phone,fx:g('fax'),em:c.email,ad:g('address'),
-    as:[...c.addresses,...(co?co.addresses:[])].filter(a=>a.address).map(a=>[a.label||'',a.address]),ws:g('website'),tx:g('taxId'),rg:g('region'),
-    pr:(co||c).processes,br:(co||c).brands,mt:c.metAt,no:o.notes?c.notes:'',
-    v:pickVisits(personVisits(c),o.visits).map(x=>visitRow(x.v,x.co))};
-  return d}
-function shareData(c,o){o=o||{visits:'all',notes:true,co:true,people:null};let d;
-  if(isCo(c)){const ppl=sortPeople(c).filter(p=>!o.people||o.people.includes(p.id));
-    d={k:'co',co:c.company,ph:c.phone,fx:c.fax,ad:c.address,as:c.addresses.filter(a=>a.address).map(a=>[a.label||'',a.address]),ws:c.website,tx:c.taxId,rg:c.region,pr:c.processes,br:c.brands,no:o.notes?c.notes:'',
-      p:ppl.map(p=>{const r=[p.name,p.title,p.mobile,p.email,p.phone,p.dept,p.nameEn,o.notes?p.notes:''];while(r.length&&!r[r.length-1])r.pop();return r}),
-      v:pickVisits(c.visits.map(v=>({v})),o.visits).map(x=>visitRow(x.v,c))}}
-  else d=personShare(c,o);
-  d.x=Math.floor(Date.now()/1000)+SHARE_HOURS*3600;
-  for(const k in d){const v=d[k];if(v===''||v==null||(Array.isArray(v)&&!v.length))delete d[k]}
-  return d;
-}
-function openShare(c){SH.rec=c;const co=isCo(c)?c:coOf(c);
-  const row=(attrs,label,sub,on)=>`<label class="shrow"><input type="checkbox" ${attrs} ${on?'checked':''}><span><b>${label}</b>${sub?`<small>${sub}</small>`:''}</span></label>`;
-  const radio=(v,label,on)=>`<label class="shrow"><input type="radio" name="shV" value="${v}" ${on?'checked':''}><span><b>${label}</b></span></label>`;
-  const nV=isCo(c)?c.visits.length:personVisits(c).length;
-  $('#shTitle').textContent=isCo(c)?'分享公司資料':'分享名片';
-  $('#shOpts').innerHTML=(isCo(c)?`<div class="sec" style="border-top:0;padding-top:0">要給對方看哪些人</div>`+sortPeople(c).map(p=>row(`data-shp="${p.id}"`,esc(p.name)+(p.title?` <small style="display:inline">${esc(p.title)}</small>`:''),esc(p.mobile||p.email||''),true)).join('')
-      :co?row('id="shCo"','附上公司資料',`${esc(co.company)} 的地址、電話、網站、加工類型`,true):'')
-    +`<div class="sec">拜訪紀錄（共 ${nV} 筆）</div>`+radio('3','最近 3 筆',true)+radio('all','全部',false)+radio('none','不附紀錄',false)
-    +`<div class="sec">其他</div>`+row('id="shNotes"','附上備註','備註常有內部資訊，傳給客戶前想一下',false)
-    +`<div style="color:var(--sub);font-size:13px">產生的連結 1 天內有效，不含照片。</div>`;
-  openModal('#mShare')}
-async function goShare(){const c=SH.rec;if(!c)return;
-  const o={visits:(($('#shOpts [name=shV]:checked')||{}).value)||'3',notes:!!($('#shNotes')||{}).checked,co:!!($('#shCo')||{}).checked,
-    people:isCo(c)?$$('#shOpts [data-shp]:checked').map(i=>i.dataset.shp):null};
-  closeModal($('#mShare'));await shareCard(c,o)}
-async function shareCard(c,o){
-  let url;try{url=new URL('view.html',location.href).href+'#'+await packShare(shareData(c,o))}catch(e){toast('產生分享連結失敗');return}
-  const title=isCo(c)?`${c.company} 的資料`:`${c.name}${c.company?'｜'+c.company:''} 的名片`;const text=`${title}（連結 1 天內有效）`;
-  if(navigator.share){
-    try{await navigator.share({title,text,url});return}
-    catch(e){if(e&&e.name==='AbortError')return}
-  }
-  try{await navigator.clipboard.writeText(text+'\n'+url);toast('已複製分享連結，貼到 LINE 就可以（1 天內有效）',3500)}
-  catch(_){await infoBox('請長按下面的文字全選後複製，再貼到 LINE（1 天內有效）：',{text:text+'\n'+url,ok:'關閉'})}
-}
 const yNow0=()=>today().slice(0,4);
 function vDateHTML(d){if(!d)return '<b>—</b>';const [y,m,dd]=d.split('-');return `<b>${+dd}</b><small>${+m} 月</small>${y!==yNow0()?`<small>${y}</small>`:''}`}
 function visitsHTML(items){
@@ -326,7 +272,6 @@ function renderCompany(co){
   </div>
   <div class="acts">
     <button class="ab p" id="dEdit"><span>${ic('edit')}</span>編輯公司</button>
-    <button class="ab" id="dShare"><span>${ic('share')}</span>分享</button>
     <a class="ab" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(co.company)}"><span>${ic('globe')}</span>查公司</a>
     <button class="ab" id="dAsk"><span>${ic('spark')}</span>拜訪前查詢</button>
   </div>
@@ -372,7 +317,6 @@ function renderPerson(c){
   </div>
   <div class="acts">
     <button class="ab p" id="dEdit"><span>${ic('edit')}</span>編輯</button>
-    <button class="ab" id="dShare"><span>${ic('share')}</span>分享</button>
     ${co?`<button class="ab" data-go="${co.id}"><span>${ic('building')}</span>公司頁</button>`:`<a class="ab" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(c.company||c.name)}"><span>${ic('globe')}</span>查公司</a>`}
     <button class="ab" id="dAsk"><span>${ic('spark')}</span>拜訪前查詢</button>
   </div>
