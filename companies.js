@@ -138,7 +138,7 @@ function bdText(c){const b=bdParts(c.birthday);if(!b)return '';const t=new Date(
 const insFollowP=c=>!isCo(c)&&!isRow(c)&&hasIns(c)&&!!c.nextFollow;
 function listBase(){if(S.cat===INS_CAT)return contacts.filter(c=>!isCo(c)&&hasIns(c));
   return contacts.filter(c=>isRow(c)||(S.follow!=='all'&&insFollowP(c)))}
-const S={q:'',cat:'',region:'',proc:'',sort:'follow',follow:'all',sel:null,ins:''};
+const S={q:'',cat:'',region:'',proc:'',sort:'updated',follow:'all',sel:null,ins:''};
 const haystack1=c=>[c.name,c.nameEn,c.company,...(c.aka||[]),c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...(c.cars||[]).map(x=>x.plate+' '+x.plate.replace(/-/g,'')),...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
 const haystack=c=>isCo(c)?[haystack1(c),...peopleOf(c).map(haystack1)].join(' '):haystack1(c);
 function filtered(){
@@ -159,8 +159,10 @@ function filtered(){
   });
   const cmp=(a,b)=>a.localeCompare(b,'zh-Hant');
   if(S.ins&&S.cat===INS_CAT)return arr.sort((a,b)=>insMatch(a).exp.localeCompare(insMatch(b).exp));
+  // 公司那一列的「最近更新」：公司本身或底下任何一位聯絡人最後修改的時間
+  const upd=new Map();const rowUpd=c=>{if(!upd.has(c.id))upd.set(c.id,isCo(c)?[c.updated||'',...peopleOf(c).map(p=>p.updated||'')].sort().pop():c.updated||'');return upd.get(c.id)};
   return arr.sort((a,b)=>{switch(S.sort){
-    case 'updated':return (b.updated||'').localeCompare(a.updated||'');
+    case 'updated':return rowUpd(b).localeCompare(rowUpd(a));
     case 'company':return cmp(a.company||'~',b.company||'~')||cmp(rowTitle(a),rowTitle(b));
     case 'name':return cmp(rowTitle(a)||'~',rowTitle(b)||'~');
     default:return (a.nextFollow||'9999').localeCompare(b.nextFollow||'9999')||(b.updated||'').localeCompare(a.updated||'')}});
@@ -207,7 +209,7 @@ function renderList(){
   $('#fProc').innerHTML='<option value="">所有加工</option>'+usedP.map(p=>`<option ${S.proc===p?'selected':''}>${esc(p)}</option>`).join('');
   $('#dlCompany').innerHTML=[...new Set(contacts.filter(c=>isCo(c)||!c.companyId).map(c=>c.company).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
   const arr=filtered();
-  $('#bFilter').classList.toggle('on',!!(S.region||S.proc||S.sort!=='follow'));
+  $('#bFilter').classList.toggle('on',!!(S.region||S.proc||S.sort!=='updated'));
   const nCo=rows.filter(isCo).length,nP=contacts.filter(c=>!isCo(c)).length;
   $('#count').textContent=arr.length===rows.length?`${nCo} 家公司・${nP} 位聯絡人`:`顯示 ${arr.length} ／ ${rows.length} 筆`;
   if(listReuse){$('#list').replaceChildren(...listReuse.childNodes);listReuse=null}else $('#list').innerHTML=listHTML(arr);
