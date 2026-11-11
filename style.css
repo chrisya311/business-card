@@ -201,7 +201,7 @@ header .hbtn:active,.nb:active{box-shadow:var(--neuin)}
 .vform textarea{grid-column:1/-1}
 .vform .row2{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-input[type=text],input[type=password],input[type=tel],input[type=email],input[type=date],input[type=search]:not(.search),select,textarea{border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--field);width:100%;font-size:16px;color:var(--ink);outline:none;min-height:42px}
+input[type=text],input[type=password],input[type=tel],input[type=email],input[type=date],input[type=time],input[type=search]:not(.search),select,textarea{border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--field);width:100%;font-size:16px;color:var(--ink);outline:none;min-height:42px}
 input:focus,select:focus,textarea:focus{border-color:var(--pri)}
 input::placeholder,textarea::placeholder{color:var(--sub);opacity:.85}
 select{-webkit-appearance:none;appearance:none;background:var(--field) var(--selic) right 10px center no-repeat;padding-right:30px}
@@ -564,3 +564,8 @@ div.f[data-ins],div.f[data-k=birthday]{display:flex;flex-direction:column;gap:6p
 .insic svg.i{width:16px;height:16px}
 #catChips.dragging,#insRow.dragging{cursor:grabbing;-webkit-user-select:none;user-select:none}
 #catChips.dragging .chip,#insRow.dragging .chip{pointer-events:none}
+
+/* 跟進日期＋時間並排 */
+label.f .dt{display:flex;gap:8px;font-weight:400}
+label.f .dt input[type=date]{flex:1.4}
+label.f .dt input[type=time]{flex:1;min-width:0;-webkit-appearance:none;appearance:none}

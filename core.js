@@ -33,8 +33,8 @@ function trialLines(t){if(!t)return [];const L=[];
 const resultCls=r=>r?optCls('result',r):'';
 const COMPOUND=['張簡','范姜','張廖','歐陽','司馬','諸葛','上官','東方','皇甫','慕容','令狐','周黃','江謝','陳黃','簡李','司徒','夏侯','尉遲','公孫'];
 const ROLES=['決策者','採購','技術／工程','現場','其他'];
-const CO_FIELDS=['company','taxId','phone','fax','address','region','website','brands','nextFollow','notes'];
-const FIELDS=['name','nameEn','company','taxId','title','dept','mobile','phone','fax','email','address','region','website','brands','metAt','nextFollow','notes'];
+const CO_FIELDS=['company','taxId','phone','fax','address','region','website','brands','nextFollow','followTime','notes'];
+const FIELDS=['name','nameEn','company','taxId','title','dept','mobile','phone','fax','email','address','region','website','brands','metAt','nextFollow','followTime','notes'];
 
 /* ---------- utils ---------- */
 /* ---------- line icons (森霧 Forest Mist：線條圖示，不用 emoji) ---------- */
@@ -229,7 +229,7 @@ const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join(
 const mapLink=a=>`<a class="btn sm" style="margin-left:6px;vertical-align:middle" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">${ic('map')}地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',birthday:'',cars:[],cropV:0,ins:false,thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',followTime:'',birthday:'',cars:[],cropV:0,ins:false,thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
