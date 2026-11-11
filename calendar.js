@@ -12,8 +12,8 @@ function calBuild(y0,y1){const ev=new Map();const add=(d,e)=>{if(!ev.has(d))ev.s
       if(b)for(let y=y0;y<=y1;y++){if(b.y&&y<b.y)continue;const dd=b.m===2&&b.d===29&&new Date(y,1,29).getMonth()!==1?28:b.d;
         add(`${y}-${pad(b.m)}-${pad(dd)}`,{t:'bd',id:c.id,title:c.name,sub:b.y&&y>b.y?`${y-b.y} 歲生日`:'生日'})}
       for(const x of c.cars||[])if(x.exp)add(x.exp,{t:'ins',id:c.id,title:c.name,sub:`${x.plate||'車'} 保險到期`})}
-    if((isRow(c)||insFollowP(c))&&c.nextFollow){const lb=insFollowP(c)?'保險跟進':'跟進';add(c.nextFollow,{t:'fu',id:c.id,title:rowTitle(c),sub:followState(c)==='od'?`${lb}（${followText(c)}）`:lb})}}
-  for(const l of ev.values())l.sort((a,b)=>CAL_TYPES.findIndex(t=>t[0]===a.t)-CAL_TYPES.findIndex(t=>t[0]===b.t));
+    if((isRow(c)||insFollowP(c))&&c.nextFollow){const lb=insFollowP(c)?'保險跟進':'跟進';add(c.nextFollow,{t:'fu',id:c.id,tm:c.followTime||'',title:rowTitle(c),sub:followState(c)==='od'?`${lb}（${followText(c)}）`:lb})}}
+  for(const l of ev.values())l.sort((a,b)=>CAL_TYPES.findIndex(t=>t[0]===a.t)-CAL_TYPES.findIndex(t=>t[0]===b.t)||(a.tm||'99').localeCompare(b.tm||'99'));   // 同一種事情裡，有時間的照時間排
   Cal.ev=ev;Cal.evFrom=y0;Cal.evTo=y1}
 const calShown=d=>(Cal.ev.get(d)||[]).filter(e=>Cal.on[e.t]);
 function monthHTML(k){const y=Math.floor(k/12),m=k%12;const first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate(),td=today();
@@ -30,7 +30,7 @@ function paintCalDay(){const d=Cal.sel;const [y,m,dd]=d.split('-').map(Number);c
   const diff=daysBetween(today(),d);const rel=diff===0?'今天':diff===1?'明天':diff===-1?'昨天':diff>0?`${diff} 天後`:`${-diff} 天前`;
   const es=calShown(d);const hidden=(Cal.ev.get(d)||[]).length-es.length;
   $('#calDay').innerHTML=`<div class="cdh"><b>${m} 月 ${dd} 日（${w}）</b><span>${rel}</span></div>`+
-    (es.length?es.map(e=>`<button type="button" class="cev" data-calgo="${e.id}"><i class="t-${e.t}"></i><span class="ct"><b>${esc(e.title)}</b><small>${esc(e.sub)}</small></span>${ic('chev')}</button>`).join('')
+    (es.length?es.map(e=>`<button type="button" class="cev" data-calgo="${e.id}"><i class="t-${e.t}"></i>${e.t==='fu'?`<span class="ctm${e.tm?'':' none'}">${e.tm||'未定'}</span>`:''}<span class="ct"><b>${esc(e.title)}</b><small>${esc(e.sub)}</small></span>${ic('chev')}</button>`).join('')
       :`<div class="cnone">這天沒有${Cal.on.bd&&Cal.on.ins&&Cal.on.fu?'':'顯示中的'}事項${hidden?`（有 ${hidden} 件被隱藏）`:''}</div>`)}
 function calScrollTo(k,smooth){const el=$(`#calMonths .calm[data-k="${k}"]`),s=$('#calScroll');if(el)s.scrollTo({top:el.getBoundingClientRect().top-s.getBoundingClientRect().top+s.scrollTop-4,behavior:smooth?'smooth':'auto'})}
 function openCal(){const t=new Date();const k=ymKey(t.getFullYear(),t.getMonth());
