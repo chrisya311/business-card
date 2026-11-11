@@ -35,7 +35,7 @@ async function mergeCo(from,to){
   const have=new Set([t.address,...t.addresses.map(a=>a.address)]);
   for(const a of [{label:from.company,address:from.address},...from.addresses])if(a.address&&!have.has(a.address)){t.addresses.push({label:a.label||'',address:a.address});have.add(a.address)}
   t.processes=[...new Set([...t.processes,...from.processes])];
-  if(from.nextFollow&&(!t.nextFollow||from.nextFollow<t.nextFollow))t.nextFollow=from.nextFollow;
+  if(from.nextFollow&&(!t.nextFollow||from.nextFollow<t.nextFollow)){t.nextFollow=from.nextFollow;t.followTime=from.followTime||''}
   t.aka=[...new Set([...t.aka,...coNames(from)])].filter(x=>x!==t.company);
   const ids=new Set(t.visits.map(v=>v.id));
   t.visits.push(...from.visits.filter(v=>!ids.has(v.id)).map(v=>({...v,photos:(v.photos||[]).map(ph=>ph.o?ph:{...ph,o:from.id})})));
@@ -70,7 +70,7 @@ function fillGaps(co,p){
   const have=new Set(co.addresses.map(a=>a.address));if(p.address&&co.address&&p.address!==co.address&&!have.has(p.address)){co.addresses=[...co.addresses,{label:'',address:p.address}];have.add(p.address)}
   co.addresses=[...co.addresses,...(p.addresses||[]).filter(a=>!have.has(a.address)&&a.address!==co.address)];
   co.processes=[...new Set([...co.processes,...(p.processes||[])])];
-  if(p.nextFollow&&(!co.nextFollow||p.nextFollow<co.nextFollow))co.nextFollow=p.nextFollow;
+  if(p.nextFollow&&(!co.nextFollow||p.nextFollow<co.nextFollow)){co.nextFollow=p.nextFollow;co.followTime=p.followTime||''}
   if(!co.region)co.region=findRegion(co.address)||'';
 }
 function newCoFor(p){const t=(p.taxId||'').replace(/\D/g,'');
@@ -85,7 +85,7 @@ async function linkTo(p,co,noFill){
   const ids=new Set(co.visits.map(v=>v.id));co.visits.push(...moved.filter(v=>!ids.has(v.id)));
   co.deletedVisits=(co.deletedVisits||[]).filter(id=>!moved.some(v=>v.id===id));
   await save(co);
-  const np={...p,companyId:co.id,company:co.company,visits:stay,nextFollow:keepIns?p.nextFollow:'',deletedVisits:[...new Set([...(p.deletedVisits||[]),...mv.map(v=>v.id)])]};
+  const np={...p,companyId:co.id,company:co.company,visits:stay,nextFollow:keepIns?p.nextFollow:'',followTime:keepIns?p.followTime||'':'',deletedVisits:[...new Set([...(p.deletedVisits||[]),...mv.map(v=>v.id)])]};
   await save(np);return [np,co]}
 let linking=null,attaching=0;
 function linkAll(){if(attaching)return Promise.resolve(0);if(linking)return linking;linking=(async()=>{let n=0;const made=new Map();
@@ -113,6 +113,8 @@ async function maybeMigrate(){
 /* ---------- follow-up ---------- */
 function followState(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c.nextFollow);return d<0?'od':d<=7?'wk':'ok'}
 function followText(c){if(!c.nextFollow)return '';const d=daysBetween(today(),c.nextFollow);return d<0?`逾期 ${-d} 天`:d===0?'今天跟進':d===1?'明天跟進':`${d} 天後`}
+// 列表徽章：有填時間就顯示「今天 14:30」「明天 09:00」「11/20 14:30」
+function followBadge(c){const fs=followState(c),t=c.followTime;if(fs==='ok')return fmtD(c.nextFollow).slice(5)+(t?' '+t:'');if(!t||fs==='od')return followText(c);const d=daysBetween(today(),c.nextFollow);return (d===0?'今天':d===1?'明天':fmtD(c.nextFollow).slice(5))+' '+t}
 const lastVisit=c=>[...c.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
 
 /* ---------- 保險到期 ---------- */
@@ -165,7 +167,7 @@ function filtered(){
     case 'updated':return rowUpd(b).localeCompare(rowUpd(a));
     case 'company':return cmp(a.company||'~',b.company||'~')||cmp(rowTitle(a),rowTitle(b));
     case 'name':return cmp(rowTitle(a)||'~',rowTitle(b)||'~');
-    default:return (a.nextFollow||'9999').localeCompare(b.nextFollow||'9999')||(b.updated||'').localeCompare(a.updated||'')}});
+    default:return (a.nextFollow||'9999').localeCompare(b.nextFollow||'9999')||(a.followTime||'99').localeCompare(b.followTime||'99')||(b.updated||'').localeCompare(a.updated||'')}});
 }
 
 /* ---------- render list ---------- */
@@ -181,14 +183,14 @@ function listHTML(arr){
       ${coThumb(c,ppl)}
       <div class="t"><div class="n">${esc(c.company)}</div>
         <div class="ppl">${ppl.length?ppl.slice(0,2).map(p=>esc(p.name)).join('・')+(ppl.length>2?` +${ppl.length-2}`:''):'（還沒有聯絡人）'}${c.region?' · '+esc(c.region):''}</div></div>
-      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
+      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${followBadge(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}
     return `<div class="item ${S.sel===c.id?'sel':''}" data-id="${c.id}">
       <div class="thumb" style="${c.thumb?`background-image:url('${c.thumb}')`:''}">${c.thumb?'':esc((c.name||'?').trim().charAt(0))}</div>
       <div class="t"><div class="n">${esc(c.name)}${c.title?` <small>${esc(c.title)}</small>`:''}${hasIns(c)&&!insOnly(c)?`<span class="insic" title="也有保險往來">${ic('car')}</span>`:''}</div>
         <div class="c">${esc(c.company||'—')}${c.region?' · '+esc(c.region):''}</div></div>
-      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${fs==='ok'?fmtD(c.nextFollow).slice(5):followText(c)}</span>`:''}${insBadge(c)}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
+      <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${followBadge(c)}</span>`:''}${insBadge(c)}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}).join('')+'</div>';
 }
@@ -237,7 +239,7 @@ const kvRow=(icn,label,val)=>`<div class="kv"><span class="k">${ic(icn)}</span><
 const webLink=w=>/^https?:|^www\./i.test(w)?`<a target="_blank" rel="noopener" href="${esc(/^www\./i.test(w)?'https://'+w:w)}">${esc(w)}</a>`:esc(w);
 function followBox(c,label){const fs=followState(c);return `<div class="follow ${fs}">
       <span class="fi">${ic('clock')}</span>
-      <div class="lbl">${c.nextFollow?`${label||'下次跟進'} <b>${fmtD(c.nextFollow)}</b>・${followText(c)}`:'還沒設定下次跟進日期'}</div>
+      <div class="lbl">${c.nextFollow?`${label||'下次跟進'} <b>${fmtD(c.nextFollow)}${c.followTime?' '+c.followTime:''}</b>・${followText(c)}`:'還沒設定下次跟進日期'}</div>
       ${c.nextFollow?`<button class="btn sm" id="fDone">${ic('check')}已跟進</button>`:''}
       <button class="btn sm" data-snooze="7">+1 週</button><button class="btn sm" data-snooze="30">+1 月</button>
     </div>`}

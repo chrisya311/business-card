@@ -46,13 +46,13 @@ function readRuns(){return $$('#tRuns .run').map(el=>{const r={};el.querySelecto
   r.result=((el.querySelector('.rres label.on')||{}).dataset||{}).res||'';r.best=el.classList.contains('best');return r})}
 function renderRuns(runs){runs=runs&&runs.length?runs:[{}];$('#tRuns').innerHTML=runs.map((r,i)=>runCard(r,i,runs.length>1)).join('')}
 function readVisitForm(){const t={mat:$('#tMat').value,proc:$('#tProc').value,ref:$('#tRef').value,refLife:$('#tRefLife').value,surf:$('#tSurf').value,runs:readRuns()};
-  return{date:$('#vDate').value,type:$('#vType').value,content:$('#vContent').value,next:$('#vNext').value,follow:$('#vFollow').value,trial:t,who:$$('#vWho label.on').map(l=>l.dataset.who),other:$('#vOther').value}}
+  return{date:$('#vDate').value,type:$('#vType').value,content:$('#vContent').value,next:$('#vNext').value,follow:$('#vFollow').value,followT:$('#vFollowT').value,trial:t,who:$$('#vWho label.on').map(l=>l.dataset.who),other:$('#vOther').value}}
 function fillVisitForm(d){const t0=cleanTrial(d.trial)||{};const ty=d.type||(VTYPES.includes('拜訪')?'拜訪':VTYPES[0]);fillOptSelects({vtype:ty,proc:t0.proc});
-  $('#vDate').value=d.date||today();$('#vType').value=ty;$('#vContent').value=d.content||'';$('#vNext').value=d.next||'';$('#vFollow').value=d.follow||'';
+  $('#vDate').value=d.date||today();$('#vType').value=ty;$('#vContent').value=d.content||'';$('#vNext').value=d.next||'';$('#vFollow').value=d.follow||'';$('#vFollowT').value=d.follow&&d.followT||'';paintTChips();
   const t=cleanTrial(d.trial)||{};for(const k of TRIAL_SHARED){const el=$('#t'+k[0].toUpperCase()+k.slice(1));if(el)el.value=t[k]||''}
   renderRuns(t.runs);paintTrial();paintWho(d.who,d.other);setTimeout(growTA,0)}
 function visitBase(c,vid,who){const v=vid&&c.visits.find(x=>x.id===vid);
-  return v?{date:v.date,type:v.type,content:v.content,next:v.next,follow:'',trial:v.trial||{},who:v.who,other:v.other}:{date:today(),type:VTYPES.includes('拜訪')?'拜訪':VTYPES[0],content:'',next:'',follow:c.nextFollow&&c.nextFollow>today()?c.nextFollow:'',trial:{},who:who||[],other:''}}
+  return v?{date:v.date,type:v.type,content:v.content,next:v.next,follow:'',followT:'',trial:v.trial||{},who:v.who,other:v.other}:{date:today(),type:VTYPES.includes('拜訪')?'拜訪':VTYPES[0],content:'',next:'',follow:c.nextFollow&&c.nextFollow>today()?c.nextFollow:'',followT:c.nextFollow&&c.nextFollow>today()?c.followTime||'':'',trial:{},who:who||[],other:''}}
 function showDraftBar(at){const b=$('#vDraft');const has=!!at;b.hidden=!has;if(has)$('#vDraftTx').textContent=(VS.vid?'有還沒儲存的修改':'已自動保存草稿')+'・'+fmtTime(at)}
 function saveDraft(){clearTimeout(draftT);const key=VS.key,vid=VS.vid;draftT=setTimeout(()=>{if(VS.key!==key)return;
   const d={...readVisitForm(),at:new Date().toISOString()};
@@ -77,7 +77,7 @@ async function saveVisit(){const c=contacts.find(x=>x.id===VS.cid);if(!c)return;
     const v={id:VS.vid||uid(),date:f.date||today(),type:f.type,content:half(f.content.trim()),next:half(f.next.trim()),updated:new Date().toISOString(),trial,who,whoN,other:isC?f.other.trim():'',ins:!!VS.ins,photos:[...keep,...added]};
     for(const pid of VS.removed)await VP.del(pid,c.id);
     const nc={...c,visits:VS.vid?c.visits.map(x=>x.id===VS.vid?v:x):[...c.visits,v],deletedPhotos:[...(c.deletedPhotos||[]),...VS.removed]};
-    if(f.follow)nc.nextFollow=f.follow;
+    if(f.follow){nc.nextFollow=f.follow;nc.followTime=f.followT||''}
     await save(nc);clearDraft();VS.removed=[];closeModal($('#mVisit'));refresh();toast(VS.vid?'已更新紀錄':'已新增紀錄')}
   catch(_){toast('儲存失敗，請檢查網路')}finally{btn.disabled=false}}
 /* 下拉選單：跟著自訂選項走；目前選的是舊名字時也保留 */
@@ -200,7 +200,7 @@ async function openEdit(c,opt={}){
   $('#eTitle').textContent=EM==='co'?(isNew?'新增公司':'編輯公司'):isNew?(opt.fromScan?'確認辨識結果':'新增名片'):'編輯名片';
   const f=$('#eForm');
   paintEditOpts(editing);
-  FIELDS.forEach(k=>{f.querySelector(`[name=${k}]`).value=editing[k]||''});
+  FIELDS.forEach(k=>{f.querySelector(`[name=${k}]`).value=editing[k]||''});paintTChips();
   $('#eAddrs').innerHTML='';(editing.addresses||[]).forEach(a=>addAddrRow(a));
   fillBirthday(editing.birthday);$('#eCars').innerHTML='';(editing.cars||[]).forEach(x=>addCarRow(x));
   if(EM==='co')f.querySelector('[name=company]').value=editing.company||'';
@@ -220,6 +220,7 @@ async function openEdit(c,opt={}){
 }
 async function saveCoEdit(){const f=$('#eForm');
   for(const k of CO_FIELDS)editing[k]=half(f.querySelector(`[name=${k}]`).value.trim());
+  if(!editing.nextFollow)editing.followTime='';
   editing.aka=[...new Set(f.querySelector('[name=aka]').value.split(/[、,，;；\n]/).map(x=>x.trim()).filter(x=>x&&x!==editing.company))];
   if(!editing.company){toast('請填寫公司名稱');f.querySelector('[name=company]').focus();return}
   editing.taxId=editing.taxId.replace(/\D/g,'');
@@ -241,6 +242,7 @@ async function saveEdit(){
   if(EM==='co')return saveCoEdit();
   const f=$('#eForm');
   FIELDS.forEach(k=>{editing[k]=half(f.querySelector(`[name=${k}]`).value.trim())});
+  if(!editing.nextFollow)editing.followTime='';
   if(!!$('#eBdM').value!==!!$('#eBdD').value){toast('生日請把月和日都選好');$('#eBdM').focus();return}
   editing.birthday=readBirthday();editing.cars=readCars();
   if(!editing.name){toast('請填寫姓名');f.querySelector('[name=name]').focus();return}
@@ -269,3 +271,16 @@ async function saveEdit(){
   }catch(e){toast('儲存失敗：'+(e&&e.code==='quota_exceeded'?'雲端空間已滿':(e&&e.message)||'請檢查網路'),4000)}
   finally{btn.disabled=false;btn.textContent='儲存'}
 }
+
+/* 跟進時間的快速按鈕：點一下就填好常用的整點、半點；再點一次取消。其他時間用旁邊的時間欄自己選 */
+const QUICK_TIMES=['09:00','10:00','11:00','13:30','14:00','15:00','16:00'];
+const tLabel=t=>{const [h,m]=t.split(':').map(Number);return (h<12?'上午 ':'下午 ')+(h>12?h-12:h)+(m?':'+String(m).padStart(2,'0'):' 點')};
+function paintTChips(){$$('.tchips').forEach(w=>{const v=w.closest('label.f').querySelector('input[type=time]').value;
+  w.querySelectorAll('[data-qt]').forEach(b=>b.classList.toggle('on',b.dataset.qt===v))})}
+$$('label.f .dt').forEach(dt=>{const w=document.createElement('span');w.className='tchips';
+  w.innerHTML=QUICK_TIMES.map(t=>`<button type="button" data-qt="${t}">${tLabel(t)}</button>`).join('');dt.after(w);
+  dt.querySelector('input[type=time]').addEventListener('input',paintTChips);
+  w.addEventListener('click',e=>{const b=e.target.closest('[data-qt]');if(!b)return;e.preventDefault();
+    const tm=dt.querySelector('input[type=time]'),dd=dt.querySelector('input[type=date]');
+    tm.value=b.classList.contains('on')?'':b.dataset.qt;tm.dispatchEvent(new Event('input',{bubbles:true}));paintTChips();
+    if(tm.value&&!dd.value){toast('記得也選一下跟進日期');dd.focus()}})});
