@@ -140,7 +140,7 @@ function bdText(c){const b=bdParts(c.birthday);if(!b)return '';const t=new Date(
 const insFollowP=c=>!isCo(c)&&!isRow(c)&&hasIns(c)&&!!c.nextFollow;
 function listBase(){if(S.cat===INS_CAT)return contacts.filter(c=>!isCo(c)&&hasIns(c));
   return contacts.filter(c=>isRow(c)||(S.follow!=='all'&&insFollowP(c)))}
-const S={q:'',cat:'',region:'',proc:'',sort:'updated',follow:'all',sel:null,ins:''};
+const S={q:'',cat:'',region:'',proc:'',sort:'updated',sortPrev:null,follow:'all',sel:null,ins:''};
 const haystack1=c=>[c.name,c.nameEn,c.company,...(c.aka||[]),c.taxId,addrText(c),c.title,c.dept,c.mobile,c.phone,c.email,c.address,c.region,c.website,c.category,c.status,c.processes.join(' '),c.brands,c.metAt,c.notes,...(c.cars||[]).map(x=>x.plate+' '+x.plate.replace(/-/g,'')),...c.visits.map(v=>v.content+' '+v.next+' '+v.other+' '+v.whoN.join(' '))].join(' ').toLowerCase();
 const haystack=c=>isCo(c)?[haystack1(c),...peopleOf(c).map(haystack1)].join(' '):haystack1(c);
 function filtered(){
