@@ -13,7 +13,7 @@ document.addEventListener('click',async e=>{
   if(t.closest('[data-scan]')){openScan();return}
   const chip=t.closest('[data-cat]');if(chip){if(chipDragged)return;S.cat=chip.dataset.cat;renderList();centerChip($('#catChips'));return}
   const insb=t.closest('[data-ins]');if(insb&&insb.closest('#insRow')){if(chipDragged)return;S.ins=S.ins===insb.dataset.ins?'':insb.dataset.ins;renderList();centerChip($('#insRow'));return}
-  const bn=t.closest('.banner button[data-f]');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;renderList();return}
+  const bn=t.closest('.banner button[data-f]');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;followSort();renderList();return}
   const zi=t.closest('[data-zoom]');if(zi&&zi.src){$('#zoom img').src=zi.src;$('#zoom').classList.add('on');return}
   if(t.closest('#zoom')){$('#zoom').classList.remove('on');return}
 
@@ -119,7 +119,12 @@ $('#importInput').onchange=e=>{const f=e.target.files[0];if(f)handleImport(f,e.t
 let qt;$('#q').oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value;renderList()},150)};
 $('#fRegion').onchange=e=>{S.region=e.target.value;renderList()};
 $('#fProc').onchange=e=>{S.proc=e.target.value;renderList()};
-$('#fSort').onchange=e=>{S.sort=e.target.value;renderList()};
+$('#fSort').onchange=e=>{S.sort=e.target.value;S.sortPrev=null;renderList()};   // 自己選了排序，就不再自動換回去
+/* 點「逾期跟進」「7 天內」時，自動改成依下次跟進排序，第一個就是最先要聯絡的；取消篩選後換回原本的排序 */
+function followSort(){const on=S.follow==='overdue'||S.follow==='week';
+  if(on&&S.sortPrev==null&&S.sort!=='follow'){S.sortPrev=S.sort;S.sort='follow'}
+  else if(!on&&S.sortPrev!=null){S.sort=S.sortPrev;S.sortPrev=null}
+  $('#fSort').value=S.sort}
 $('#bFilter').onclick=()=>{const f=$('.frow');const o=f.classList.toggle('open');$('#bFilter').setAttribute('aria-expanded',String(o))};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#dlg').classList.contains('on'))return;if($('#zoom').classList.contains('on'))$('#zoom').classList.remove('on');else{const m=$$('.modal.on').pop();if(m)closeModal(m)}}});
 /* ---------- settings UI ---------- */
