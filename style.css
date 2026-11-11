@@ -571,3 +571,6 @@ div.f[data-ins],div.f[data-k=birthday]{display:flex;flex-direction:column;gap:6p
 label.f .dt{display:flex;gap:8px;font-weight:400}
 label.f .dt input[type=date]{flex:1.4}
 label.f .dt input[type=time]{flex:1;min-width:0;-webkit-appearance:none;appearance:none}
+label.f .tchips{display:flex;flex-wrap:wrap;gap:6px;font-weight:400}
+label.f .tchips button{height:32px;padding:0 11px;border:1px solid var(--line);border-radius:999px;background:var(--field);color:var(--ink);font-size:13px}
+label.f .tchips button.on{background:var(--pri);border-color:var(--pri);color:var(--onpri);font-weight:600}

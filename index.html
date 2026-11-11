@@ -233,7 +233,7 @@
 
         <div class="sec" id="eFollowSec">認識情境與跟進</div>
         <label class="f" data-m="p"><span>在哪裡／怎麼認識</span><input type="text" name="metAt" placeholder="例：2026/10 台中工具機展"></label>
-        <label class="f" data-m="c"><span>下次跟進日期與時間</span><span class="dt"><input type="date" name="nextFollow"><input type="time" name="followTime" aria-label="跟進時間（可不填）"></span></label>
+        <label class="f" data-m="c"><span>下次跟進日期與時間</span><span class="dt"><input type="date" name="nextFollow"><input type="time" step="1800" name="followTime" aria-label="跟進時間（可不填）"></span></label>
         <label class="f full" data-m="o"><span>其他名稱（合併來的、舊名、簡稱，用頓號分開）</span><input type="text" name="aka" placeholder="例：永興機械台中廠、永興"></label>
         <div class="f full" data-m="o" id="eMergeBox"><button type="button" class="btn sm" id="eMerge" style="align-self:flex-start">合併到另一家公司…</button><small style="color:var(--sub);font-size:12.5px">發現兩家其實是同一家時用。這家的聯絡人和拜訪紀錄會搬過去，名字會留在「其他名稱」。</small></div>
         <label class="f full"><span>備註</span><textarea name="notes" placeholder="例：主要做鋁件 CNC，在找耐用的銑刀片"></textarea></label>
@@ -270,7 +270,7 @@
         </div>
         <label class="f full"><span id="vContentLbl">內容</span><textarea id="vContent" class="grow"></textarea></label>
         <label class="f"><span>下一步</span><input type="text" id="vNext" placeholder="例：寄報價、安排第二次試刀"></label>
-        <label class="f"><span>下次跟進日期與時間</span><span class="dt"><input type="date" id="vFollow"><input type="time" id="vFollowT" aria-label="跟進時間（可不填）"></span></label>
+        <label class="f"><span>下次跟進日期與時間</span><span class="dt"><input type="date" id="vFollow"><input type="time" step="1800" id="vFollowT" aria-label="跟進時間（可不填）"></span></label>
         <div class="f full"><span class="fl">照片</span><div class="vph" id="vPend"></div></div>
       </div>
     </div>
