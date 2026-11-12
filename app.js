@@ -117,7 +117,7 @@ $('#photoInput').onchange=async e=>{const f=e.target.files[0];if(!f||!pickCtx)re
   const ctx=pickCtx;try{await putCardPhoto(ctx.target,ctx.side,f);if(ctx.target==='scan')$('#scanStatus').hidden=true}catch(err){toast(err.message)}};
 $('#importInput').onchange=e=>{const f=e.target.files[0];if(f)handleImport(f,e.target.dataset.kind)};
 let qt;$('#q').oninput=e=>{$('#qClr').hidden=!e.target.value;clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value;renderList()},150)};
-$('#qClr').onclick=()=>{clearTimeout(qt);$('#q').value='';S.q='';$('#qClr').hidden=true;renderList()};
+$('#qClr').onclick=()=>{clearTimeout(qt);$('#q').value='';$('#q').blur();S.q='';$('#qClr').hidden=true;renderList()};   // 清完收起鍵盤，方便看整個列表
 $('#fRegion').onchange=e=>{S.region=e.target.value;renderList()};
 $('#fProc').onchange=e=>{S.proc=e.target.value;renderList()};
 $('#fSort').onchange=e=>{S.sort=e.target.value;S.sortPrev=null;renderList()};   // 自己選了排序，就不再自動換回去
