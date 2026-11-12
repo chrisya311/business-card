@@ -13,7 +13,7 @@ document.addEventListener('click',async e=>{
   if(t.closest('[data-scan]')){openScan();return}
   const chip=t.closest('[data-cat]');if(chip){if(chipDragged)return;S.cat=chip.dataset.cat;renderList();centerChip($('#catChips'));return}
   const insb=t.closest('[data-ins]');if(insb&&insb.closest('#insRow')){if(chipDragged)return;S.ins=S.ins===insb.dataset.ins?'':insb.dataset.ins;renderList();centerChip($('#insRow'));return}
-  const bn=t.closest('.banner button[data-f]');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value=''}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;followSort();renderList();return}
+  const bn=t.closest('.banner button[data-f]');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value='';$('#qClr').hidden=true}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;followSort();renderList();return}
   const zi=t.closest('[data-zoom]');if(zi&&zi.src){$('#zoom img').src=zi.src;$('#zoom').classList.add('on');return}
   if(t.closest('#zoom')){$('#zoom').classList.remove('on');return}
 
@@ -116,7 +116,8 @@ $('#wipe').onclick=async()=>{if(await confirmBox(`確定清空全部 ${contacts.
 $('#photoInput').onchange=async e=>{const f=e.target.files[0];if(!f||!pickCtx)return;
   const ctx=pickCtx;try{await putCardPhoto(ctx.target,ctx.side,f);if(ctx.target==='scan')$('#scanStatus').hidden=true}catch(err){toast(err.message)}};
 $('#importInput').onchange=e=>{const f=e.target.files[0];if(f)handleImport(f,e.target.dataset.kind)};
-let qt;$('#q').oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value;renderList()},150)};
+let qt;$('#q').oninput=e=>{$('#qClr').hidden=!e.target.value;clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value;renderList()},150)};
+$('#qClr').onclick=()=>{clearTimeout(qt);$('#q').value='';$('#q').blur();S.q='';$('#qClr').hidden=true;renderList()};   // 清完收起鍵盤，方便看整個列表
 $('#fRegion').onchange=e=>{S.region=e.target.value;renderList()};
 $('#fProc').onchange=e=>{S.proc=e.target.value;renderList()};
 $('#fSort').onchange=e=>{S.sort=e.target.value;S.sortPrev=null;renderList()};   // 自己選了排序，就不再自動換回去
