@@ -335,7 +335,13 @@ label.f.warn>span::after{content:"　請確認";font-weight:500;color:var(--org)
 }
 /* compact top on phones (about 1/3 of the screen) */
 .srow{display:flex;gap:8px;align-items:center}
+.srow .sbox{flex:1;min-width:0;position:relative;display:block}
 .srow .search{flex:1;min-width:0}
+.sbox .search{padding-right:44px}
+.sbox .search::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+.qclr{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;border-radius:50%;background:var(--chip);color:var(--sub);display:flex;align-items:center;justify-content:center;padding:0}
+.qclr[hidden]{display:none}
+.qclr svg.i{width:16px;height:16px}
 .fbtn{display:none;position:relative}
 .fdot{position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--pri);display:none}
 .fbtn.on .fdot{display:block}
