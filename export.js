@@ -34,10 +34,10 @@ function exportXLSX(list){
   const vr=[];
   for(const r of list){if(!r.visits.length)continue;const co=isCo(r)?r:null;
     r.visits.forEach(v=>{const t=v.trial;const runs=t&&t.runs&&t.runs.length?t.runs:[null];const w=co?whoText(v,co):r.name;
-      runs.forEach((x,i)=>{x=x||{};vr.push([toDate(v.date),r.company,w,v.type,i?'':v.content,i?'':v.next,t?t.mat:'',t?t.proc:'',t&&runs.length>1?i+1:'',x.best?'★':'',x.tool||'',t?t.ref:'',x.vc||'',x.f||'',x.ap||'',x.n||'',x.fm||'',x.cool||'',x.life||'',t?t.refLife:'',x.result||'',x.note||'',i?'':(t?t.surf:''),i?'':((v.photos||[]).length||''),r.id])})})}
+      runs.forEach((x,i)=>{x=x||{};vr.push([toDate(v.date),r.company,w,v.type,i?'':v.content,i?'':v.next,t?t.mat:'',t?t.proc:'',t?t.req:'',t&&runs.length>1?i+1:'',x.best?'★':'',x.tool||'',t?t.ref:'',x.vc||'',x.f||'',x.ap||'',x.n||'',x.fm||'',x.cool||'',x.life||'',t?t.refLife:'',x.result||'',x.note||'',i?'':(t?t.surf:''),i?'':((v.photos||[]).length||''),r.id])})})}
   vr.sort((a,b)=>(b[0]||0)-(a[0]||0));
-  book(vr,['日期','公司','窗口','方式','內容','下一步','工件材質','加工方式','組別','建議條件','試用刀具','對照刀具','Vc','f','ap','S 轉速','F 進給','冷卻','壽命','對照壽命','結果','組備註','觀察','照片數','所屬ID'],
-    [12,22,16,9,50,24,12,10,6,8,20,18,7,7,7,8,9,8,12,12,8,20,24,8,14],'拜訪紀錄',wb);
+  book(vr,['日期','公司','窗口','方式','內容','下一步','工件材質','加工方式','客戶訴求','組別','建議條件','試用刀具','對照刀具','Vc','f','ap','S 轉速','F 進給','冷卻','壽命','對照壽命','結果','組備註','觀察','照片數','所屬ID'],
+    [12,22,16,9,50,24,12,10,24,6,8,20,18,7,7,7,8,9,8,12,12,8,20,24,8,14],'拜訪紀錄',wb);
   const buf=XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true});
   return saveFile(`客戶名片_${stamp()}.xlsx`,new Blob([buf]));
 }

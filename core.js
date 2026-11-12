@@ -13,7 +13,7 @@ const VTYPES=['拜訪','試刀','電話','Email','LINE','展覽','視訊會議',
 const MATERIALS=['S45C','S50C','SCM440','SCM415','SUJ2','SUS304','SUS316','SUS420','FC250','FC300','FCD450','FCD600','SKD11','SKD61','NAK80','AL6061','A7075','黃銅','銅','鈦合金 Ti-6Al-4V','Inconel 718'];
 const COOLANTS=['水溶性','油性','乾切','MQL','高壓冷卻'];
 const RESULTS=['成功','持平','失敗','待確認'];
-const TRIAL_SHARED=['mat','proc','ref','refLife','surf'];
+const TRIAL_SHARED=['mat','proc','req','ref','refLife','surf'];
 const RUN_KEYS=['tool','vc','f','ap','n','fm','cool','life','result','note'];
 /* 試刀：共用資料＋好幾組條件（runs）；舊格式（只有一組）自動轉成第 1 組 */
 function cleanTrial(t){if(!t||typeof t!=='object')return null;const o={};let any=false;
@@ -28,6 +28,7 @@ function runLine(r,i,many){const cond=[r.vc&&'Vc '+r.vc,r.f&&'f '+r.f,r.ap&&'ap 
   return (r.best?'★ ':'')+(many?`第 ${i+1} 組　`:'')+[r.tool,cond,r.life&&'壽命 '+r.life,r.result,r.note].filter(Boolean).join(' · ')}
 function trialLines(t){if(!t)return [];const L=[];
   const a=[t.mat,t.proc].filter(Boolean).join(' · ')+(t.ref?`（對照 ${t.ref}${t.refLife?`，壽命 ${t.refLife}`:''}）`:(t.refLife?`（對照壽命 ${t.refLife}）`:''));if(a)L.push(a);
+  if(t.req)L.push('客戶訴求：'+t.req);
   (t.runs||[]).forEach((r,i)=>L.push(runLine(r,i,t.runs.length>1)));
   if(t.surf)L.push(t.surf);return L}
 const resultCls=r=>r?optCls('result',r):'';

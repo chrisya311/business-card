@@ -45,7 +45,7 @@ function runCard(r,i,many){r=r||{};const v=k=>esc(r[k]||'');
 function readRuns(){return $$('#tRuns .run').map(el=>{const r={};el.querySelectorAll('[data-k]').forEach(i=>r[i.dataset.k]=i.value);
   r.result=((el.querySelector('.rres label.on')||{}).dataset||{}).res||'';r.best=el.classList.contains('best');return r})}
 function renderRuns(runs){runs=runs&&runs.length?runs:[{}];$('#tRuns').innerHTML=runs.map((r,i)=>runCard(r,i,runs.length>1)).join('')}
-function readVisitForm(){const t={mat:$('#tMat').value,proc:$('#tProc').value,ref:$('#tRef').value,refLife:$('#tRefLife').value,surf:$('#tSurf').value,runs:readRuns()};
+function readVisitForm(){const t={mat:$('#tMat').value,proc:$('#tProc').value,req:$('#tReq').value,ref:$('#tRef').value,refLife:$('#tRefLife').value,surf:$('#tSurf').value,runs:readRuns()};
   return{date:$('#vDate').value,type:$('#vType').value,content:$('#vContent').value,next:$('#vNext').value,follow:$('#vFollow').value,followT:$('#vFollowT').value,trial:t,who:$$('#vWho label.on').map(l=>l.dataset.who),other:$('#vOther').value}}
 function fillVisitForm(d){const t0=cleanTrial(d.trial)||{};const ty=d.type||(VTYPES.includes('拜訪')?'拜訪':VTYPES[0]);fillOptSelects({vtype:ty,proc:t0.proc});
   $('#vDate').value=d.date||today();$('#vType').value=ty;$('#vContent').value=d.content||'';$('#vNext').value=d.next||'';$('#vFollow').value=d.follow||'';$('#vFollowT').value=d.follow&&d.followT||'';paintTChips();
