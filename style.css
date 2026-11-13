@@ -557,13 +557,12 @@ div.f[data-ins],div.f[data-k=birthday]{display:flex;flex-direction:column;gap:6p
 /* 清單縮圖：橫式名片的形狀（公司的色塊放在同樣寬度的中間，文字才會對齊） */
 .item .thumb{width:64px;height:40px;border-radius:7px;background-size:cover}
 .item .thumb[style*="url("]{box-shadow:0 1px 4px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.12)}
-.item .thumb.logo:not(.has){width:32px;height:32px;margin:0 16px;border-radius:10px}
 /* 首頁那一排的日曆按鈕 */
 .banner .cal{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;color:var(--ink)}
 .banner .cal svg.i{width:26px;height:26px;color:var(--pri)}
 @media (max-width:820px){.banner .cal{flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px}.banner .cal svg.i{width:22px;height:22px}}
-/* 沒有名片照片的公司：色塊也做成名片的形狀 */
-.item .thumb.logo:not(.has){width:64px;height:40px;margin:0;border-radius:7px}
+/* 清單的色塊：小方塊（跟早期版本一樣 28×28），看起來比較精緻 */
+.item .thumb.logo:not(.has){width:28px;height:28px;margin:0 8px;border-radius:10px}
 @media (max-width:820px){
   .banner button[data-f]{flex-direction:column;align-items:flex-start;gap:0;padding:8px 10px;white-space:nowrap;font-size:12px}
 }
