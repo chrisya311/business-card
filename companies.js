@@ -61,8 +61,9 @@ function logoBg(co){const n=normCo(co.company)||co.company||'?';let h=0;for(cons
 const logoIni=co=>{const n=String(co.company||'').replace(/^(台灣|臺灣|中華|財團法人)/,'').trim();return esc([...n][0]||'?')};
 function logoHTML(co,cls){return `<div class="${cls}" style="${logoBg(co)}"></div>`}
 function wireLogos(){}
-/* 首頁公司那一列：用這家公司聯絡人的名片縮圖（照接觸次數、職稱排第一個有名片照片的人）；都沒有照片才用色塊 */
-function coThumb(co,ppl){const p=(ppl||sortPeople(co)).find(x=>x.thumb);return p?`<div class="thumb" style="background-image:url('${p.thumb}')"></div>`:logoHTML(co,'thumb logo')}
+/* 首頁那一列：一律用公司名稱算出的色塊（不放名片縮圖，看起來比較整齊）；沒有公司的人用姓名算顏色 */
+function coThumb(co){return logoHTML(co,'thumb logo')}
+const rowThumb=c=>logoHTML({company:c.company||c.name},'thumb logo')
 function fillGaps(co,p){
   for(const k of ['taxId','fax','address','region','brands','status','category'])if(!co[k]&&p[k])co[k]=p[k];
   if(!co.phone&&p.phone)co.phone=coPhone(p.phone);
@@ -180,14 +181,14 @@ function listHTML(arr){
   return '<div class="grp glass">'+arr.map(c=>{const fs=followState(c);
     if(isCo(c)){const ppl=sortPeople(c);const sel=S.sel===c.id||ppl.some(p=>p.id===S.sel);
       return `<div class="item co ${sel?'sel':''}" data-id="${c.id}">
-      ${coThumb(c,ppl)}
+      ${coThumb(c)}
       <div class="t"><div class="n">${esc(c.company)}</div>
         <div class="ppl">${ppl.length?ppl.slice(0,2).map(p=>esc(p.name)).join('・')+(ppl.length>2?` +${ppl.length-2}`:''):'（還沒有聯絡人）'}${c.region?' · '+esc(c.region):''}</div></div>
       <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${followBadge(c)}</span>`:''}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>
       <span class="chev">${ic('chev')}</span>
     </div>`}
     return `<div class="item ${S.sel===c.id?'sel':''}" data-id="${c.id}">
-      <div class="thumb" style="${c.thumb?`background-image:url('${c.thumb}')`:''}">${c.thumb?'':esc((c.name||'?').trim().charAt(0))}</div>
+      ${rowThumb(c)}
       <div class="t"><div class="n">${esc(c.name)}${c.title?` <small>${esc(c.title)}</small>`:''}${hasIns(c)&&!insOnly(c)?`<span class="insic" title="也有保險往來">${ic('car')}</span>`:''}</div>
         <div class="c">${esc(c.company||'—')}${c.region?' · '+esc(c.region):''}</div></div>
       <div class="r">${fs?`<span class="badge ${fs==='ok'?'':fs}">${followBadge(c)}</span>`:''}${insBadge(c)}${c.category?`<span class="badge ${optCls('cat',c.category)}">${esc(c.category)}</span>`:''}</div>

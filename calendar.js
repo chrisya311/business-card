@@ -1,8 +1,8 @@
 /* 名片管家：日曆（生日、保險到期、跟進日期）
    一個月一格，上下滑動看其他月份；滑到快到底時自動再多接幾個月。上面的按鈕可以快速顯示或隱藏某一種日子。 */
 'use strict';
-const CAL_TYPES=[['bd','生日','gift'],['ins','保險到期','car'],['fu','跟進','clock']];
-const Cal={on:{bd:true,ins:true,fu:true},from:null,to:null,sel:'',ev:new Map(),evFrom:0,evTo:0};
+const CAL_TYPES=[['vs','紀錄','note'],['fu','跟進','clock'],['bd','生日','gift'],['ins','保險到期','car']];
+const Cal={on:{bd:true,ins:true,fu:true,vs:true},from:null,to:null,sel:'',ev:new Map(),evFrom:0,evTo:0};
 try{const v=JSON.parse(localStorage.getItem('mpgj.calTypes')||'null');if(v&&typeof v==='object')for(const k in Cal.on)if(typeof v[k]==='boolean')Cal.on[k]=v[k]}catch(_){}
 const ymKey=(y,m)=>y*12+m;   // 月份編號（m 從 0 開始），方便加減
 /* 把 y0～y1 年之間的事件整理成「日期 → 清單」 */
@@ -12,6 +12,9 @@ function calBuild(y0,y1){const ev=new Map();const add=(d,e)=>{if(!ev.has(d))ev.s
       if(b)for(let y=y0;y<=y1;y++){if(b.y&&y<b.y)continue;const dd=b.m===2&&b.d===29&&new Date(y,1,29).getMonth()!==1?28:b.d;
         add(`${y}-${pad(b.m)}-${pad(dd)}`,{t:'bd',id:c.id,title:c.name,sub:b.y&&y>b.y?`${y-b.y} 歲生日`:'生日'})}
       for(const x of c.cars||[])if(x.exp)add(x.exp,{t:'ins',id:c.id,title:c.name,sub:`${x.plate||'車'} 保險到期`})}
+    // 過去的紀錄：哪天跟哪間聯絡過（拜訪、試刀、電話…全部）
+    for(const v of c.visits||[])if(v.date){const who=isCo(c)?(v.whoN||[]).filter(Boolean).join('、'):'';const ct=String(v.content||v.next||'').replace(/\s+/g,' ').trim();
+      add(v.date,{t:'vs',id:c.id,title:isCo(c)?c.company:(c.company?`${c.name}（${c.company}）`:c.name),sub:[v.type,who,ct.length>24?ct.slice(0,24)+'…':ct].filter(Boolean).join('・')})}
     if((isRow(c)||insFollowP(c))&&c.nextFollow){const lb=insFollowP(c)?'保險跟進':'跟進';add(c.nextFollow,{t:'fu',id:c.id,tm:c.followTime||'',title:rowTitle(c),sub:followState(c)==='od'?`${lb}（${followText(c)}）`:lb})}}
   for(const l of ev.values())l.sort((a,b)=>CAL_TYPES.findIndex(t=>t[0]===a.t)-CAL_TYPES.findIndex(t=>t[0]===b.t)||(a.tm||'99').localeCompare(b.tm||'99'));   // 同一種事情裡，有時間的照時間排
   Cal.ev=ev;Cal.evFrom=y0;Cal.evTo=y1}
@@ -31,7 +34,7 @@ function paintCalDay(){const d=Cal.sel;const [y,m,dd]=d.split('-').map(Number);c
   const es=calShown(d);const hidden=(Cal.ev.get(d)||[]).length-es.length;
   $('#calDay').innerHTML=`<div class="cdh"><b>${m} 月 ${dd} 日（${w}）</b><span>${rel}</span></div>`+
     (es.length?es.map(e=>`<button type="button" class="cev" data-calgo="${e.id}"><i class="t-${e.t}"></i>${e.t==='fu'?`<span class="ctm${e.tm?'':' none'}">${e.tm||'未定'}</span>`:''}<span class="ct"><b>${esc(e.title)}</b><small>${esc(e.sub)}</small></span>${ic('chev')}</button>`).join('')
-      :`<div class="cnone">這天沒有${Cal.on.bd&&Cal.on.ins&&Cal.on.fu?'':'顯示中的'}事項${hidden?`（有 ${hidden} 件被隱藏）`:''}</div>`)}
+      :`<div class="cnone">這天沒有${Object.values(Cal.on).every(Boolean)?'':'顯示中的'}事項${hidden?`（有 ${hidden} 件被隱藏）`:''}</div>`)}
 function calScrollTo(k,smooth){const el=$(`#calMonths .calm[data-k="${k}"]`),s=$('#calScroll');if(el)s.scrollTo({top:el.getBoundingClientRect().top-s.getBoundingClientRect().top+s.scrollTop-4,behavior:smooth?'smooth':'auto'})}
 function openCal(){const t=new Date();const k=ymKey(t.getFullYear(),t.getMonth());
   Cal.from=k-6;Cal.to=k+12;Cal.evFrom=Infinity;Cal.evTo=-Infinity;Cal.sel=today();
