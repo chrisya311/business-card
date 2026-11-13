@@ -516,7 +516,7 @@ body.catswipe .list .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 /* 日曆 */
 :root,:root[data-theme=dark]{--bd:#F0A3C4;--bd-soft:rgba(240,163,196,.16)}
 :root[data-theme=light]{--bd:#B03A72;--bd-soft:rgba(176,58,114,.12)}
-.t-bd{background:var(--bd)!important}.t-ins{background:var(--org)!important}.t-fu{background:var(--pri)!important}
+.t-bd{background:var(--bd)!important}.t-ins{background:var(--org)!important}.t-fu{background:var(--pri)!important}.t-vs{background:var(--pur)!important}
 .calbox{display:flex;flex-direction:column;height:calc(100vh - 72px);height:calc(100dvh - 72px)}
 @media (max-width:820px){.calbox{height:100vh;height:100dvh;min-height:0!important}}
 .calbox .mhead h2{flex:1}
