@@ -203,8 +203,10 @@
           <div class="pslot" data-side="back"><div class="pv" data-pick><span class="ic"><i data-ic="plus"></i></span>背面（選填）</div><div class="pb"><button type="button" class="btn sm" data-crop><i data-ic="crop"></i>裁切</button><button type="button" class="btn sm" data-rot aria-label="順時針轉 90 度" title="順時針轉 90 度"><i data-ic="rot"></i></button><button type="button" class="btn sm danger" data-clear>移除</button></div></div>
         </div>
 
+        <div class="full" id="eAi" data-m="p"><button type="button" class="btn sm" id="eAiGo" hidden><i data-ic="spark"></i>用 AI 讀這張名片，補資料</button><div class="status" id="eAiStatus" hidden><div class="spin"></div><div style="flex:1" id="eAiTx"></div><button type="button" class="btn sm" id="eAiStop">停止</button></div><div id="eAiCmp" hidden></div></div>
+
         <div class="sec" id="eBasic">基本資料</div>
-        <label class="f" data-k="name" data-m="p"><span>姓名 *</span><input type="text" name="name" required></label>
+        <label class="f" data-k="name" data-m="p"><span>姓名 *</span><input type="text" name="name" placeholder="還不知道窗口？留空只建立公司"></label>
         <label class="f" data-k="nameEn" data-m="p"><span>英文名</span><input type="text" name="nameEn"></label>
         <label class="f" data-k="company"><span id="eCoLbl">公司</span><input type="text" name="company" list="dlCompany"></label>
         <label class="f" data-k="taxId"><span>統一編號</span><input type="text" name="taxId" inputmode="numeric" maxlength="8" placeholder="8 位數字"></label>

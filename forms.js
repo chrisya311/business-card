@@ -214,7 +214,7 @@ async function openEdit(c,opt={}){
   else{slotState.edit={front:'',back:''};slotOrig.edit={front:null,back:null};editPhotosOrig={front:'',back:''};
     if(!isNew){for(const s of ['front','back'])if(editing['has'+(s==='front'?'Front':'Back')]){const d=await Store.getPhoto(editing.id,s);slotState.edit[s]=d;editPhotosOrig[s]=d;
       const o=await Store.getOrig(editing.id,s);if(o&&o.d)slotOrig.edit[s]={src:o.d,quad:o.q||null,rot:o.r||0}}}}
-  paintSlots('edit');
+  eAiReset();paintSlots('edit');
   openModal('#mEdit');
   $('#mEdit .mbox').scrollIntoView({block:'start'});
 }
@@ -245,7 +245,15 @@ async function saveEdit(){
   if(!editing.nextFollow)editing.followTime='';
   if(!!$('#eBdM').value!==!!$('#eBdD').value){toast('生日請把月和日都選好');$('#eBdM').focus();return}
   editing.birthday=readBirthday();editing.cars=readCars();
-  if(!editing.name){toast('請填寫姓名');f.querySelector('[name=name]').focus();return}
+  if(!editing.name){
+    // 新的一筆、有公司、沒有名片照片：可以只建立公司（之後拿到名片，到公司頁按「拍名片」）
+    const isNew=!contacts.some(x=>x.id===editing.id);
+    if(isNew&&editing.company&&!slotState.edit.front&&!slotState.edit.back){
+      const ex=findCo(editing.company,editing.taxId);
+      if(ex){toast(`已經有「${ex.company}」了，幫你打開`);closeModal($('#mEdit'));S.sel=ex.id;refresh();return}
+      if(!await confirmBox(`沒有填姓名，要只建立「${editing.company}」公司嗎？\n\n之後拿到名片，到公司頁按「拍名片」就能加進去。`,{ok:'只建立公司',cancel:'回去填姓名'}))return;
+      editing=newCoFor(editing);EM='co';return saveCoEdit()}
+    toast('請填寫姓名');f.querySelector('[name=name]').focus();return}
   editing.taxId=editing.taxId.replace(/\D/g,'');
   if(editing.taxId&&!validTaxId(editing.taxId)&&!await confirmBox(`統一編號「${editing.taxId}」的檢查碼對不起來，可能有一個數字看錯了。\n\n還是要儲存嗎？`,{ok:'仍要儲存',cancel:'回去修改'}))return;
   {const rc=readCat();editing.category=rc.category;editing.ins=rc.ins}
@@ -284,3 +292,40 @@ $$('label.f .dt').forEach(dt=>{const w=document.createElement('span');w.classNam
     const tm=dt.querySelector('input[type=time]'),dd=dt.querySelector('input[type=date]');
     tm.value=b.classList.contains('on')?'':b.dataset.qt;tm.dispatchEvent(new Event('input',{bubbles:true}));paintTChips();
     if(tm.value&&!dd.value){toast('記得也選一下跟進日期');dd.focus()}})});
+
+/* ---------- 事後補名片：AI 讀「編輯名片」裡的照片，跟目前填的逐欄比對，讓你挑要留哪一個 ---------- */
+let eAiCtl=null,eAiRows=[];
+function paintEditAi(){$('#eAiGo').hidden=!(EM==='p'&&slotState.edit.front&&canScan()&&!eAiCtl)}
+function eAiReset(){if(eAiCtl)eAiCtl.abort();eAiCtl=null;eAiRows=[];$('#eAiStatus').hidden=true;$('#eAiCmp').hidden=true;$('#eAiCmp').innerHTML=''}
+const sameVal=(a,b)=>{const n=s=>half(String(s||'')).toLowerCase().replace(/[\s\-–—().（）#＃]/g,'');return n(a)===n(b)};
+function eAiShow(pre,unc){const f=$('#eForm');eAiRows=[];
+  for(const k of OCR_KEYS){const card=String(pre[k]||'').trim();if(!card)continue;const el=f.querySelector(`[name=${k}]`);if(!el)continue;
+    if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===card))continue;
+    const cur=el.value.trim();if(sameVal(cur,card))continue;
+    const lb=((el.closest('label.f')||{}).querySelector?.('span')||{}).textContent||k;
+    eAiRows.push({k,label:lb.replace(/\s*\*$/,''),cur,card,unc:unc.includes(k),pick:cur?'cur':'card'})}
+  const have=$$('#eAddrs [data-aa]').map(i=>i.value.trim()).concat(f.querySelector('[name=address]').value.trim());
+  for(const a of pre.addresses||[])if(!have.some(h=>sameVal(h,a.address)))eAiRows.push({k:'addr',label:'其他地址'+(a.label?`（${a.label}）`:''),cur:null,card:a.address,addr:a,unc:false,pick:'card'});
+  const box=$('#eAiCmp');box.hidden=false;
+  if(!eAiRows.length){box.innerHTML=`<div class="aicmp"><div class="aih">名片上的資料跟你填的都一樣，不用改。</div></div>`;return}
+  box.innerHTML=`<div class="aicmp"><div class="aih">名片上讀到的，跟你填的不一樣的地方。<b>點一下選要留哪一個</b>，再按「套用」。</div>`+
+    eAiRows.map((r,i)=>`<div class="airow" data-i="${i}"><div class="ail">${esc(r.label)}${r.unc?'<small>AI 不太確定，請對照照片</small>':''}</div><div class="aich">
+      <button type="button" data-ch="cur" class="${r.pick==='cur'?'on':''}"><small>${r.cur===null?'':'目前填的'}</small>${r.cur===null?'不加入':r.cur?esc(r.cur):'（空白）'}</button>
+      <button type="button" data-ch="card" class="${r.pick==='card'?'on':''}"><small>名片上的</small>${esc(r.card)}</button></div></div>`).join('')+
+    `<div class="aif"><button type="button" class="btn sm" id="eAiCancel">不用了</button><button type="button" class="btn sm pri" id="eAiApply">套用選好的</button></div></div>`}
+$('#eAiGo').onclick=async()=>{eAiCtl=new AbortController();paintEditAi();$('#eAiCmp').hidden=true;
+  const st=$('#eAiStatus');st.hidden=false;st.querySelector('.spin').hidden=false;$('#eAiStop').hidden=false;$('#eAiTx').textContent='Claude 正在讀名片…（大約 10–40 秒）';
+  try{const {pre,unc}=await recognize([slotState.edit.front,slotState.edit.back].filter(Boolean).map(dataUrlToBlob),eAiCtl.signal);
+    eAiCtl=null;for(const sd of ['front','back'])if(pre.rot[sd]&&slotState.edit[sd])await rotateSlot('edit',sd,pre.rot[sd]);
+    st.hidden=true;eAiShow(pre,unc)}
+  catch(e){const code=e&&e.code;if(code==='cancelled'||(e&&e.name==='AbortError'))st.hidden=true;else{$('#eAiTx').textContent=scanErrMsg(code);st.querySelector('.spin').hidden=true;$('#eAiStop').hidden=true}}
+  finally{eAiCtl=null;paintEditAi()}};
+$('#eAiStop').onclick=()=>{if(eAiCtl)eAiCtl.abort()};
+$('#eAiCmp').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ch]');if(b){const row=b.closest('.airow');const r=eAiRows[+row.dataset.i];r.pick=b.dataset.ch;row.querySelectorAll('[data-ch]').forEach(x=>x.classList.toggle('on',x===b));return}
+  if(e.target.closest('#eAiCancel')){eAiReset();return}
+  if(e.target.closest('#eAiApply')){const f=$('#eForm');let n=0;
+    for(const r of eAiRows){if(r.pick!=='card')continue;n++;
+      if(r.k==='addr'){addAddrRow({label:r.addr.label,address:r.addr.address});continue}
+      f.querySelector(`[name=${r.k}]`).value=r.card}
+    eAiReset();paintEditMode();toast(n?`已套用 ${n} 個欄位，確認沒問題再按「儲存」`:'沒有改任何欄位');$('#eBasic').scrollIntoView({behavior:'smooth',block:'start'})}});

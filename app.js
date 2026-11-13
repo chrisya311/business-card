@@ -27,6 +27,7 @@ document.addEventListener('click',async e=>{
   if(t.closest('#dBack')){goBack();return}
   if(!c)return;
   if(t.closest('#dEdit')){openEdit(c);return}
+  if(t.closest('#pScan')&&isCo(c)){openScan({co:c});return}
   if(t.closest('#pNew')){openEdit(normalize({company:c.company,taxId:c.taxId,companyId:c.id,category:c.category}));return}
   if(t.closest('#dDel')&&isCo(c)){const ppl=peopleOf(c);if(await confirmBox(`確定要刪除「${c.company}」？\n\n會一起刪除 ${c.visits.length} 筆拜訪紀錄${ppl.length?`和 ${ppl.length} 位聯絡人（${ppl.slice(0,3).map(p=>p.name).join('、')}${ppl.length>3?'…':''}）的名片`:''}，無法復原。`,{ok:'全部刪除',danger:true})){try{for(const p of ppl)await Store.del(p);await Store.del(c);const gone=new Set([c.id,...ppl.map(p=>p.id)]);contacts=contacts.filter(x=>!gone.has(x.id));S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('刪除失敗')}}return}
   if(t.closest('#dDel')){if(await confirmBox(coOf(c)?`確定要刪除「${c.name}」的名片？\n（公司的拜訪紀錄會留著）`:`確定要刪除「${c.name}」？\n（包含照片和所有拜訪紀錄，無法復原）`,{ok:'刪除',danger:true})){try{await Store.del(c);contacts=contacts.filter(x=>x.id!==c.id);S.sel=null;refresh();if(history.state&&history.state.detail)history.back();toast('已刪除')}catch(_){toast('刪除失敗')}}return}
@@ -107,7 +108,7 @@ document.addEventListener('drop',async e=>{if(!hasFiles(e))return;e.preventDefau
   if($('#mScan').classList.contains('on'))closeModal($('#mScan'));
   addBatchFiles(files)});
 $('#scanStop').onclick=()=>{if(scanCtl)scanCtl.abort()};
-$('#scanManual').onclick=()=>{const ph={...slotState.scan};closeModal($('#mScan'));openEdit(normalize({}),{photos:ph})};
+$('#scanManual').onclick=()=>{const ph={...slotState.scan};closeModal($('#mScan'));openEdit(normalize(coPre(scanCo)),{photos:ph})};
 $('#eSave').onclick=saveEdit;
 $('#eAddAddr').onclick=()=>addAddrRow(undefined,true);
 $('#eAddrs').addEventListener('click',e=>{const b=e.target.closest('[data-adel]');if(b)b.closest('.addr-row').remove()});

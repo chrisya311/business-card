@@ -289,8 +289,9 @@ function renderCompany(co){
     <a class="ab" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent(co.company)}"><span>${ic('globe')}</span>查公司</a>
     <button class="ab" id="dAsk"><span>${ic('spark')}</span>拜訪前查詢</button>
   </div>
-  <div class="gh"><span>聯絡人・${ppl.length} 位</span><span class="sp"></span><button class="btn sm" id="pNew">${ic('plus')}新增聯絡人</button></div>
+  <div class="gh"><span>聯絡人・${ppl.length} 位</span><span class="sp"></span><button class="btn sm" id="pScan">${ic('cam')}拍名片</button><button class="btn sm" id="pNew">${ic('plus')}新增聯絡人</button></div>
   <div class="dgrp glass" style="padding:4px 0">${ppl.map(pRow).join('')||`<div style="color:var(--sub);font-size:14px;padding:12px 16px">還沒有聯絡人</div>`}${former.map(gRow).join('')}</div>
+  ${ppl.some(p=>!p.hasFront)?`<div class="ghint">還沒有名片照片的人：點名字 →「編輯」就能補拍，AI 會幫你讀資料。</div>`:''}
   ${rows.length?`<div class="gh">公司資料</div><div class="dgrp glass">${rows.map(r=>kvRow(r[0],r[1],r[2])).join('')}</div>`:''}
   ${visitsBlock(co.visits.length,visits,'還沒有紀錄。拜訪或聯絡後記一筆，選這次的窗口是誰，下次就知道跟誰聊到哪裡。')}
   <div class="dfoot"><span>建立 ${fmtD((co.created||'').slice(0,10))}・最後更新 ${fmtD((co.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這家公司</button></div>`;
