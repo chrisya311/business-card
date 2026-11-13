@@ -279,6 +279,7 @@ function paintSlots(target){
     pv.style.backgroundImage=src?`url('${src}')`:'';[...pv.children].forEach(ch=>ch.style.visibility=src?'hidden':'visible');pv.style.color=src?'transparent':'';
     s.querySelector('[data-clear]').style.visibility=src?'visible':'hidden';for(const b of s.querySelectorAll('[data-crop],[data-rot]'))b.style.visibility=src?'visible':'hidden'});
   if(target==='scan')$('#scanGo').disabled=!slotState.scan.front||!canScan();
+  if(target==='edit'&&typeof paintEditAi==='function')paintEditAi();
 }
 
 /* ---------- 統一編號 checksum (財政部規則：加權和可被 5 整除；第 7 碼為 7 時另一算法) ---------- */

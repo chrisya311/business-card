@@ -59,8 +59,10 @@ function parseJSONText(t){
 }
 /* ---------- scan (Claude reads the card) ---------- */
 const canScan=()=>!!AI.get().key;
-let scanCtl=null;
-function openScan(){
+let scanCtl=null,scanCo=null;
+/* 從公司頁按「拍名片」：拍好的名片直接放進這家公司 */
+const coPre=co=>co?{company:co.company,companyId:co.id,taxId:co.taxId||'',category:co.category||''}:{};
+function openScan(opt={}){scanCo=opt.co||null;$('#mScan h2').textContent=scanCo?`拍名片（加到 ${scanCo.company}）`:'拍名片';
   slotState.scan={front:'',back:''};slotOrig.scan={front:null,back:null};paintSlots('scan');$('#scanStatus').hidden=true;
   $('#scanGo').hidden=!canScan();
   $('#scanTip').textContent=canScan()?'拍照小技巧：名片放在深色桌面、拍正一點、避開反光，字會辨識得更準。':'還沒設定 AI 金鑰，所以不能自動辨識。拍好照片後按「自己填」，或先到「設定」貼上金鑰。';
@@ -105,6 +107,7 @@ async function runScan(){
     // AI 說名片是倒的或側躺：自動轉正
     for(const sd of ['front','back'])if(pre.rot[sd]&&slotState.scan[sd])await rotateSlot('scan',sd,pre.rot[sd]);delete pre.rot;
     closeModal($('#mScan'));
+    if(scanCo){const cp=coPre(scanCo);pre.company=cp.company;pre.companyId=cp.companyId;pre.category=cp.category;if(!pre.taxId)pre.taxId=cp.taxId}
     openEdit(normalize({...pre,metAt:today().slice(0,7).replace('-','/')+' '}),{photos:{...slotState.scan},uncertain:unc,fromScan:true});
   }catch(e){
     const code=e&&e.code;
