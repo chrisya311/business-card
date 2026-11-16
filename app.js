@@ -179,7 +179,11 @@ refresh();
   try{await maybeMigrate()}catch(_){}
   setTimeout(()=>fixOldPhotos().catch(()=>{}),2500);
   const rd=Sync.takeRedirect();
-  if(rd&&rd.ok){toast('已連結 Google 雲端硬碟，開始同步…',3000);Sync.run()}
+  let back=null;try{back=JSON.parse(sessionStorage.getItem('mpgj.back')||'null');sessionStorage.removeItem('mpgj.back')}catch(_){}
+  if(rd&&back&&back.sel&&contacts.some(c=>c.id===back.sel)){S.sel=back.sel;refresh()}
+  const quiet=!!(back&&back.quiet);
+  if(rd&&rd.ok){toast(quiet?'已重新連結，同步中…':'已連結 Google 雲端硬碟，開始同步…',3000);Sync.run()}
+  else if(rd&&rd.error&&quiet){toast('沒辦法自動重新連結，請按上面的「點我同步」',4500)}
   else if(rd&&rd.error){toast(rd.error==='access_denied'?'已取消 Google 登入':'Google 登入沒有成功，請再試一次',4000)}
   else if(Sync.linked())Sync.run();
   paintSync();
