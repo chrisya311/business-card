@@ -32,7 +32,7 @@ async function callAIOnce(prompt,blobs,signal,cfg){
       res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',signal,headers:{'content-type':'application/json','authorization':'Bearer '+s.key},
         body:JSON.stringify({model:s.model,response_format:{type:'json_object'},messages:[{role:'user',content:[{type:'text',text:prompt},...imgs.map(i=>({type:'image_url',image_url:{url:`data:${i.mime};base64,${i.data}`}}))]}]})});
     }else{
-      res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(s.model)}:generateContent?key=${encodeURIComponent(s.key)}`,{method:'POST',signal,headers:{'content-type':'application/json'},
+      res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(s.model)}:generateContent`,{method:'POST',signal,headers:{'content-type':'application/json','x-goog-api-key':s.key},
         body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt},...imgs.map(i=>({inline_data:{mime_type:i.mime,data:i.data}}))]}],generationConfig:{responseMimeType:'application/json'}})});
     }
   }catch(e){if(e&&e.name==='AbortError')throw{code:'cancelled'};throw{code:navigator.onLine?'network':'offline'}}

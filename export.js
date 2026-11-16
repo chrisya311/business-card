@@ -5,7 +5,8 @@ async function saveFile(filename,data){
   const ext=filename.split('.').pop();
   const mime={xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',csv:'text/csv;charset=utf-8',json:'application/json'}[ext]||'application/octet-stream';
   const blob=data instanceof Blob?new Blob([data],{type:mime}):new Blob([data],{type:mime});
-  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  // iPad 會假裝自己是 Mac，所以再用「有觸控螢幕」分辨
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
   if(ios&&navigator.canShare){const file=new File([blob],filename,{type:mime});
     if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return true}catch(e){if(e&&e.name==='AbortError')return false}}}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();

@@ -195,7 +195,7 @@ function readCat(){const f=$('#eForm');const biz=(f.querySelector('[name=categor
   return{category:biz||(ins?INS_CAT:''),ins,insOnly:ins&&!biz}}
 function readEditOpts(){const f=$('#eForm');const rc=readCat();return{ins:rc.ins,category:rc.category||(f.querySelector('[name=category]:checked')||{}).value||'',status:(f.querySelector('[name=status]:checked')||{}).value||'',processes:$$('#eProc input:checked').map(i=>i.value),region:f.querySelector('[name=region]').value}}
 async function openEdit(c,opt={}){
-  editing=JSON.parse(JSON.stringify(c||normalize({})));EM=isCo(editing)?'co':'p';
+  editing=structuredClone(c||normalize({}));EM=isCo(editing)?'co':'p';
   const isNew=!contacts.some(x=>x.id===editing.id);
   $('#eTitle').textContent=EM==='co'?(isNew?'新增公司':'編輯公司'):isNew?(opt.fromScan?'確認辨識結果':'新增名片'):'編輯名片';
   const f=$('#eForm');
