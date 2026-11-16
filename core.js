@@ -142,11 +142,22 @@ function dialog1(msg,{ok='確定',cancel='取消',danger=false,text=null}={}){
 const confirmBox=(m,o)=>dialog(m,o);
 const infoBox=(m,o={})=>dialog(m,{cancel:null,...o});
 
+/* 彈窗打開時，把後面的畫面設成 inert（不能點、按 Tab 也不會跑過去）；關掉後焦點回到原本的按鈕 */
+const Inert=(()=>{let prev=null,was=null;
+  const top=()=>$('#dlg.on')||$('#zoom.on')||$$('.modal.on').pop()||null;   // 疊在最上面的那一層
+  const sync=()=>{const t=top();
+    if(t&&!was){const a=document.activeElement;prev=a&&a!==document.body&&!a.matches('input,textarea,select,[contenteditable]')?a:null}
+    for(const el of document.body.children){if(el.id==='toast'||el.tagName==='SCRIPT')continue;const off=!!t&&el!==t;if(el.inert!==off)el.inert=off}
+    if(!t&&was&&prev&&prev.isConnected){try{prev.focus({preventScroll:true})}catch(_){}prev=null}
+    was=t};
+  const mo=new MutationObserver(sync);for(const el of $$('.modal,.dlg,.zoom'))mo.observe(el,{attributes:true,attributeFilter:['class']});
+  return{sync}})();
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.16-1';
+const APP_VERSION='2026.11.16-2';
 const CHANGELOG=[
+  {v:'2026.11.16-2',items:['電腦上用鍵盤操作：打開視窗後按 Tab 只會在視窗裡面移動，不會跑到後面的畫面；關掉視窗會回到剛剛按的按鈕','Gemini 的 API 金鑰改用比較安全的方式傳送']},
   {v:'2026.11.16-1',items:['Google 雲端同步：登入過期時，只要你新增或修改資料，App 會自動重新連結再同步，不用再按「點我同步」（平常打開不會打擾）','跟進可以加時間（例：明天 09:00），有常用時間的快速按鈕；清單和日曆同一天照時間排','點「逾期跟進」「7 天內」會自動照下次跟進排序','日曆會顯示過去的紀錄（紅色橫槓），看得到哪天跟哪間聯絡過','事後補拍名片：編輯名片放上照片可以讓 AI 讀，跟你填的逐欄挑；公司頁可以直接拍名片；只填公司不填人名也能建立','試刀資料加「客戶訴求」；搜尋框加清除按鈕；首頁改用小色塊']},
   {v:'2026.11.10-8',items:['首頁清單預設改成「最近更新」排前面（公司底下的聯絡人改過，公司也會排到前面）；想看跟進順序，到篩選選「排序：下次跟進」']},
   {v:'2026.11.10-7',items:['修正：電腦上類別太多時，最右邊的類別會被擋住；現在點了會自動捲到中間，也可以用滑鼠滾輪或按住拖曳左右捲動']},
@@ -210,7 +221,7 @@ const LDB={db:null,
   del(store,k){return this.req(store,'readwrite',s=>s.delete(k))}
 };
 const Store={
-  async put(c){await LDB.put('contacts',JSON.parse(JSON.stringify(c)))},
+  async put(c){await LDB.put('contacts',structuredClone(c))},
   async del(c){const t=(await Meta.get('deleted'))||{};t[c.id]=new Date().toISOString();await Meta.set('deleted',t);Sync.dirty();await LDB.del('contacts',c.id);for(const v of c.visits||[])for(const ph of v.photos||[])await VP.del(ph.id);for(const s of ['front','back']){await LDB.del('photos',c.id+':'+s).catch(()=>{});await LDB.del('photos',c.id+':'+s+':orig').catch(()=>{});photoCache.delete(c.id+':'+s)}},
   async putPhoto(id,side,data){const k=id+':'+side;if(data)await LDB.put('photos',data,k);else await LDB.del('photos',k);photoCache.set(k,data||'')},
   /* 裁切前的原始照片（只存在這台手機，不上傳雲端），給「裁切」重新調整用 */

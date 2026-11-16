@@ -3,6 +3,7 @@
   "short_name": "名片管家",
   "description": "拍照辨識名片、記錄拜訪、提醒跟進。資料存在自己的裝置。",
   "lang": "zh-Hant-TW",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
