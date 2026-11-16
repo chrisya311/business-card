@@ -12,11 +12,14 @@ const Sync={
   linked(){return this.enabled()&&!!this.st().linked},
   tokenOk(){const t=this.st();return !!(t.token&&t.exp&&Date.now()<t.exp-60000)},
   redirectUri(){return location.origin+location.pathname.replace(/index\.html$/,'')},
-  login(forceConsent){
+  login(forceConsent,quiet){
     if(!this.enabled())return;
+    // 跳去 Google 前記住現在打開的是哪一筆，回來時再打開
+    try{sessionStorage.setItem('mpgj.back',JSON.stringify({sel:S.sel||null,quiet:!!quiet}))}catch(_){}
     const state=uid();try{sessionStorage.setItem('mpgj.oauth',state);localStorage.setItem('mpgj.oauth',state)}catch(_){}
     const q=new URLSearchParams({client_id:GOOGLE_CLIENT_ID,redirect_uri:this.redirectUri(),response_type:'token',scope:this.scope,include_granted_scopes:'true',state});
     const st=this.st();if(forceConsent||!st.linked)q.set('prompt','consent select_account');else if(st.email)q.set('login_hint',st.email);
+    if(quiet&&!forceConsent&&st.linked)q.set('prompt','none');
     location.href='https://accounts.google.com/o/oauth2/v2/auth?'+q.toString();
   },
   takeRedirect(){
@@ -42,14 +45,20 @@ const Sync={
     const fd=new FormData();fd.append('metadata',new Blob([JSON.stringify({name,parents:['appDataFolder']})],{type:'application/json'}));fd.append('file',blob);
     return this.api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',{method:'POST',body:fd});
   },
-  dirty(){if(!this.linked())return;clearTimeout(this.timer);this.timer=setTimeout(()=>this.run(),4000)},
-  async run(manual){
+  dirty(){if(!this.linked())return;if(!this.st().pend)this.save({pend:true});clearTimeout(this.timer);this.timer=setTimeout(()=>this.run(false,true),4000)},
+  /* 只在「資料有改、要同步」時才續登入（平常打開 App 不打擾）。
+     正在填表單、看照片時先等，視窗都關了才跳；同一段時間只自動試一次，失敗就回到「點我同步」 */
+  autoRenew(){
+    if($$('.modal.on').length){clearTimeout(this.timer);this.timer=setTimeout(()=>this.run(false,true),3000);return}
+    const last=+(this.st().autoAt||0);if(Date.now()-last<10*60000)return;
+    this.save({autoAt:Date.now()});toast('Google 登入過期，自動重新連結一下…',2000);setTimeout(()=>{if($$('.modal.on').length){this.save({autoAt:0});this.dirty();return}this.login(false,true)},1200)},   // 這 1 秒內又打開了視窗：先不跳，晚點再試
+  async run(manual,changed){
     if(!this.linked())return;
     if(this.busy){this.pending=true;return}
     if(!navigator.onLine){paintSync();return}
-    if(!this.tokenOk()){paintSync();if(manual)this.login();return}
+    if(!this.tokenOk()){paintSync();if(manual)this.login();else if(changed||this.st().pend)this.autoRenew();return}
     this.busy=true;paintSync('同步中…');
-    try{await this.syncOnce();this.save({last:new Date().toISOString(),err:''});}
+    try{await this.syncOnce();this.save({last:new Date().toISOString(),err:'',pend:false});}
     catch(e){this.save({err:e&&e.code==='auth'?'auth':'fail'});if(manual&&e&&e.code!=='auth')toast('同步失敗，請稍後再試',3500)}
     finally{this.busy=false;paintSync();if(this.pending){this.pending=false;this.dirty()}}
   },
