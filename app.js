@@ -14,6 +14,7 @@ document.addEventListener('click',async e=>{
   const chip=t.closest('[data-cat]');if(chip){if(chipDragged)return;S.cat=chip.dataset.cat;renderList();centerChip($('#catChips'));return}
   const insb=t.closest('[data-ins]');if(insb&&insb.closest('#insRow')){if(chipDragged)return;S.ins=S.ins===insb.dataset.ins?'':insb.dataset.ins;renderList();centerChip($('#insRow'));return}
   const bn=t.closest('.banner button[data-f]');if(bn){if(bn.dataset.f==='all'){S.follow='all';S.cat='';S.region='';S.proc='';S.q='';$('#q').value='';$('#qClr').hidden=true}else S.follow=S.follow===bn.dataset.f?'all':bn.dataset.f;followSort();renderList();return}
+  const cpb=t.closest('[data-copy]');if(cpb){copyText(cpb.dataset.copy,cpb.dataset.cplabel,cpb);return}
   const zi=t.closest('[data-zoom]');if(zi&&zi.src){$('#zoom img').src=zi.src;$('#zoom').classList.add('on');return}
   if(t.closest('#zoom')){$('#zoom').classList.remove('on');return}
 
@@ -26,6 +27,7 @@ document.addEventListener('click',async e=>{
   const c=contacts.find(x=>x.id===S.sel);
   if(t.closest('#dBack')){goBack();return}
   if(!c)return;
+  if(t.closest('[data-copyall]')){copyText(cardText(c),'名片資訊',t.closest('[data-copyall]'));return}
   if(t.closest('#dEdit')){openEdit(c);return}
   if(t.closest('#pScan')&&isCo(c)){openScan({co:c});return}
   if(t.closest('#pNew')){openEdit(normalize({company:c.company,taxId:c.taxId,companyId:c.id,category:c.category}));return}

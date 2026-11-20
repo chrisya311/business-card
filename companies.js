@@ -236,7 +236,14 @@ function visitsHTML(items){
       ${v.trial?`<div class="tsum">${trialLines(v.trial).map(l=>`<div class="${l.startsWith('★')?'tb':''}">${esc(l)}</div>`).join('')}</div>`:''}
       ${v.content?`<div class="ct">${esc(v.content)}</div>`:''}${v.next?`<div class="nx">→ ${esc(v.next)}</div>`:''}
       <div class="vph">${(v.photos||[]).map(ph=>`<div class="th"><img data-vp="${ph.id}" data-zoom alt="拜訪照片"><button data-vpdel="${ph.id}" data-v="${v.id}" title="刪除這張照片" aria-label="刪除這張照片">${ic('x')}</button></div>`).join('')}<button class="add" data-vpadd="${v.id}" title="加照片">${ic('cam')}加照片</button></div></div></div>`).join('')}</div>`}
-const kvRow=(icn,label,val)=>`<div class="kv"><span class="k">${ic(icn)}</span><div style="flex:1;min-width:0"><div class="kl">${label}</div><div class="kvv">${val}</div></div></div>`;
+const kvRow=(icn,label,val,cp,cpl)=>`<div class="kv"><span class="k">${ic(icn)}</span><div style="flex:1;min-width:0"><div class="kl">${label}</div><div class="kvv">${val}</div></div>${cpBtn(cp,cpl||label)}</div>`;
+/* 「複製全部」：只放對外的聯絡資料，不含備註、刀具品牌這類自己的筆記 */
+function cardText(c){const co=isCo(c)?null:coOf(c);const L=(k,v)=>v?(k?k+'：':'')+v:'';
+  const addrs=[L('地址',c.address),...(c.addresses||[]).map(a=>L(a.label||'其他地址',a.address))];
+  const lines=isCo(c)?[c.company,L('電話',c.phone),L('傳真',c.fax),...addrs,L('網站',c.website),L('統編',c.taxId)]
+    :[[c.name,c.title].filter(Boolean).join(' '),co?co.company:c.company,c.dept,L('手機',c.mobile),L('電話',c.phone),L('傳真',c.fax),L('Email',c.email),...addrs,L('網站／LINE',c.website)];
+  return lines.filter(Boolean).join('\n')}
+const copyAllBtn=`<span class="sp"></span><button class="btn sm" data-copyall>${ic('copy')}複製全部</button>`;
 const webLink=w=>/^https?:|^www\./i.test(w)?`<a target="_blank" rel="noopener" href="${esc(/^www\./i.test(w)?'https://'+w:w)}">${esc(w)}</a>`:esc(w);
 function followBox(c,label){const fs=followState(c);return `<div class="follow ${fs}">
       <span class="fi">${ic('clock')}</span>
@@ -266,20 +273,20 @@ function renderCompany(co){
     <div class="t"><div class="n">${esc(f.name)}<span class="lft">已離職</span></div><div class="c">${f.p&&f.p.company?'現在：'+esc(f.p.company):''}</div></div>
     <div class="r"><span class="vc">接觸 ${visitN({id:f.id},co)} 次</span></div>${f.p?`<span class="chev">${ic('chev')}</span>`:''}</div>`;
   const rows=[
-    ['phone','公司電話',co.phone&&telLink(co.phone)],['fax','傳真',co.fax&&esc(co.fax)],
-    ['pin','地址',co.address&&`${esc(co.address)}${mapLink(co.address)}`],
-    ...co.addresses.map(a=>['factory',esc(a.label||'其他地址'),`${esc(a.address)}${mapLink(a.address)}`]),
-    ['link','網站',co.website&&webLink(co.website)],
-    ['receipt','統一編號',co.taxId&&esc(co.taxId)+(validTaxId(co.taxId)?'':' <span class="badge od">格式可能有誤</span>')],['map','地區',co.region&&esc(co.region)],
+    ['phone','公司電話',co.phone&&telLink(co.phone),co.phone],['fax','傳真',co.fax&&esc(co.fax),co.fax],
+    ['pin','地址',co.address&&`${esc(co.address)}${mapLink(co.address)}`,co.address],
+    ...co.addresses.map(a=>['factory',esc(a.label||'其他地址'),`${esc(a.address)}${mapLink(a.address)}`,a.address,'地址']),
+    ['link','網站',co.website&&webLink(co.website),co.website],
+    ['receipt','統一編號',co.taxId&&esc(co.taxId)+(validTaxId(co.taxId)?'':' <span class="badge od">格式可能有誤</span>'),co.taxId],['map','地區',co.region&&esc(co.region)],
     ['cog','加工類型',co.processes.length&&co.processes.map(p=>`<span class="badge">${esc(p)}</span>`).join(' ')],
-    ['tool','刀具品牌',co.brands&&esc(co.brands)],['note','備註',co.notes&&esc(co.notes)]
+    ['tool','刀具品牌',co.brands&&esc(co.brands),co.brands],['note','備註',co.notes&&esc(co.notes),co.notes]
   ].filter(r=>r[2]);
   const visits=[...co.visits].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(v=>({v,o:co,co}));
   $('#main').innerHTML=`
   <div class="dtop"><button class="nb" id="dBack" aria-label="返回">${ic('back')}</button></div>
   <div class="dcard glass">
     <div class="dhead cohead">${logoHTML(co,'dlogo')}
-      <div class="who"><h2>${esc(co.company)}</h2>
+      <div class="who"><h2>${esc(co.company)}${cpBtn(co.company,'公司名稱')}</h2>
         ${co.aka.length?`<div class="co" style="font-size:13px">也叫：${co.aka.map(esc).join('、')}</div>`:''}<div class="co">${[co.region,ppl.length?ppl.length+' 位聯絡人':''].filter(Boolean).map(esc).join(' · ')}</div>${tagsHTML(co)}</div>
     </div>
     ${followBox(co)}
@@ -292,7 +299,7 @@ function renderCompany(co){
   <div class="gh"><span>聯絡人・${ppl.length} 位</span><span class="sp"></span><button class="btn sm" id="pScan">${ic('cam')}拍名片</button><button class="btn sm" id="pNew">${ic('plus')}新增聯絡人</button></div>
   <div class="dgrp glass" style="padding:4px 0">${ppl.map(pRow).join('')||`<div style="color:var(--sub);font-size:14px;padding:12px 16px">還沒有聯絡人</div>`}${former.map(gRow).join('')}</div>
   ${ppl.some(p=>!p.hasFront)?`<div class="ghint">還沒有名片照片的人：點名字 →「編輯」就能補拍，AI 會幫你讀資料。</div>`:''}
-  ${rows.length?`<div class="gh">公司資料</div><div class="dgrp glass">${rows.map(r=>kvRow(r[0],r[1],r[2])).join('')}</div>`:''}
+  <div class="gh"><span>公司資料</span>${copyAllBtn}</div>${rows.length?`<div class="dgrp glass">${rows.map(r=>kvRow(...r)).join('')}</div>`:''}
   ${visitsBlock(co.visits.length,visits,'還沒有紀錄。拜訪或聯絡後記一筆，選這次的窗口是誰，下次就知道跟誰聊到哪裡。')}
   <div class="dfoot"><span>建立 ${fmtD((co.created||'').slice(0,10))}・最後更新 ${fmtD((co.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這家公司</button></div>`;
   afterDetail(co);
@@ -306,15 +313,15 @@ function carsBlock(c){const cars=c.cars||[];if(!isIns(c)&&!cars.length)return ''
 function renderPerson(c){
   const co=coOf(c);
   const rows=[
-    ['mobile','手機',c.mobile&&telLink(c.mobile)],['phone','公司電話',c.phone&&telLink(c.phone)],['fax','傳真',c.fax&&esc(c.fax)],
-    ['mail','Email',c.email&&`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`],
+    ['mobile','手機',c.mobile&&telLink(c.mobile),c.mobile],['phone','公司電話',c.phone&&telLink(c.phone),c.phone],['fax','傳真',c.fax&&esc(c.fax),c.fax],
+    ['mail','Email',c.email&&`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`,c.email],
     ['gift','生日',bdText(c)&&esc(bdText(c))],
-    ['pin','地址',c.address&&`${esc(c.address)}${mapLink(c.address)}`],
-    ...c.addresses.map(a=>['factory',esc(a.label||'其他地址'),`${esc(a.address)}${mapLink(a.address)}`]),
-    ['link','網站／LINE',c.website&&webLink(c.website)],
-    ['receipt','統一編號',!co&&c.taxId&&esc(c.taxId)+(validTaxId(c.taxId)?'':' <span class="badge od">格式可能有誤</span>')],['building','部門',c.dept&&esc(c.dept)],['map','地區',!co&&c.region&&esc(c.region)],
+    ['pin','地址',c.address&&`${esc(c.address)}${mapLink(c.address)}`,c.address],
+    ...c.addresses.map(a=>['factory',esc(a.label||'其他地址'),`${esc(a.address)}${mapLink(a.address)}`,a.address,'地址']),
+    ['link','網站／LINE',c.website&&webLink(c.website),c.website],
+    ['receipt','統一編號',!co&&c.taxId&&esc(c.taxId)+(validTaxId(c.taxId)?'':' <span class="badge od">格式可能有誤</span>'),c.taxId],['building','部門',c.dept&&esc(c.dept),c.dept],['map','地區',!co&&c.region&&esc(c.region)],
     ['cog','加工類型',!co&&c.processes.length&&c.processes.map(p=>`<span class="badge">${esc(p)}</span>`).join(' ')],
-    ['tool','刀具品牌',!co&&c.brands&&esc(c.brands)],['users','認識情境',c.metAt&&esc(c.metAt)],['note','備註',c.notes&&esc(c.notes)]
+    ['tool','刀具品牌',!co&&c.brands&&esc(c.brands),c.brands],['users','認識情境',c.metAt&&esc(c.metAt),c.metAt],['note','備註',c.notes&&esc(c.notes),c.notes]
   ].filter(r=>r[2]);
   const items=personVisits(c).sort(byDate).map(x=>({...x,tag:co&&x.co&&x.co.id!==co.id?x.co.company:(!co&&x.co?x.co.company:'')}));
   $('#main').innerHTML=`
@@ -322,8 +329,8 @@ function renderPerson(c){
   <div class="dcard glass">
     <div class="dhead">
       <div class="who">
-        <h2>${esc(c.name)}${c.nameEn?`<span class="en">${esc(c.nameEn)}</span>`:''}</h2>
-        <div class="co">${co?`<button class="colink" data-go="${co.id}" title="打開公司頁">${ic('building')}<span>${esc(co.company)}</span>${ic('chev')}</button>`:esc(c.company||'')}${c.title?' · '+esc(c.title):''}</div>
+        <h2>${esc(c.name)}${cpBtn(c.name,'姓名')}${c.nameEn?`<span class="en">${esc(c.nameEn)}</span>`:''}</h2>
+        <div class="co">${co?`<button class="colink" data-go="${co.id}" title="打開公司頁">${ic('building')}<span>${esc(co.company)}</span>${ic('chev')}</button>`:esc(c.company||'')}${cpBtn(co?co.company:c.company,'公司名稱')}${c.title?`<span style="white-space:nowrap"> · ${esc(c.title)}</span>`:''}</div>
         ${tagsHTML(co?{}:c,hasIns(c)&&!insOnly(c)?`<span class="badge ${optCls('cat',INS_CAT)}">${esc(INS_CAT)}</span>`:'')}
       </div>
       <div class="photos" id="dPhotos">${['front','back'].filter(s=>c['has'+(s==='front'?'Front':'Back')]).map(s=>`<img data-zoom data-side="${s}" alt="名片${s==='front'?'正面':'背面'}" ${s==='front'&&c.thumb?`src="${c.thumb}"`:''}>`).join('')}</div>
@@ -336,7 +343,7 @@ function renderPerson(c){
     <button class="ab" id="dAsk"><span>${ic('spark')}</span>拜訪前查詢</button>
   </div>
   ${carsBlock(c)}
-  ${rows.length?`<div class="gh">詳細資料</div><div class="dgrp glass">${rows.map(r=>kvRow(r[0],r[1],r[2])).join('')}</div>`:''}
+  <div class="gh"><span>詳細資料</span>${copyAllBtn}</div>${rows.length?`<div class="dgrp glass">${rows.map(r=>kvRow(...r)).join('')}</div>`:''}
   ${visitsBlock(items.length,items,co?`還沒有跟${esc(c.name)}有關的紀錄。「新增紀錄」會記在「${esc(co.company)}」，窗口選${esc(c.name)}${hasIns(c)?'；「保險紀錄」記在這個人身上，不會出現在公司頁':''}。`:'還沒有紀錄。見面或聯絡後記一筆，下次就知道聊到哪裡。',!!co&&hasIns(c))}
   <div class="dfoot"><span>建立 ${fmtD((c.created||'').slice(0,10))}・最後更新 ${fmtD((c.updated||'').slice(0,10))}</span><span class="sp"></span><button class="btn sm danger" id="dDel">${ic('trash')}刪除這張名片</button></div>`;
   afterDetail(c);

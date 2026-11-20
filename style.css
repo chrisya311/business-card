@@ -490,6 +490,13 @@ body.catswipe .list .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 .car-row .btn{height:44px}
 .plate{font-weight:700;font-size:16px}
 .kv>.btn.sm{align-self:center;flex:none}
+.cpb{border:0;background:none;color:var(--sub);width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;flex:none;vertical-align:middle;cursor:pointer}
+.cpb svg{width:17px;height:17px}
+.cpb:hover{color:var(--pri);background:var(--chip)}
+.cpb.ok{color:var(--grn)}
+.kv>.cpb{align-self:center;margin-right:-8px}
+.dhead h2 .cpb{margin-left:4px;margin-top:-4px}
+.gh .btn.sm svg{width:15px;height:15px}
 .badge svg.i{display:inline-block;width:13px;height:13px;vertical-align:-2px;margin-right:3px}
 .inschips{margin-top:8px;align-items:center}
 .inschips .il{display:inline-flex;align-items:center;gap:4px;flex:none;font-size:13px;color:var(--sub);padding:0 4px 0 8px}

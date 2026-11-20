@@ -76,6 +76,7 @@ users:'<circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 
 note:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
 clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 check:'<path d="M20 6L9 17l-5-5"/>',
+copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
 card:'<rect x="2" y="5" width="20" height="14" rx="2.5"/><circle cx="8" cy="11" r="2"/><path d="M5 16a3 3 0 0 1 6 0M14 10h5M14 14h4"/>',
 table:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
 save:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
@@ -152,11 +153,18 @@ const Inert=(()=>{let prev=null,was=null;
     was=t};
   const mo=new MutationObserver(sync);for(const el of $$('.modal,.dlg,.zoom'))mo.observe(el,{attributes:true,attributeFilter:['class']});
   return{sync}})();
+/* 一鍵複製：按鈕帶著要複製的文字（data-copy），按下去放進剪貼簿，圖示短暫變成打勾 */
+const cpBtn=(text,label)=>text?`<button type="button" class="cpb" data-copy="${esc(text)}" data-cplabel="${esc(label)}" aria-label="複製${esc(label)}" title="複製${esc(label)}">${ic('copy')}</button>`:'';
+async function copyText(text,label,btn){
+  try{await navigator.clipboard.writeText(text)}catch(_){toast('這個瀏覽器不能自動複製，請長按文字選取');return}
+  toast(`已複製${label||''}`);
+  if(btn&&!btn._t){const old=btn.innerHTML;btn.innerHTML=ic('check');btn.classList.add('ok');btn._t=setTimeout(()=>{btn.innerHTML=old;btn.classList.remove('ok');btn._t=0},1200)}}
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.16-2';
+const APP_VERSION='2026.11.20-1';
 const CHANGELOG=[
+  {v:'2026.11.20-1',items:['一鍵複製：公司名稱、姓名、電話、地址等每個欄位旁邊都有複製按鈕，按一下就能貼給別人','「公司資料」「詳細資料」右邊多了「複製全部」，一次複製名稱、電話、地址等聯絡資料（不含備註這類自己的筆記）']},
   {v:'2026.11.16-2',items:['電腦上用鍵盤操作：打開視窗後按 Tab 只會在視窗裡面移動，不會跑到後面的畫面；關掉視窗會回到剛剛按的按鈕','Gemini 的 API 金鑰改用比較安全的方式傳送']},
   {v:'2026.11.16-1',items:['Google 雲端同步：登入過期時，只要你新增或修改資料，App 會自動重新連結再同步，不用再按「點我同步」（平常打開不會打擾）','跟進可以加時間（例：明天 09:00），有常用時間的快速按鈕；清單和日曆同一天照時間排','點「逾期跟進」「7 天內」會自動照下次跟進排序','日曆會顯示過去的紀錄（紅色橫槓），看得到哪天跟哪間聯絡過','事後補拍名片：編輯名片放上照片可以讓 AI 讀，跟你填的逐欄挑；公司頁可以直接拍名片；只填公司不填人名也能建立','試刀資料加「客戶訴求」；搜尋框加清除按鈕；首頁改用小色塊']},
   {v:'2026.11.10-8',items:['首頁清單預設改成「最近更新」排前面（公司底下的聯絡人改過，公司也會排到前面）；想看跟進順序，到篩選選「排序：下次跟進」']},
