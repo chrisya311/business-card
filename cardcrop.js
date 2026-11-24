@@ -263,27 +263,17 @@ async function rotateSlot(target,side,k){const d=slotState[target][side];if(!d)r
 async function compressPhoto(src){let q=.8,max=1400,d=await shrinkTo(src,max,q);
   while(d.length>230000&&(q>.45||max>700)){if(q>.5)q-=.1;else max-=200;d=await shrinkTo(src,max,q)}return d}
 
-/* 找到的四邊形跟相機的框框差不多（大小、位置）：代表找到的就是框裡那張名片 */
-function nearGuide(q,g){const a=polyArea(orderQuad(q)),b=polyArea(g);if(a<b*.6||a>b*1.5)return false;
-  const c=p=>[p.reduce((s,x)=>s+x[0],0)/4,p.reduce((s,x)=>s+x[1],0)/4];const [x1,y1]=c(q),[x2,y2]=c(g);return Math.hypot(x1-x2,y1-y2)<Math.sqrt(b)*.15}
-/* 選好一張名片照片：自動裁切轉正。回傳 {d:存起來的照片, orig:原始照片（給微調用）, quad:四個角或 null, how:'auto'|'snap'|'guide'}
-   guide：用相機拍的時候，畫面上框框的四個角（原圖座標）。有框框就一定會裁：先自己找 → 從框框吸到真正的邊 → 直接照框裁 */
-async function cardPhoto(file,guide){
+/* 選好一張名片照片：自動裁切轉正。回傳 {d:存起來的照片, orig:原始照片（給微調用）, quad:四個角或 null} */
+async function cardPhoto(file){
   const url=typeof file==='string'?file:URL.createObjectURL(file);
-  try{const img=await loadImg(url);const oc=imgToCanvas(img,1800),sc=oc.width/(img.naturalWidth||img.width);const orig=oc.toDataURL('image/jpeg',.88);const oi=await loadImg(orig);
-    let quad=null,how='auto',d='';
-    try{quad=detectCard(oi);
-      if(guide){const g=guide.map(([x,y])=>[x*sc,y*sc]);
-        if(!quad||!nearGuide(quad,g)){const s=refineQuad(oi,g,.1,.45);/* 名片可能比框框小一圈，找遠一點 */quad=s?insetQuad(s,.003):g;how=s?'snap':'guide'}}
-      if(quad){const w=warpCard(oi,quad);if(w)d=await compressPhoto(w);else quad=null}}catch(_){quad=null}
+  try{const img=await loadImg(url);const orig=imgToCanvas(img,1800).toDataURL('image/jpeg',.88);const oi=await loadImg(orig);
+    let quad=null,d='';try{quad=detectCard(oi);if(quad){const w=warpCard(oi,quad);if(w)d=await compressPhoto(w);else quad=null}}catch(_){quad=null}
     if(!d)d=await compressPhoto(orig);
-    return{d,orig,quad,how}}
+    return{d,orig,quad}}
   finally{if(typeof file!=='string')URL.revokeObjectURL(url)}}
 /* 放進照片框，順便告訴使用者有沒有裁到 */
-async function putCardPhoto(target,side,file,guide){const r=await cardPhoto(file,guide);slotState[target][side]=r.d;slotOrig[target][side]={src:r.orig,quad:r.quad,rot:0};paintSlots(target);
-  toast(!r.quad?'沒找到名片的邊，先保留整張照片，可以按「裁切」自己拉四個角。下次把名片放在深色、素色的桌面上拍會比較準'
-    :r.how==='guide'?'已照框框裁切；名片沒完全對準框框的話，可以按「裁切」調整'
-    :'已自動裁切、轉正名片，不滿意可以按「裁切」調整',r.quad?3200:4500);return r}
+async function putCardPhoto(target,side,file){const r=await cardPhoto(file);slotState[target][side]=r.d;slotOrig[target][side]={src:r.orig,quad:r.quad,rot:0};paintSlots(target);
+  toast(r.quad?'已自動裁切、轉正名片，不滿意可以按「裁切」調整':'沒找到名片的邊，先保留整張照片，可以按「裁切」自己拉四個角。下次把名片放在深色、素色的桌面上拍會比較準',r.quad?3200:4500);return r}
 
 /* ---------- 手動調整：拖四個角 ---------- */
 const CR={target:null,side:null,img:null,quad:null,drag:-1,rot:0};
