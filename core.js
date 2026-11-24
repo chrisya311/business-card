@@ -162,8 +162,9 @@ async function copyText(text,label,btn){
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.24-1';
+const APP_VERSION='2026.11.24-2';
 const CHANGELOG=[
+  {v:'2026.11.24-2',items:['手機拍名片改用 App 自己的相機：畫面上有名片形狀的框，對準就好，裁切會準很多（也可以按「相簿」改用系統相機或選照片）','自動找名片四個角更準：找到大概位置後會再仔細對齊一次，比較不用自己微調；名片邊緣印有色條的也找得到']},
   {v:'2026.11.24-1',items:['新增「工作報告」（在「匯出」裡）：選今年、這一季、上一季、近 30 天或自訂期間，看聯絡次數、接觸客戶、試刀成功、每月次數和各客戶進展；可以複製、匯出 Excel，也可以請 AI 寫成給老闆看的報告（不含保險）','從今天開始，改公司或名片的「狀態」時會記下日期，報告就能算出這段期間有幾家「轉為已成交」']},
   {v:'2026.11.20-1',items:['一鍵複製：公司名稱、姓名、電話、地址等每個欄位旁邊都有複製按鈕，按一下就能貼給別人','「公司資料」「詳細資料」右邊多了「複製全部」，一次複製名稱、電話、地址等聯絡資料（不含備註這類自己的筆記）']},
   {v:'2026.11.16-2',items:['電腦上用鍵盤操作：打開視窗後按 Tab 只會在視窗裡面移動，不會跑到後面的畫面；關掉視窗會回到剛剛按的按鈕','Gemini 的 API 金鑰改用比較安全的方式傳送']},
