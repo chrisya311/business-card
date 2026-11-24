@@ -138,7 +138,7 @@
     <div class="mbody">
       <div class="cropwrap"><div class="cropbox" id="cropBox"><img id="cropImg" alt="名片原始照片" draggable="false"><svg id="cropSvg" preserveAspectRatio="none"></svg>
         <span class="ch" data-i="0"></span><span class="ch" data-i="1"></span><span class="ch" data-i="2"></span><span class="ch" data-i="3"></span><div class="loupe" id="cropLoupe" hidden></div></div></div>
-      <div class="note">把四個圓點拖到名片的四個角，按「完成」就會裁掉名片以外的部分，並把名片拉正。黃色的邊（標「上」）是名片的上緣，方向不對就按「轉向」。</div>
+      <div class="note">把四個圓點拖到名片的四個角，按「完成」就會裁掉名片以外的部分，並把名片拉正。黃色的邊（標「上」）是名片的上緣，方向不對就按「轉向」。<br>小提示：名片放在深色、素色的桌面上拍，「自動找」會比較準。</div>
     </div>
     <div class="mfoot"><button class="btn" id="cropFull">整張</button><button class="btn" id="cropRot" aria-label="換方向" title="換方向：黃色的邊是名片的上緣"><i data-ic="rot"></i>轉向</button><button class="btn" id="cropAuto"><i data-ic="spark"></i>自動找</button><span style="flex:1"></span><button class="btn pri" id="cropOk"><i data-ic="check"></i>完成</button></div>
   </div>
@@ -338,6 +338,20 @@
   </div>
 </div>
 
+<div class="modal camm" id="mCam" role="dialog" aria-label="拍名片">
+  <div class="camwrap" id="camWrap">
+    <video id="camVideo" playsinline muted autoplay></video>
+    <div class="camframe" id="camFrame"><i></i><i></i><i></i><i></i></div>
+    <div class="camtip">把名片對準框框<small>放在深色、素色的桌面上，邊緣會抓得更準</small></div>
+    <div class="camflash" id="camFlash"></div>
+    <div class="camerr" id="camErr" hidden><div id="camErrTx"></div><button type="button" class="btn pri" id="camErrBtn"><i data-ic="cam"></i>改用系統相機</button></div>
+  </div>
+  <div class="cambar">
+    <button type="button" class="btn" id="camCancel">取消</button>
+    <button type="button" class="camshot" id="camShot" aria-label="拍照" disabled><span></span></button>
+    <button type="button" class="btn" id="camAlbum" title="改用系統相機或從相簿選">相簿</button>
+  </div>
+</div>
 <div class="dlg" id="dlg"><div class="box"><div class="msg" id="dlgMsg"></div><textarea id="dlgText" hidden readonly></textarea><div class="bts"><button class="btn" id="dlgNo">取消</button><button class="btn pri" id="dlgYes">確定</button></div></div></div>
 <div class="zoom" id="zoom"><img alt=""></div>
 <div class="toast" id="toast"></div>
@@ -353,6 +367,7 @@
 <script src="core.js"></script>
 <script src="options.js"></script>
 <script src="cardcrop.js"></script>
+<script src="camera.js"></script>
 <script src="companies.js"></script>
 <script src="forms.js"></script>
 <script src="ai-scan.js"></script>

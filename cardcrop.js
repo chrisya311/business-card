@@ -48,8 +48,56 @@ function findCard(img){
   const k=(img.naturalWidth||img.width)/w,q=best.q;
   // 往內收一點點：寧可切掉名片最邊邊，也不要留一條桌面
   const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4,f=.01;
-  return{quad:q.map(([x,y])=>[(x+(cx-x)*f)*k,(y+(cy-y)*f)*k]),score:best.score,area:best.area}}
-function detectCard(img,min=CROP_MIN){const r=findCard(img);return r&&r.score>=min?r.quad:null}
+  return{quad:q.map(([x,y])=>[(x+(cx-x)*f)*k,(y+(cy-y)*f)*k]),raw:q.map(([x,y])=>[x*k,y*k]),score:best.score,area:best.area}}
+function detectCard(img,min=CROP_MIN){const r=findCard(img);if(!r||r.score<min)return null;
+  const q=refineQuad(img,r.raw);return q?insetQuad(q,.003):r.quad}
+/* 往中心收一點點（比例）：寧可切掉名片最邊邊，也不要留一條桌面 */
+const insetQuad=(q,f)=>{const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4;return q.map(([x,y])=>[x+(cx-x)*f,y+(cy-y)*f])};
+
+/* ---------- 微調四個角（改善「找到了但差一點點」） ----------
+   找名片時照片縮得很小（420 像素）比較快，但角落會偏幾個像素。找到大概位置後，改用大一點的照片（1600 像素），
+   像拿放大鏡沿著鉛筆線再描一次：每條邊上取很多點，往內、往外各找一小段，找「名片紙 → 桌面」顏色跳最多的地方；
+   再用這些點拉一條最直的線（離太遠的點當雜訊丟掉），四條線的交叉點就是新的四個角。
+   win：往內外找多遠（佔短邊的比例）；tol：新的範圍跟原本面積可以差多少。任何一步沒把握就回傳 null，維持原本的結果。 */
+function refineQuad(img,quad,win=.02,tol=.15){
+  const cv=imgToCanvas(img,1600),w=cv.width,h=cv.height,k=(img.naturalWidth||img.width)/w;if(w<80||h<80)return null;
+  const D=cv.getContext('2d').getImageData(0,0,w,h).data;
+  const px=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return null;const i=(y*w+x)*4;return[D[i],D[i+1],D[i+2]]};
+  const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+  const q=orderQuad(quad).map(([x,y])=>[x/k,y/k]);if(!convex(q))return null;
+  const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.reduce((s,p)=>s+p[1],0)/4;
+  // 名片紙的顏色：中間一圈取樣的中位數（避開正中央的 logo、字）
+  const md=a=>{a.sort((p,r)=>p-r);return a[a.length>>1]};const cs=[[],[],[]];
+  for(let i=0;i<4;i++)for(let t=.15;t<.9;t+=.05){const a=q[i],b=q[(i+1)%4];const x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;const c=px(x+(cx-x)*.12,y+(cy-y)*.12);if(c)for(let j=0;j<3;j++)cs[j].push(c[j])}
+  if(cs[0].length<10)return null;const paper=cs.map(md);
+  const W=Math.max(6,Math.round(Math.min(w,h)*win)),lines=[];
+  for(let s=0;s<4;s++){const a=q[s],b=q[(s+1)%4],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<20)return null;
+    const tx=dx/L,ty=dy/L;let nx=ty,ny=-tx;if(nx*(cx-(a[0]+b[0])/2)+ny*(cy-(a[1]+b[1])/2)>0){nx=-nx;ny=-ny}   // n：往名片外面
+    // 沿著邊的方向平均 3 個點，比較不會被雜點騙
+    const avg=(x,y)=>{let r=0,g=0,bb=0,n=0;for(const e of [-2,0,2]){const c=px(x+tx*e,y+ty*e);if(c){r+=c[0];g+=c[1];bb+=c[2];n++}}return n?[r/n,g/n,bb/n]:null};
+    const M=Math.max(24,Math.min(90,Math.round(L/10))),pts=[];
+    for(let j=0;j<M;j++){const t=.06+.88*j/(M-1),x0=a[0]+dx*t,y0=a[1]+dy*t;let best=0,bo=0;
+      for(let o=-W;o<=W;o++){const x=x0+nx*o,y=y0+ny*o;const pi=avg(x-nx*2,y-ny*2),po=avg(x+nx*2,y+ny*2);if(!pi||!po)continue;
+        // 顏色跳得多、而且內側像名片紙，才算名片的邊（名片上印的色條、桌上的陰影邊都不算）
+        const sc=dist(pi,po)/(1+dist(pi,paper)/45);if(sc>best){best=sc;bo=o}}
+      if(best>=14)pts.push([x0+nx*bo,y0+ny*bo])}
+    if(pts.length<M*.45)return null;
+    const ln=fitLine(pts);if(!ln)return null;lines.push(ln)}
+  // 相鄰兩條邊的交叉點 = 角
+  const out=[];for(let i=0;i<4;i++){const p=crossLines(lines[(i+3)%4],lines[i]);if(!p)return null;out.push(p)}
+  // 不能跑太遠、形狀要合理，否則當作沒把握
+  const far=out.some((p,i)=>Math.hypot(p[0]-q[i][0],p[1]-q[i][1])>W*2.5);
+  if(far||!convex(out)||polyArea(out)<polyArea(q)*(1-tol)||polyArea(out)>polyArea(q)*(1+tol))return null;
+  return out.map(([x,y])=>[x*k,y*k])}
+/* 把一堆點拉成一條最直的線：先算一條，離線太遠的點丟掉再算一次 */
+function fitLine(pts){let P=pts;let ln=null;
+  for(let it=0;it<3;it++){if(P.length<6)return ln;const n=P.length,mx=P.reduce((s,p)=>s+p[0],0)/n,my=P.reduce((s,p)=>s+p[1],0)/n;
+    let sxx=0,sxy=0,syy=0;for(const [x,y] of P){sxx+=(x-mx)**2;sxy+=(x-mx)*(y-my);syy+=(y-my)**2}
+    const th=.5*Math.atan2(2*sxy,sxx-syy);ln={x:mx,y:my,dx:Math.cos(th),dy:Math.sin(th)};
+    const res=P.map(([x,y])=>Math.abs((x-mx)*-ln.dy+(y-my)*ln.dx));const sorted=[...res].sort((a,b)=>a-b);const lim=Math.max(1.5,sorted[sorted.length>>1]*2.5);
+    const keep=P.filter((_,i)=>res[i]<=lim);if(keep.length===P.length)break;P=keep}
+  return ln}
+function crossLines(a,b){const c=a.dx*b.dy-a.dy*b.dx;if(Math.abs(c)<1e-6)return null;const t=((b.x-a.x)*b.dy-(b.y-a.y)*b.dx)/c;return[a.x+a.dx*t,a.y+a.dy*t]}
 
 function regionDiff(q,w,h,R,G,B){const inn=[[],[],[]],out=[[],[],[]];
   const inside=(x,y)=>{let s=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];const c=Math.sign((b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0]));if(!c)continue;if(!s)s=c;else if(c!==s)return false}return true};
@@ -71,8 +119,10 @@ function sidesBelong(q,w,h,R,G,B){const cx=q.reduce((s,p)=>s+p[0],0)/4,cy=q.redu
   for(let s=0;s<4;s++){const a=q[s],b=q[(s+1)%4];const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;let nx=-dy/L,ny=dx/L;
     if(nx*(cx-(a[0]+b[0])/2)+ny*(cy-(a[1]+b[1])/2)<0){nx=-nx;ny=-ny}
     const dI=[],dO=[],hI=[],hO=[];
-    for(let k=0;k<30;k++){const t=.1+.8*k/29,x=a[0]+dx*t,y=a[1]+dy*t;const ci=col(x+nx*7,y+ny*7),cd=col(x+nx*16,y+ny*16),co=col(x-nx*7,y-ny*7);
-      if(!ci||!cd)continue;dI.push(dist(ci,cd));hI.push(dist(chroma(ci),card));if(co){dO.push(dist(co,cd));hO.push(dist(chroma(co),card))}}
+    for(let k=0;k<30;k++){const t=.1+.8*k/29,x=a[0]+dx*t,y=a[1]+dy*t;const cd=col(x+nx*16,y+ny*16),co=col(x-nx*7,y-ny*7);
+      // 內側取 3 個深度，用最像名片紙的那個：名片邊緣常印一條色條，剛好踩在色條上不代表這條邊是錯的
+      let ci=null,bi=Infinity;if(cd)for(const dd of [4,7,10]){const c=col(x+nx*dd,y+ny*dd);if(c){const v=dist(c,cd);if(v<bi){bi=v;ci=c}}}
+      if(!ci||!cd)continue;dI.push(bi);hI.push(dist(chroma(ci),card));if(co){dO.push(dist(co,cd));hO.push(dist(chroma(co),card))}}
     if(dI.length<8)return false;if(dO.length<8)continue;   // 這條邊貼著照片邊緣：外面看不到，不檢查
     const dIn=md(dI),dOut=md(dO);
 
@@ -213,17 +263,27 @@ async function rotateSlot(target,side,k){const d=slotState[target][side];if(!d)r
 async function compressPhoto(src){let q=.8,max=1400,d=await shrinkTo(src,max,q);
   while(d.length>230000&&(q>.45||max>700)){if(q>.5)q-=.1;else max-=200;d=await shrinkTo(src,max,q)}return d}
 
-/* 選好一張名片照片：自動裁切轉正。回傳 {d:存起來的照片, orig:原始照片（給微調用）, quad:四個角或 null} */
-async function cardPhoto(file){
+/* 找到的四邊形跟相機的框框差不多（大小、位置）：代表找到的就是框裡那張名片 */
+function nearGuide(q,g){const a=polyArea(orderQuad(q)),b=polyArea(g);if(a<b*.6||a>b*1.5)return false;
+  const c=p=>[p.reduce((s,x)=>s+x[0],0)/4,p.reduce((s,x)=>s+x[1],0)/4];const [x1,y1]=c(q),[x2,y2]=c(g);return Math.hypot(x1-x2,y1-y2)<Math.sqrt(b)*.15}
+/* 選好一張名片照片：自動裁切轉正。回傳 {d:存起來的照片, orig:原始照片（給微調用）, quad:四個角或 null, how:'auto'|'snap'|'guide'}
+   guide：用相機拍的時候，畫面上框框的四個角（原圖座標）。有框框就一定會裁：先自己找 → 從框框吸到真正的邊 → 直接照框裁 */
+async function cardPhoto(file,guide){
   const url=typeof file==='string'?file:URL.createObjectURL(file);
-  try{const img=await loadImg(url);const orig=imgToCanvas(img,1800).toDataURL('image/jpeg',.88);const oi=await loadImg(orig);
-    let quad=null,d='';try{quad=detectCard(oi);if(quad){const w=warpCard(oi,quad);if(w)d=await compressPhoto(w);else quad=null}}catch(_){quad=null}
+  try{const img=await loadImg(url);const oc=imgToCanvas(img,1800),sc=oc.width/(img.naturalWidth||img.width);const orig=oc.toDataURL('image/jpeg',.88);const oi=await loadImg(orig);
+    let quad=null,how='auto',d='';
+    try{quad=detectCard(oi);
+      if(guide){const g=guide.map(([x,y])=>[x*sc,y*sc]);
+        if(!quad||!nearGuide(quad,g)){const s=refineQuad(oi,g,.1,.45);/* 名片可能比框框小一圈，找遠一點 */quad=s?insetQuad(s,.003):g;how=s?'snap':'guide'}}
+      if(quad){const w=warpCard(oi,quad);if(w)d=await compressPhoto(w);else quad=null}}catch(_){quad=null}
     if(!d)d=await compressPhoto(orig);
-    return{d,orig,quad}}
+    return{d,orig,quad,how}}
   finally{if(typeof file!=='string')URL.revokeObjectURL(url)}}
 /* 放進照片框，順便告訴使用者有沒有裁到 */
-async function putCardPhoto(target,side,file){const r=await cardPhoto(file);slotState[target][side]=r.d;slotOrig[target][side]={src:r.orig,quad:r.quad,rot:0};paintSlots(target);
-  toast(r.quad?'已自動裁切、轉正名片，不滿意可以按「裁切」調整':'沒找到名片的邊，先保留整張照片，可以按「裁切」自己拉四個角',3200);return r}
+async function putCardPhoto(target,side,file,guide){const r=await cardPhoto(file,guide);slotState[target][side]=r.d;slotOrig[target][side]={src:r.orig,quad:r.quad,rot:0};paintSlots(target);
+  toast(!r.quad?'沒找到名片的邊，先保留整張照片，可以按「裁切」自己拉四個角。下次把名片放在深色、素色的桌面上拍會比較準'
+    :r.how==='guide'?'已照框框裁切；名片沒完全對準框框的話，可以按「裁切」調整'
+    :'已自動裁切、轉正名片，不滿意可以按「裁切」調整',r.quad?3200:4500);return r}
 
 /* ---------- 手動調整：拖四個角 ---------- */
 const CR={target:null,side:null,img:null,quad:null,drag:-1,rot:0};
@@ -258,7 +318,7 @@ function paintCrop(){const W=CR.img.naturalWidth,H=CR.img.naturalHeight,q=CR.qua
 })();
 $('#cropFull').onclick=()=>{CR.quad=fullQuad();paintCrop()};
 $('#cropRot').onclick=()=>{CR.rot=(CR.rot+1)%4;paintCrop()};
-$('#cropAuto').onclick=()=>{const q=detectCard(CR.img);if(q){CR.quad=q;paintCrop();toast('找到名片了')}else toast('找不到名片的邊，請自己拖四個角')};
+$('#cropAuto').onclick=()=>{const q=detectCard(CR.img);if(q){CR.quad=q;paintCrop();toast('找到名片了')}else toast('找不到名片的邊，請自己拖四個角。名片放在深色、素色的桌面上拍會比較好找',4000)};
 $('#cropOk').onclick=async()=>{const q=orderQuad(CR.quad);if(polyArea(q)<CR.img.naturalWidth*CR.img.naturalHeight*.02){toast('範圍太小了');return}
   const btn=$('#cropOk');btn.disabled=true;
   try{const w=warpCard(CR.img,rotQuad(q,CR.rot));if(!w){toast('範圍太小了');return}const d=await compressPhoto(w);

@@ -635,3 +635,26 @@ label.f .tchips button.on{background:var(--pri);border-color:var(--pri);color:va
 .rpm{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--sub)}
 .rpc{margin-top:3px;white-space:pre-wrap;word-break:break-word}
 .rpc .nx{color:var(--sub);margin-top:2px}
+/* 拍名片相機 */
+.modal.camm{background:#000;padding:0;flex-direction:column;align-items:stretch;overflow:hidden;backdrop-filter:none;-webkit-backdrop-filter:none}
+.camwrap{position:relative;flex:1;min-height:0;overflow:hidden;background:#000}
+.camwrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.camframe{position:absolute;border:1.5px solid rgba(255,255,255,.75);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none}
+.camframe i{position:absolute;width:28px;height:28px;border:0 solid #8FD3B0}
+.camframe i:nth-child(1){left:-3px;top:-3px;border-width:4px 0 0 4px;border-top-left-radius:16px}
+.camframe i:nth-child(2){right:-3px;top:-3px;border-width:4px 4px 0 0;border-top-right-radius:16px}
+.camframe i:nth-child(3){right:-3px;bottom:-3px;border-width:0 4px 4px 0;border-bottom-right-radius:16px}
+.camframe i:nth-child(4){left:-3px;bottom:-3px;border-width:0 0 4px 4px;border-bottom-left-radius:16px}
+.camtip{position:absolute;left:16px;right:16px;bottom:18px;text-align:center;color:#fff;font-size:16px;font-weight:600;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,.7);pointer-events:none}
+.camtip small{display:block;font-size:13px;font-weight:400;opacity:.9}
+.camflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.camflash.on{animation:camflash .35s ease-out}
+@keyframes camflash{from{opacity:.8}to{opacity:0}}
+.camerr{position:absolute;left:20px;right:20px;top:50%;transform:translateY(-50%);background:var(--sheet);color:var(--ink);padding:18px;border-radius:18px;text-align:center;line-height:1.6;display:flex;flex-direction:column;gap:12px;align-items:center}
+.camerr[hidden]{display:none}
+.cambar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 24px;padding-bottom:max(14px,env(safe-area-inset-bottom));background:#000}
+.cambar .btn{background:rgba(255,255,255,.16);color:#fff;box-shadow:none;min-width:76px;height:44px}
+.camshot{width:74px;height:74px;border-radius:50%;border:4px solid #fff;background:transparent;padding:4px;display:flex;flex:none;cursor:pointer}
+.camshot span{flex:1;border-radius:50%;background:#fff;transition:transform .1s}
+.camshot:active span{transform:scale(.88)}
+.camshot:disabled{opacity:.35}

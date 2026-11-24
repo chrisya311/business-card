@@ -19,7 +19,9 @@ document.addEventListener('click',async e=>{
   if(t.closest('#zoom')){$('#zoom').classList.remove('on');return}
 
   // photo slots
-  const pick=t.closest('[data-pick]');if(pick){const slot=pick.closest('.pslot');pickCtx={target:slot.closest('#scanSlots')?'scan':'edit',side:slot.dataset.side};const inp=$('#photoInput');inp.value='';inp.click();return}
+  const pick=t.closest('[data-pick]');if(pick){const slot=pick.closest('.pslot');pickCtx={target:slot.closest('#scanSlots')?'scan':'edit',side:slot.dataset.side};
+    if(Cam.ok()){Cam.open(pickCtx);return}   // 手機：開有框框的相機
+    const inp=$('#photoInput');inp.value='';inp.click();return}
   const clr=t.closest('[data-clear]');if(clr){const slot=clr.closest('.pslot');const target=slot.closest('#scanSlots')?'scan':'edit';slotState[target][slot.dataset.side]='';slotOrig[target][slot.dataset.side]=null;paintSlots(target);return}
   const rtb=t.closest('[data-rot]');if(rtb){const slot=rtb.closest('.pslot');rtb.disabled=true;rotateSlot(slot.closest('#scanSlots')?'scan':'edit',slot.dataset.side,1).finally(()=>{rtb.disabled=false});return}
   const crp=t.closest('[data-crop]');if(crp){const slot=crp.closest('.pslot');openCrop(slot.closest('#scanSlots')?'scan':'edit',slot.dataset.side);return}
