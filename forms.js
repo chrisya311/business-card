@@ -233,7 +233,7 @@ async function saveCoEdit(){const f=$('#eForm');
   const dupCo=contacts.find(x=>isCo(x)&&x.id!==editing.id&&(normCo(x.company)===normCo(editing.company)||(validTaxId(editing.taxId)&&x.taxId===editing.taxId)));
   if(dupCo&&!await confirmBox(`已經有「${dupCo.company}」了，可能是同一家公司。\n\n還是要另外存一家嗎？（要合併的話，到其中一家的「編輯公司」最下面選「合併到另一家」）`,{ok:'仍要儲存'}))return;
   const btn=$('#eSave');btn.disabled=true;btn.textContent='儲存中…';
-  try{await save(editing);
+  try{logStatus(editing);await save(editing);
     for(const p of peopleOf(editing))if(p.company!==editing.company||(!p.taxId&&editing.taxId))await save({...p,company:editing.company});
     closeModal($('#mEdit'));S.sel=editing.id;if(isNarrow()){if(history.state&&history.state.modal)history.replaceState({detail:S.sel},'');else if(!(history.state&&history.state.detail))history.pushState({detail:S.sel},'')}refresh();toast('已儲存')}
   catch(e){toast('儲存失敗：'+((e&&e.message)||'請檢查網路'),4000)}
@@ -274,7 +274,7 @@ async function saveEdit(){
     }
     if(slotState.edit.front!==editPhotosOrig.front||!editing.thumb!==!slotState.edit.front)editing.thumb=await makeThumb(slotState.edit.front);
     if(['front','back'].every(s=>!slotState.edit[s]||slotOrig.edit[s]))editing.cropV=CROP_V;
-    attaching++;let r;try{await save(editing);r=await attach(contacts.find(x=>x.id===editing.id)||editing)}finally{attaching--}
+    attaching++;let r;try{logStatus(editing);await save(editing);r=await attach(contacts.find(x=>x.id===editing.id)||editing)}finally{attaching--}
     closeModal($('#mEdit'));S.sel=editing.id;if(isNarrow()){if(history.state&&history.state.modal)history.replaceState({detail:S.sel},'');else if(!(history.state&&history.state.detail))history.pushState({detail:S.sel},'')}refresh();toast(r.co?(r.moved?`已改到「${r.co.company}」，舊公司的紀錄會保留並標示已離職`:r.isNew?`已儲存，並建立「${r.co.company}」公司`:`已儲存，加入「${r.co.company}」`):'已儲存',3000);
   }catch(e){toast('儲存失敗：'+(e&&e.code==='quota_exceeded'?'雲端空間已滿':(e&&e.message)||'請檢查網路'),4000)}
   finally{btn.disabled=false;btn.textContent='儲存'}

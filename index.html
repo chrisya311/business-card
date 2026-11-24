@@ -300,11 +300,23 @@
         <select id="xScope"><option value="all">全部名片</option><option value="filtered">只匯出目前清單（套用搜尋／篩選）</option></select>
       </label>
       <div class="menu" id="xMenu">
+        <button class="opt" id="xReport"><span class="ic"><i data-ic="list"></i></span><span><b>工作報告（給老闆看）</b><small>選一段期間，整理聯絡次數、試刀成果、每月次數和各客戶進展。可以複製、匯出 Excel，或請 AI 寫成報告。不含保險。</small></span></button>
         <button class="opt" data-x="xlsx"><span class="ic"><i data-ic="table"></i></span><span><b>Excel（給 Microsoft 365）</b><small>一個檔案三個工作表：「公司」、「聯絡人」和「拜訪紀錄」（含每次的窗口）。上傳到 OneDrive／SharePoint 就能跟同事共用。</small></span></button>
         <button class="opt" data-x="outlook"><span class="ic"><i data-ic="mail"></i></span><span><b>Outlook 聯絡人（CSV）</b><small>新版 Outlook／網頁版：左側「人員」→「匯入連絡人」→ 選這個檔案。</small></span></button>
         <button class="opt" data-x="json"><span class="ic"><i data-ic="save"></i></span><span><b>完整備份（.json，含照片）</b><small>資料只存在這台裝置，請每個月備份一次。iPhone 會跳出分享選單，選「儲存到檔案」。</small></span></button>
       </div>
       
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mReport">
+  <div class="mbox" style="max-width:760px">
+    <div class="mhead"><h2>工作報告</h2><button class="btn" data-close aria-label="關閉"><i data-ic="x"></i></button></div>
+    <div class="mbody">
+      <div class="chips" id="rpRanges" role="group" aria-label="報告期間"></div>
+      <div class="rpcustom" id="rpCustom" hidden><label class="f"><span>從</span><input type="date" id="rpFrom"></label><label class="f"><span>到</span><input type="date" id="rpTo"></label></div>
+      <div id="rpBody"></div>
     </div>
   </div>
 </div>
@@ -347,6 +359,7 @@
 <script src="export.js"></script>
 <script src="drive-sync.js"></script>
 <script src="calendar.js"></script>
+<script src="report.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
