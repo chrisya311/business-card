@@ -41,11 +41,12 @@ function findCard(img){
   const top=Math.max(...list.map(x=>x.score));
   const ok=list.filter(x=>x.score>=Math.max(CROP_MIN,top*.45)).sort((x,y)=>y.area-x.area||y.score-x.score);
   // 挑法：
-  // 1. 通過檢查的候選，分數乘上「多像名片的比例」（越接近 9:5.4 越高；斜拍會變形，所以只是加減分，不是一刀切）
+  // 1. 通過檢查的候選，分數乘上兩個加權：「多像名片的比例」（越接近 9:5.4 越高；斜拍會變形，所以只是加減分，不是一刀切），
+  //    和「大小」（拍名片時名片通常佔畫面一大塊；木紋、裂縫、反光常常圍出小小的假框，分數很高但很小）
   // 2. 從最高分的開始，看有沒有「更大、把它包在裡面」的候選：外圈多出來的那一圈如果是名片紙（例如名片上緣有 logo、字），
   //    外圈才是名片；如果那一圈跟外面的桌面比較像（例如桌子的裂縫、桌緣），就不要外圈
   const pass=ok.filter(x=>regionDiff(x.q,w,h,R,G,B)>=16&&sidesBelong(x.q,w,h,R,G,B));
-  for(const x of pass)x.adj=x.score*Math.exp(-2*Math.abs(Math.log(quadRatio(x.q)/CARD_RATIO)));
+  for(const x of pass)x.adj=x.score*Math.exp(-2*Math.abs(Math.log(quadRatio(x.q)/CARD_RATIO)))*Math.pow(x.area,.75);
   let best=null;for(const x of pass)if(!best||x.adj>best.adj)best=x;
   if(best){const outer=pass.filter(x=>x!==best&&x.area>best.area*1.03&&x.adj>=best.adj*.45&&containsQuad(x.q,best.q)).sort((a,b)=>b.area-a.area);
     for(const x of outer)if(ringIsCard(x.q,best.q,w,h,R,G,B)){best=x;break}}
