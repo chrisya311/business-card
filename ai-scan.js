@@ -27,7 +27,7 @@ async function callAIOnce(prompt,blobs,signal,cfg){
   try{
     if(s.provider==='claude'){
       res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':s.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:s.model,max_tokens:2000,messages:[{role:'user',content:[...imgs.map(i=>({type:'image',source:{type:'base64',media_type:i.mime,data:i.data}})),{type:'text',text:prompt}]}]})});
+        body:JSON.stringify({model:s.model,max_tokens:s.maxTokens||2000,messages:[{role:'user',content:[...imgs.map(i=>({type:'image',source:{type:'base64',media_type:i.mime,data:i.data}})),{type:'text',text:prompt}]}]})});
     }else if(s.provider==='openai'){
       res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',signal,headers:{'content-type':'application/json','authorization':'Bearer '+s.key},
         body:JSON.stringify({model:s.model,response_format:{type:'json_object'},messages:[{role:'user',content:[{type:'text',text:prompt},...imgs.map(i=>({type:'image_url',image_url:{url:`data:${i.mime};base64,${i.data}`}}))]}]})});

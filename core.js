@@ -162,8 +162,9 @@ async function copyText(text,label,btn){
 function setNotice(html,err){const n=$('#notice');if(!html){n.hidden=true;return}n.hidden=false;n.className='notice'+(err?' err':'');n.innerHTML=html}
 function setSync(t,st){const b=$('#syncBadge');b.querySelector('.stx').textContent=noEmoji(t);b.querySelector('.dot').className='dot '+(st||'')}
 
-const APP_VERSION='2026.11.20-1';
+const APP_VERSION='2026.11.24-1';
 const CHANGELOG=[
+  {v:'2026.11.24-1',items:['新增「工作報告」（在「匯出」裡）：選今年、這一季、上一季、近 30 天或自訂期間，看聯絡次數、接觸客戶、試刀成功、每月次數和各客戶進展；可以複製、匯出 Excel，也可以請 AI 寫成給老闆看的報告（不含保險）','從今天開始，改公司或名片的「狀態」時會記下日期，報告就能算出這段期間有幾家「轉為已成交」']},
   {v:'2026.11.20-1',items:['一鍵複製：公司名稱、姓名、電話、地址等每個欄位旁邊都有複製按鈕，按一下就能貼給別人','「公司資料」「詳細資料」右邊多了「複製全部」，一次複製名稱、電話、地址等聯絡資料（不含備註這類自己的筆記）']},
   {v:'2026.11.16-2',items:['電腦上用鍵盤操作：打開視窗後按 Tab 只會在視窗裡面移動，不會跑到後面的畫面；關掉視窗會回到剛剛按的按鈕','Gemini 的 API 金鑰改用比較安全的方式傳送']},
   {v:'2026.11.16-1',items:['Google 雲端同步：登入過期時，只要你新增或修改資料，App 會自動重新連結再同步，不用再按「點我同步」（平常打開不會打擾）','跟進可以加時間（例：明天 09:00），有常用時間的快速按鈕；清單和日曆同一天照時間排','點「逾期跟進」「7 天內」會自動照下次跟進排序','日曆會顯示過去的紀錄（紅色橫槓），看得到哪天跟哪間聯絡過','事後補拍名片：編輯名片放上照片可以讓 AI 讀，跟你填的逐欄挑；公司頁可以直接拍名片；只填公司不填人名也能建立','試刀資料加「客戶訴求」；搜尋框加清除按鈕；首頁改用小色塊']},
@@ -250,7 +251,7 @@ const addrText=c=>c.addresses.map(a=>(a.label?a.label+'：':'')+a.address).join(
 const mapLink=a=>`<a class="btn sm" style="margin-left:6px;vertical-align:middle" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}">${ic('map')}地圖</a>`;
 function normalize(c){
   const o={id:c.id||uid(),name:'',nameEn:'',company:'',taxId:'',title:'',dept:'',mobile:'',phone:'',fax:'',email:'',address:'',region:'',website:'',
-    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',followTime:'',birthday:'',cars:[],cropV:0,ins:false,thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
+    kind:'',companyId:'',role:'',aka:[],logo:'',logoTone:'',logoOff:false,logoTry:'',category:'',status:'',statusLog:[],addresses:[],processes:[],photoHash:{},deletedVisits:[],deletedPhotos:[],brands:'',metAt:'',notes:'',nextFollow:'',followTime:'',birthday:'',cars:[],cropV:0,ins:false,thumb:'',hasFront:false,hasBack:false,visits:[],created:'',updated:''};
   for(const k in o){if(c[k]!=null)o[k]=c[k]}
   if(typeof o.processes==='string')o.processes=o.processes.split(/[;；、,，]/).map(s=>s.trim()).filter(Boolean);
   if(!Array.isArray(o.processes))o.processes=[];
@@ -260,6 +261,7 @@ function normalize(c){
   if(!Array.isArray(o.deletedVisits))o.deletedVisits=[];
   o.visits=(Array.isArray(o.visits)?o.visits:[]).map(v=>({id:v.id||uid(),date:v.date||'',type:v.type||'拜訪',content:v.content||'',next:v.next||'',updated:v.updated||'',trial:cleanTrial(v.trial),who:Array.isArray(v.who)?v.who.filter(Boolean):[],whoN:Array.isArray(v.whoN)?v.whoN:[],other:v.other||'',ins:!!v.ins,photos:(Array.isArray(v.photos)?v.photos:[]).filter(x=>x&&x.id).map(x=>{const p={id:x.id,h:x.h||''};if(x.o)p.o=x.o;if(x.d)p.d=x.d;return p})}));
   if(!Array.isArray(o.deletedPhotos))o.deletedPhotos=[];
+  if(!Array.isArray(o.statusLog))o.statusLog=[];
   if(!o.created)o.created=new Date().toISOString();
   if(!o.updated)o.updated=o.created;
   if(!o.region)o.region=findRegion(o.address)||'';
@@ -272,6 +274,9 @@ function normalize(c){
   o.cars=(Array.isArray(o.cars)?o.cars:[]).map(x=>({plate:fmtPlate(x&&x.plate),exp:/^\d{4}-\d{2}-\d{2}$/.test(x&&x.exp)?x.exp:''})).filter(x=>x.plate||x.exp);
   return o;
 }
+/* 狀態改變時記下日期（例：哪天變成「已成交」），工作報告用；只在「編輯」儲存時呼叫 */
+function logStatus(c){const old=contacts.find(x=>x.id===c.id);if(old===c||!c.status||(old&&old.status===c.status))return;
+  const L=Array.isArray(c.statusLog)?c.statusLog:[];if((L[L.length-1]||{}).s===c.status)return;c.statusLog=[...L,{s:c.status,d:today()}]}
 async function save(c){c.updated=new Date().toISOString();await Store.put(c);const i=contacts.findIndex(x=>x.id===c.id);if(i>=0)contacts[i]=c;else contacts.push(c);Sync.dirty()}
 
 /* ---------- images ---------- */
